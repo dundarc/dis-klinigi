@@ -39,8 +39,9 @@ class PatientPolicy
      * Kullanıcı hasta oluşturabilir mi?
      */
     public function create(User $user): bool
-    {
-    return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST, UserRole::DENTIST]);    }
+{
+    return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST, UserRole::DENTIST]);
+}
 
     /**
      * Kullanıcı hasta bilgilerini güncelleyebilir mi?

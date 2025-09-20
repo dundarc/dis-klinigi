@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
+
                 <x-card>
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                         Son 30 Günlük Randevu Sayısı
@@ -26,13 +26,12 @@
                         <canvas id="appointmentStatusChart"></canvas>
                     </div>
                 </x-card>
-                
+
             </div>
         </div>
     </div>
 
     @push('scripts')
-        {{-- Chart.js verilerini global bir JS değişkenine aktar --}}
         <script>
             window.chartData = @json($chartData);
         </script>

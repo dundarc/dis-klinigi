@@ -5,6 +5,8 @@ use App\Enums\Gender;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\PatientXray;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Patient extends Model
 {
@@ -38,4 +40,9 @@ class Patient extends Model
     public function prescriptions() { return $this->hasMany(Prescription::class); }
     public function files() { return $this->hasMany(File::class); }
     public function consents() { return $this->hasMany(Consent::class); }
+ public function xrays(): HasMany
+    {
+        return $this->hasMany(PatientXray::class);
+    }
+
 }

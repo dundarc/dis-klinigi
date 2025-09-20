@@ -10,7 +10,20 @@ use App\Http\Controllers\ReportController; // Ekleyin
 
 use App\Http\Controllers\PatientController; // Ekleyin
 
+Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
 
+// Yeni röntgen görseli yükleme rotası (POST)
+Route::post('/patients/{patient}/xrays', [PatientController::class, 'storeXRay'])->name('patients.x-rays.store');
+
+
+// Hasta detay sayfası
+Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+
+// Yeni tedavi ekleme formunu göstermek için (GET)
+Route::get('/patients/{patient}/treatments/create', [PatientController::class, 'createTreatment'])->name('patients.treatments.create');
+
+// Yeni tedavi formundan gelen veriyi kaydetmek için (POST)
+Route::post('/patients/{patient}/treatments', [PatientController::class, 'storeTreatment'])->name('patients.treatments.store');
 
 Route::get('/', function () {
     return view('welcome');

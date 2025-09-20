@@ -7,8 +7,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
-                                'resources/js/reports.js', // Bu satırı ekleyin
-                'resources/js/calendar.js', // Bu satırı ekleyin
+                'resources/js/reports.js',
             ],
             refresh: true,
         }),
