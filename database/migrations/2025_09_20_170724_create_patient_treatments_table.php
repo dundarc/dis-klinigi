@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('treatment_id')->constrained('treatments')->cascadeOnDelete();
             $table->tinyInteger('tooth_number')->nullable();
             $table->string('status')->default(\App\Enums\PatientTreatmentStatus::PLANNED->value);
-            $table->decimal('unit_price', 10, 2);
+            $table->decimal('unit_price', 10, 2)->nullable();
             $table->decimal('vat', 5, 2);
             $table->decimal('discount', 10, 2)->default(0);
             $table->timestamp('performed_at')->nullable();

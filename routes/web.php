@@ -7,6 +7,7 @@ use App\Http\Controllers\WaitingRoomController; // Ekleyin
 use App\Http\Controllers\Api\V1\EncounterController; // Ekleyin
 use App\Http\Controllers\PdfController; // Ekleyin
 use App\Http\Controllers\ReportController; // Ekleyin
+use App\Http\Controllers\AccountingController;
 
 use App\Http\Controllers\PatientController; // Ekleyin
 
@@ -46,6 +47,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
         Route::resource('patients', PatientController::class);
+            Route::get('/accounting', [AccountingController::class, 'index'])->middleware('can:accessAccountingFeatures')->name('accounting');
+
 });
 
 require __DIR__.'/auth.php';

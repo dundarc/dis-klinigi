@@ -141,6 +141,15 @@
                     {{ __('Hastalar') }}
                 </x-responsive-nav-link>
             @endcan
+
+             @can('accessAccountingFeatures')
+                        <x-nav-link :href="route('accounting')" :active="request()->routeIs('accounting')">
+                            {{ __('Muhasebe') }}
+                        </x-nav-link>
+                    @endcan
+
+
+
             @can('accessAdminFeatures')
                  <x-responsive-nav-link :href="route('waiting-room')" :active="request()->routeIs('waiting-room')">
                     {{ __('Bekleme Odası') }}
@@ -148,6 +157,7 @@
                 <x-responsive-nav-link :href="route('reports')" :active="request()->routeIs('reports')">
                     {{ __('Raporlar') }}
                 </x-responsive-nav-link>
+                
             @endcan
         </div>
 

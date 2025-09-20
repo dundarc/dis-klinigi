@@ -13,12 +13,13 @@
 
                     <div>
                         <x-input-label for="treatment_id" :value="__('Tedavi')" />
-                        <select id="treatment_id" name="treatment_id" required autofocus class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">
+                       <select id="treatment_id" name="treatment_id" required autofocus class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring">
                             <option value="">Lütfen bir tedavi seçin</option>
                             @foreach($treatments as $treatment)
                                 <option value="{{ $treatment->id }}">{{ $treatment->name }}</option>
                             @endforeach
                         </select>
+
                         <x-input-error class="mt-2" :messages="$errors->get('treatment_id')" />
                     </div>
 
@@ -41,9 +42,16 @@
 
                     <div class="mt-4">
                         <x-input-label for="invoice_amount" :value="__('Fatura Miktarı (TL)')" />
-                        <x-text-input id="invoice_amount" class="block mt-1 w-full" type="number" step="0.01" name="invoice_amount" :value="old('invoice_amount')" />
+                        <x-text-input required id="invoice_amount" class="block mt-1 w-full" type="number" step="0.01" name="invoice_amount" :value="old('invoice_amount')" />
                         <x-input-error class="mt-2" :messages="$errors->get('invoice_amount')" />
                     </div>
+
+                    <div>
+                        <x-input-label for="vat" value="KDV (%)" />
+                        <x-text-input type="number" step="0.01" name="vat" id="vat" value="20" required class="mt-1 block w-full" />
+                        <x-input-error class="mt-2" :messages="$errors->get('vat')" />
+                    </div>
+
 
                     <div class="mt-4">
                         <x-input-label for="xray_image" :value="__('Röntgen Görseli Yükle')" />

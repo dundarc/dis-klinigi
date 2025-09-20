@@ -23,6 +23,8 @@ class Invoice extends Model
             'vat_total' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'grand_total' => 'decimal:2',
+            'insurance_coverage_amount' => 'decimal:2',
+            'patient_payable_amount' => 'decimal:2',
         ];
     }
 
@@ -30,4 +32,11 @@ class Invoice extends Model
     public function patient() { return $this->belongsTo(Patient::class); }
     public function items() { return $this->hasMany(InvoiceItem::class); }
     public function payments() { return $this->hasMany(Payment::class); }
+
+    public function getBalanceDueAttribute(): float
+    {
+        $paid = $this->payments_sum_amount ?? $this->payments()->sum('amount');
+
+        return max($this->patient_payable_amount - $paid, 0);
+    }
 }
