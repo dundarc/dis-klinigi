@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Fatura - {{ $invoice->invoice_no }}</title>
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+        .container { width: 100%; margin: 0 auto; }
+        .header, .footer { text-align: center; }
+        .content { margin-top: 20px; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { border: 1px solid #ddd; padding: 8px; }
+        .table th { background-color: #f2f2f2; text-align: left; }
+        .text-right { text-align: right; }
+        .totals { float: right; width: 40%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            {{-- <img src="{{ public_path('logo.png') }}" alt="Logo"> --}}
+            <h1>FATURA</h1>
+        </div>
+
+        <table style="width:100%; margin-bottom: 20px;">
+            <tr>
+                <td style="width: 50%;">
+                    <strong>Hasta Bilgileri:</strong><br>
+                    {{ $invoice->patient->first_name }} {{ $invoice->patient->last_name }}<br>
+                    {{ $invoice->patient->phone_primary }}<br>
+                    {{ $invoice->patient->email }}
+                </td>
+                <td style="width: 50%; text-align: right;">
+                    <strong>Fatura No:</strong> {{ $invoice->invoice_no }}<br>
+                    <strong>Tarih:</strong> {{ $invoice->issue_date->format('d.m.Y') }}<br>
+                    <strong>Durum:</strong> {{ $invoice->status->value }}
+                </td>
+            </tr>
+        </table>
+
+        <div class="content">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Açıklama</th>
+                        <th>Miktar</th>
+                        <th>Birim Fiyat</th>
+                        <th>KDV (%)</th>
+                        <th>Toplam</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($invoice->items as $item)
+                    <tr>
+                        <td>{{ $item->description }}</td>
+                        <td class="text-right">{{ $item->qty }}</td>
+                        <td class="text-right">{{ number_format($item->unit_price, 2, ',', '.') }} TL</td>
+                        <td class="text-right">{{ number_format($item->vat, 2, ',', '.') }}%</td>
+                        <td class="text-right">{{ number_format($item->line_total, 2, ',', '.') }} TL</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <table class="totals">
+                <tr>
+                    <td><strong>Ara Toplam:</strong></td>
+                    <td class="text-right">{{ number_format($invoice->subtotal, 2, ',', '.') }} TL</td>
+                </tr>
+                <tr>
+                    <td><strong>Toplam KDV:</strong></td>
+                    <td class="text-right">{{ number_format($invoice->vat_total, 2, ',', '.') }} TL</td>
+                </tr>
+                <tr>
+                    <td><strong>Genel Toplam:</strong></td>
+                    <td class="text-right">{{ number_format($invoice->grand_total, 2, ',', '.') }} TL</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
