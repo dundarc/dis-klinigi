@@ -57,6 +57,7 @@ class EncounterController extends Controller
         ]);
 
         $encounter->update($validated);
+ 
 
         return response()->json(['message' => 'Hekim atandı.']);
     }

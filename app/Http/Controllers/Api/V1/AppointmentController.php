@@ -17,15 +17,15 @@ use Illuminate\Support\Carbon;
 
 class AppointmentController extends Controller
 {
-    use AuthorizesRequests; // Yetkilendirme için GEREKLİ
+    use AuthorizesRequests;
 
-     public function call(Request $request, Appointment $appointment)
+    public function call(Request $request, Appointment $appointment)
     {
         $this->authorize('update', $appointment);
 
         $appointment->update([
-            'status' => AppointmentStatus::IN_SERVICE, // Durumu "İşlemde" yap
-            'called_at' => now(), // Çağırılma zamanını kaydet
+            'status' => AppointmentStatus::IN_SERVICE,
+            'called_at' => now(),
         ]);
 
         return new AppointmentResource($appointment->load(['patient', 'dentist']));
@@ -54,7 +54,10 @@ class AppointmentController extends Controller
 
     public function store(StoreAppointmentRequest $request)
     {
+        $this->authorize('create', Appointment::class);
+
         $appointment = Appointment::create($request->validated());
+
         return new AppointmentResource($appointment->load(['patient', 'dentist']));
     }
 
@@ -66,7 +69,10 @@ class AppointmentController extends Controller
 
     public function update(UpdateAppointmentRequest $request, Appointment $appointment)
     {
+        $this->authorize('update', $appointment);
+
         $appointment->update($request->validated());
+
         return new AppointmentResource($appointment->load(['patient', 'dentist']));
     }
 
@@ -84,6 +90,7 @@ class AppointmentController extends Controller
             'status' => AppointmentStatus::CHECKED_IN,
             'checked_in_at' => now(),
         ]);
+
         return new AppointmentResource($appointment->load(['patient', 'dentist']));
     }
 

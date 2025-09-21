@@ -65,6 +65,7 @@ class WaitingRoomController extends Controller
         $allDentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get();
 
         // Tüm verileri view'e gönder.
+        
         $triageLevels = TriageLevel::cases();
         $encounterTypes = EncounterType::cases();
 
@@ -72,7 +73,6 @@ class WaitingRoomController extends Controller
             'checkedInAppointments' => $checkedInAppointments,
             'waitingEncounters' => $waitingEncounters,
             'inServiceAppointments' => $inServiceAppointments,
-            'inServiceEncounters' => $inServiceEncounters,
             'allDentists' => $allDentists,
             'triageLevels' => $triageLevels,
             'encounterTypes' => $encounterTypes,
