@@ -56,7 +56,8 @@ class EncounterController extends Controller
             'dentist_id' => 'required|exists:users,id',
         ]);
 
-         $encounter->update($validated);
+        $encounter->update($validated);
+ 
 
         return response()->json(['message' => 'Hekim atandı.']);
     }

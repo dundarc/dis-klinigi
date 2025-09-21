@@ -4,9 +4,8 @@
             {{ __('Bekleme Odası') }}
         </h2>
     </x-slot>
-
-   
-    @php
+    
+     @php
         $routeConfig = [
             'appointmentBase' => url('/waiting-room/appointments'),
             'appointmentStore' => route('waiting-room.appointments.store'),
@@ -69,6 +68,9 @@
                             <span id="selected-patient-name" class="font-semibold">Henüz seçilmedi</span>
                         </div>
                         <div id="selected-patient-meta" class="mt-1 text-xs text-gray-500 dark:text-gray-400 hidden"></div>
+                        <div class="mt-2">
+                            <x-secondary-button type="button" id="clear-selected-patient" class="hidden">Seçimi Temizle</x-secondary-button>
+                        </div>
 
                         <div class="mt-4">
                             <x-secondary-button type="button" id="toggle-new-patient">Yeni Hasta Kaydet</x-secondary-button>
@@ -85,22 +87,19 @@
                                         <x-text-input id="new_patient_last_name" name="last_name" type="text" class="mt-1 block w-full" required />
                                     </div>
                                     <div>
-                                       
                                         <x-input-label for="new_patient_national_id" value="TC Kimlik (11 hane)" />
                                         <x-text-input id="new_patient_national_id" name="national_id" type="text" class="mt-1 block w-full" maxlength="11" />
                                     </div>
-                                    <div>
-                                        <x-input-label for="new_patient_phone" value="Telefon" />
+                                                                        <div>
+                                                                         <x-input-label for="new_patient_phone" value="Telefon" />
                                         <x-text-input id="new_patient_phone" name="phone_primary" type="text" class="mt-1 block w-full" required />
                                     </div>
                                     <div class="md:col-span-2">
                                         <x-input-label for="new_patient_notes" value="Notlar" />
                                         <textarea id="new_patient_notes" name="notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                                     </div>
-                                    <span class="status-badge text-sm font-medium text-blue-600 dark:text-blue-400">BEKLİYOR</span>
-                                </div>
-                                
-                                <div class="mt-4 flex justify-end">
+                                                                    </div>
+ <div class="mt-4 flex justify-end">
                                     <x-primary-button type="submit">Hızlı Kaydet</x-primary-button>
                                 </div>
                             </form>
@@ -119,7 +118,8 @@
                                 <x-input-label for="appointment_start_at" value="Randevu Başlangıç" />
                                 <input id="appointment_start_at" type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required />
                             </div>
-                            <div>
+                            
+                             <div>
                                 <x-input-label for="appointment_end_at" value="Randevu Bitiş" />
                                 <input id="appointment_end_at" type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required />
                             </div>
@@ -143,7 +143,6 @@
                             <div class="flex justify-end">
                                 <x-primary-button type="submit">Randevuyu Kaydet</x-primary-button>
                             </div>
-                        
                             <div>
                                 <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Seçilen Gün İçin Hekim Takvimi</h4>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Hekim ve tarih seçtikten sonra güncel randevu listesi burada görünür.</p>
@@ -196,9 +195,8 @@
                         </form>
                     </div>
                 </div>
-
-               
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -208,18 +206,18 @@
                         </div>
                         <div id="appointments-container" class="mt-4 space-y-4">
                             @forelse($checkedInAppointments as $appointment)
-                                <div id="appointment-{{ $appointment->id }}" class="p-4 border rounded-lg dark:border-gray-700" data-status="{{ $appointment->status->value }}">
+                                <div id="appointment-{{ $appointment->id }}" class="p-4 border rounded-lg dark:border-gray-700" data-status="{{ $appointment->status?->value ?? '' }}" data-start="{{ optional($appointment->start_at)->format('Y-m-d H:i:s') }}">
                                     <div class="flex justify-between items-start gap-4">
                                         <div>
                                             <p class="font-bold text-lg dark:text-white">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</p>
-                                            <p class="text-sm text-gray-600 dark:text-gray-400">Hekim: {{ $appointment->dentist->name }}</p>
-                                            <p class="text-sm text-gray-600 dark:text-gray-400">Randevu: {{ $appointment->start_at->format('H:i') }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Hekim: {{ $appointment->dentist->name ?? 'Atanmadı' }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Randevu: {{ optional($appointment->start_at)->format('H:i') ?? 'Belirtilmemiş' }}</p>
                                             <p class="text-sm text-gray-600 dark:text-gray-400">Check-in: {{ $appointment->checked_in_at?->format('H:i') ?? 'Belirtilmemiş' }}</p>
                                         </div>
                                         <span class="status-badge text-sm font-medium text-blue-600 dark:text-blue-400">BEKLİYOR</span>
                                     </div>
                                     
-                                    <div class="mt-4 flex flex-wrap gap-2">
+                                      <div class="mt-4 flex flex-wrap gap-2">
                                         <x-primary-button class="action-btn" type="button" data-type="appointment" data-action="call" data-id="{{ $appointment->id }}">Çağır</x-primary-button>
                                         <x-secondary-button class="action-btn" type="button" data-type="appointment" data-action="in_service" data-id="{{ $appointment->id }}">İşlemde</x-secondary-button>
                                         <x-danger-button class="action-btn" type="button" data-type="appointment" data-action="completed" data-id="{{ $appointment->id }}">Tamamlandı</x-danger-button>
@@ -227,7 +225,7 @@
                                     </div>
                                 </div>
                                 
-                            @empty
+                                  @empty
                                 <p class="text-gray-500 dark:text-gray-400">Bekleyen randevulu hasta bulunmamaktadır.</p>
                             @endforelse
                         </div>
@@ -239,7 +237,7 @@
                         </h3>
                         <div id="encounters-container" class="mt-4 space-y-4">
                             @forelse($waitingEncounters as $encounter)
-                                <div id="encounter-{{ $encounter->id }}" class="p-4 border rounded-lg dark:border-gray-700" data-triage="{{ $encounter->triage_level->value }}">
+                                <div id="encounter-{{ $encounter->id }}" class="p-4 border rounded-lg dark:border-gray-700" data-triage="{{ $encounter->triage_level?->value ?? '' }}">
                                     <div class="flex justify-between items-start gap-4">
                                         <div>
                                             <p class="font-bold text-lg dark:text-white patient-name">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
@@ -262,25 +260,125 @@
                             @endforelse
                         </div>
                     </div>
+
+                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                            İçeride Muayene Olanlar (
+                            <span id="in-service-count">{{ $inServiceAppointments->count() + $inServiceEncounters->count() }}</span>
+                            )
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Şu anda hekim yanında olan hastalar.</p>
+                        @php
+                            $hasInService = $inServiceAppointments->isNotEmpty() || $inServiceEncounters->isNotEmpty();
+                        @endphp
+                        <div id="in-service-container" class="mt-4 space-y-4">
+                            @foreach($inServiceAppointments as $appointment)
+                                <div
+                                    id="in-service-appointment-{{ $appointment->id }}"
+                                    class="p-4 border rounded-lg dark:border-gray-700 bg-emerald-50 dark:bg-emerald-900/20"
+                                    data-scope="in-service"
+                                    data-started="{{ optional($appointment->called_at)->format('Y-m-d H:i:s') ?? optional($appointment->checked_in_at)->format('Y-m-d H:i:s') ?? optional($appointment->start_at)->format('Y-m-d H:i:s') }}"
+                                >
+                                    <div class="flex justify-between items-start gap-4">
+                                        <div>
+                                            <p class="font-bold text-lg dark:text-white">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Hekim: {{ $appointment->dentist->name ?? 'Atanmadı' }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Randevu: {{ optional($appointment->start_at)->format('H:i') ?? 'Belirtilmemiş' }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Çağırılma: {{ $appointment->called_at?->format('H:i') ?? '-' }}</p>
+                                        </div>
+                                        <span class="status-badge text-sm font-medium text-green-700 dark:text-green-300">İŞLEMDE</span>
+                                    </div>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <x-primary-button
+                                            type="button"
+                                            class="action-btn"
+                                            data-type="appointment"
+                                            data-action="completed"
+                                            data-id="{{ $appointment->id }}"
+                                            data-scope="in-service"
+                                        >
+                                            Tamamlandı
+                                        </x-primary-button>
+                                        <x-danger-button
+                                            type="button"
+                                            class="action-btn"
+                                            data-type="appointment"
+                                            data-action="cancelled"
+                                            data-id="{{ $appointment->id }}"
+                                            data-scope="in-service"
+                                        >
+                                            İptal
+                                        </x-danger-button>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            @foreach($inServiceEncounters as $encounter)
+                                <div
+                                    id="in-service-encounter-{{ $encounter->id }}"
+                                    class="p-4 border rounded-lg dark:border-gray-700 bg-emerald-50 dark:bg-emerald-900/20"
+                                    data-scope="in-service"
+                                    data-started="{{ optional($encounter->started_at)->format('Y-m-d H:i:s') ?? optional($encounter->arrived_at)->format('Y-m-d H:i:s') }}"
+                                >
+                                    <div class="flex justify-between items-start gap-4">
+                                        <div>
+                                            <p class="font-bold text-lg dark:text-white patient-name">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Hekim: {{ $encounter->dentist->name ?? 'Atanmadı' }}</p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Başlangıç: {{ $encounter->started_at?->format('H:i') ?? $encounter->arrived_at?->format('H:i') ?? '-' }}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <x-triage-badge :level="$encounter->triage_level" />
+                                            <span class="status-badge block mt-1 text-sm font-medium text-green-700 dark:text-green-300">İŞLEMDE</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <x-primary-button
+                                            type="button"
+                                            class="action-btn"
+                                            data-type="encounter"
+                                            data-action="done"
+                                            data-id="{{ $encounter->id }}"
+                                            data-scope="in-service"
+                                        >
+                                            Tamamlandı
+                                        </x-primary-button>
+                                        <x-danger-button
+                                            type="button"
+                                            class="action-btn"
+                                            data-type="encounter"
+                                            data-action="cancelled"
+                                            data-id="{{ $encounter->id }}"
+                                            data-scope="in-service"
+                                        >
+                                            İptal
+                                        </x-danger-button>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            <p id="in-service-empty" class="text-gray-500 dark:text-gray-400 {{ $hasInService ? 'hidden' : '' }}">
+                                Şu anda muayene edilen hasta bulunmuyor.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-
-    <x-modal name="assign-doctor-modal" title="Hekim Ata ve İşleme Al">
+      <x-modal name="assign-doctor-modal" title="Hekim Ata ve İşleme Al">
         <form id="assign-doctor-form" onsubmit="return false;">
             <input type="hidden" id="modal_encounter_id" name="encounter_id">
             <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                 <strong id="modal_patient_name" class="dark:text-white"></strong> isimli hastayı yönlendirmek istediğiniz hekimi seçin.
             </p>
             <div>
-                
-                <x-input-label for="modal_dentist_id" value="Hekimler" />
+            
+             <x-input-label for="modal_dentist_id" value="Hekimler" />
                 <x-select-input id="modal_dentist_id" name="dentist_id" class="mt-1 block w-full" required>
                     <option value="">-- Hekim Seçin --</option>
-                   
-                    @foreach($allDentists as $dentist)
+                    
+                     @foreach($allDentists as $dentist)
                         <option value="{{ $dentist->id }}">{{ $dentist->name }}</option>
                     @endforeach
                 </x-select-input>
@@ -298,7 +396,7 @@
 
     @push('scripts')
     
-        <script>
+      <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const app = document.getElementById('waiting-room-app');
                 const routes = JSON.parse(app.dataset.routes);
@@ -306,9 +404,9 @@
                 const triageLabels = JSON.parse(app.dataset.triage);
                 const triageColors = JSON.parse(app.dataset.triageColors);
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-                    
-                const state = {
+                
+                
+                 const state = {
                     selectedPatient: null,
                     dentistSchedule: [],
                 };
@@ -318,6 +416,7 @@
                     patientSearchResults: document.getElementById('patient-search-results'),
                     selectedPatientName: document.getElementById('selected-patient-name'),
                     selectedPatientMeta: document.getElementById('selected-patient-meta'),
+                    clearSelectedPatient: document.getElementById('clear-selected-patient'),
                     toggleNewPatientButton: document.getElementById('toggle-new-patient'),
                     newPatientFormWrapper: document.getElementById('new-patient-form'),
                     quickPatientForm: document.getElementById('quick-patient-form'),
@@ -340,8 +439,10 @@
                     encounterFeedback: document.getElementById('encounter-feedback'),
                     appointmentsContainer: document.getElementById('appointments-container'),
                     encountersContainer: document.getElementById('encounters-container'),
+                    inServiceContainer: document.getElementById('in-service-container'),
                     appointmentsCount: document.getElementById('appointments-count'),
                     encountersCount: document.getElementById('encounters-count'),
+                    inServiceCount: document.getElementById('in-service-count'),
                     assignModalForm: document.getElementById('assign-doctor-form'),
                     assignModalDentist: document.getElementById('modal_dentist_id'),
                 };
@@ -364,7 +465,7 @@
                     }
                     return response.json();
                 }
-           
+
                 function handleError(error, element) {
                     console.error(error);
                     const message = error?.errors ? Object.values(error.errors).flat().join('\n') : (error?.message || 'İşlem sırasında bir hata oluştu.');
@@ -395,6 +496,11 @@
                         elements.selectedPatientName.textContent = 'Henüz seçilmedi';
                         elements.selectedPatientMeta.textContent = '';
                         elements.selectedPatientMeta.classList.add('hidden');
+                    }
+
+                    if (elements.clearSelectedPatient) {
+                        elements.clearSelectedPatient.classList.toggle('hidden', !patient);
+                        elements.clearSelectedPatient.disabled = !patient;
                     }
                 }
 
@@ -439,7 +545,37 @@
                     element.textContent = Math.max(0, current + delta);
                 }
 
-                function getAppointmentStatusMeta(status) {
+                function fadeOutAndRemove(element, counterElement, afterRemove = null) {
+                    if (!element) {
+                        return;
+                    }
+
+                    element.style.transition = 'opacity 0.4s';
+                    element.style.opacity = '0';
+
+                    setTimeout(() => {
+                        element.remove();
+                        if (counterElement) {
+                            updateCount(counterElement, -1);
+                        }
+                        if (typeof afterRemove === 'function') {
+                            afterRemove();
+                        }
+                    }, 400);
+                }
+
+                function toggleInServiceEmptyState() {
+                    const emptyElement = document.getElementById('in-service-empty');
+                    if (!emptyElement || !elements.inServiceContainer) {
+                        return;
+                    }
+
+                    const hasActiveCard = Boolean(elements.inServiceContainer.querySelector('[data-scope="in-service"]'));
+                    emptyElement.classList.toggle('hidden', hasActiveCard);
+                }
+                
+                
+                 function getAppointmentStatusMeta(status) {
                     switch (status) {
                         case 'in_service':
                             return { label: 'İŞLEMDE', className: 'status-badge text-sm font-medium text-green-600 dark:text-green-400' };
@@ -452,11 +588,70 @@
                     }
                 }
 
+                function insertAppointmentCard(card) {
+                    if (!elements.appointmentsContainer) {
+                        return;
+                    }
+
+                    const startValue = card.dataset.start;
+                    if (!startValue) {
+                        elements.appointmentsContainer.appendChild(card);
+                        return;
+                    }
+
+                    const startDate = new Date(startValue.replace(' ', 'T'));
+                    const siblings = Array.from(elements.appointmentsContainer.children);
+                    const insertBefore = siblings.find((child) => {
+                        if (!child.dataset.start) {
+                            return false;
+                        }
+
+                        const childDate = new Date(child.dataset.start.replace(' ', 'T'));
+                        return childDate > startDate;
+                    });
+
+                    if (insertBefore) {
+                        elements.appointmentsContainer.insertBefore(card, insertBefore);
+                    } else {
+                        elements.appointmentsContainer.appendChild(card);
+                    }
+                }
+
+                function insertInServiceCard(card) {
+                    if (!elements.inServiceContainer) {
+                        return;
+                    }
+
+                    const startedValue = card.dataset.started;
+                    if (!startedValue) {
+                        elements.inServiceContainer.appendChild(card);
+                        return;
+                    }
+
+                    const startedDate = new Date(startedValue.replace(' ', 'T'));
+                    const siblings = Array.from(elements.inServiceContainer.children);
+                    const insertBefore = siblings.find((child) => {
+                        if (!child.dataset.started) {
+                            return false;
+                        }
+
+                        const childDate = new Date(child.dataset.started.replace(' ', 'T'));
+                        return childDate > startedDate;
+                    });
+
+                    if (insertBefore) {
+                        elements.inServiceContainer.insertBefore(card, insertBefore);
+                    } else {
+                        elements.inServiceContainer.appendChild(card);
+                    }
+                }
+
                 function buildAppointmentCard(appointment) {
                     const card = document.createElement('div');
                     card.id = `appointment-${appointment.id}`;
                     card.className = 'p-4 border rounded-lg dark:border-gray-700 transition-opacity';
                     card.dataset.status = appointment.status;
+                    card.dataset.start = appointment.start ?? '';
 
                     const header = document.createElement('div');
                     header.className = 'flex justify-between items-start gap-4';
@@ -499,29 +694,93 @@
                     return card;
                 }
 
-                function replaceAppointmentCard(appointment) {
-                    const resource = unwrapResource(appointment);
-                    const existing = document.getElementById(`appointment-${resource.id}`);
-                    const card = buildAppointmentCard(resource);
+                function buildInServiceAppointmentCard(appointment) {
+                    const card = document.createElement('div');
+                    card.id = `in-service-appointment-${appointment.id}`;
+                    card.className = 'p-4 border rounded-lg dark:border-gray-700 bg-emerald-50 dark:bg-emerald-900/20 transition-opacity';
+                    card.dataset.scope = 'in-service';
+                    card.dataset.started = appointment.called_at || appointment.checked_in_at || appointment.start || '';
+
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-start gap-4';
+
+                    const info = document.createElement('div');
+                    info.innerHTML = `
+                        <p class="font-bold text-lg dark:text-white">${appointment.patient?.fullName ?? ''}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Hekim: ${appointment.dentist?.name ?? 'Atanmadı'}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Randevu: ${formatTime(appointment.start)}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Çağırılma: ${formatTime(appointment.called_at)}</p>
+                    `;
+
+                    const badge = document.createElement('span');
+                    badge.className = 'status-badge text-sm font-medium text-green-700 dark:text-green-300';
+                    badge.textContent = 'İŞLEMDE';
+
+                    header.append(info, badge);
+                    card.appendChild(header);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'mt-4 flex flex-wrap gap-2';
+                    const doneButton = buildActionButton('Tamamlandı', 'primary', { type: 'appointment', action: 'completed', id: appointment.id, scope: 'in-service' });
+                    const cancelButton = buildActionButton('İptal', 'danger', { type: 'appointment', action: 'cancelled', id: appointment.id, scope: 'in-service' });
+                    actions.append(doneButton, cancelButton);
+                    card.appendChild(actions);
+
+                    return card;
+                }
+
+                function addInServiceAppointmentCard(appointment) {
+                    const card = buildInServiceAppointmentCard(appointment);
+                    const existing = document.getElementById(card.id);
+
                     if (existing) {
-                        elements.appointmentsContainer.replaceChild(card, existing);
+                        elements.inServiceContainer.replaceChild(card, existing);
                     } else {
-                        elements.appointmentsContainer.prepend(card);
-                        updateCount(elements.appointmentsCount, 1);
+                        insertInServiceCard(card);
+                        updateCount(elements.inServiceCount, 1);
                     }
 
-                    if (['completed', 'cancelled'].includes(resource.status)) {
-                        setTimeout(() => {
-                            const cardEl = document.getElementById(`appointment-${resource.id}`);
-                            if (cardEl) {
-                                cardEl.style.transition = 'opacity 0.4s';
-                                cardEl.style.opacity = '0';
-                                setTimeout(() => {
-                                    cardEl.remove();
-                                    updateCount(elements.appointmentsCount, -1);
-                                }, 400);
-                            }
-                        }, 400);
+                    toggleInServiceEmptyState();
+                }
+
+                function removeInServiceAppointmentCard(id) {
+                    const card = document.getElementById(`in-service-appointment-${id}`);
+                    if (card) {
+  fadeOutAndRemove(card, elements.inServiceCount, toggleInServiceEmptyState);
+                    }
+                }
+
+                function syncAppointmentCard(appointment) {
+                    const resource = unwrapResource(appointment);
+                    if (!resource) {
+                        return;
+                    }
+
+                    const status = resource.status;
+                    const waitingCard = document.getElementById(`appointment-${resource.id}`);
+
+                    if (status === 'in_service') {
+                        if (waitingCard) {
+                            fadeOutAndRemove(waitingCard, elements.appointmentsCount);
+                        }
+                        addInServiceAppointmentCard(resource);
+                        return;
+                    }
+
+                    if (['completed', 'cancelled'].includes(status)) {
+                        if (waitingCard) {
+                            fadeOutAndRemove(waitingCard, elements.appointmentsCount);
+                        }
+                        removeInServiceAppointmentCard(resource.id);
+                        return;
+                    }
+
+                    const card = buildAppointmentCard(resource);
+                    if (waitingCard) {
+                        elements.appointmentsContainer.replaceChild(card, waitingCard);
+                    } else {
+                        insertAppointmentCard(card);
+                        updateCount(elements.appointmentsCount, 1);
                     }
                 }
 
@@ -572,11 +831,71 @@
                     return card;
                 }
 
+                function buildInServiceEncounterCard(encounter) {
+                    const card = document.createElement('div');
+                    card.id = `in-service-encounter-${encounter.id}`;
+                    card.className = 'p-4 border rounded-lg dark:border-gray-700 bg-emerald-50 dark:bg-emerald-900/20 transition-opacity';
+                    card.dataset.scope = 'in-service';
+                    card.dataset.started = encounter.started_at || encounter.arrived_at || '';
+
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-start gap-4';
+
+                    const info = document.createElement('div');
+                    info.innerHTML = `
+                        <p class="font-bold text-lg dark:text-white patient-name">${encounter.patient?.first_name ?? ''} ${encounter.patient?.last_name ?? ''}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Hekim: ${encounter.dentist?.name ?? 'Atanmadı'}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Başlangıç: ${formatTime(encounter.started_at ?? encounter.arrived_at)}</p>
+                    `;
+
+                    const meta = document.createElement('div');
+                    meta.className = 'text-right';
+                    meta.appendChild(buildTriageBadge(encounter.triage_level));
+                    const status = document.createElement('span');
+                    status.className = 'status-badge block mt-1 text-sm font-medium text-green-700 dark:text-green-300';
+                    status.textContent = 'İŞLEMDE';
+                    meta.appendChild(status);
+
+                    header.append(info, meta);
+                    card.appendChild(header);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'mt-4 flex flex-wrap gap-2';
+                    const doneButton = buildActionButton('Tamamlandı', 'primary', { type: 'encounter', action: 'done', id: encounter.id, scope: 'in-service' });
+                    const cancelButton = buildActionButton('İptal', 'danger', { type: 'encounter', action: 'cancelled', id: encounter.id, scope: 'in-service' });
+                    actions.append(doneButton, cancelButton);
+                    card.appendChild(actions);
+
+                    return card;
+                }
+
                 function addEncounterCard(encounter) {
                     const resource = unwrapResource(encounter);
                     const card = buildEncounterCard(resource);
                     elements.encountersContainer.prepend(card);
                     updateCount(elements.encountersCount, 1);
+                }
+
+                function addInServiceEncounterCard(encounter) {
+                    const resource = unwrapResource(encounter);
+                    const card = buildInServiceEncounterCard(resource);
+                    const existing = document.getElementById(card.id);
+
+                    if (existing) {
+                        elements.inServiceContainer.replaceChild(card, existing);
+                    } else {
+                        insertInServiceCard(card);
+                        updateCount(elements.inServiceCount, 1);
+                    }
+
+                    toggleInServiceEmptyState();
+                }
+
+                function removeInServiceEncounterCard(id) {
+                    const card = document.getElementById(`in-service-encounter-${id}`);
+                    if (card) {
+                        fadeOutAndRemove(card, elements.inServiceCount, toggleInServiceEmptyState);
+                    }
                 }
 
                 function loadDentistSchedule() {
@@ -589,8 +908,7 @@
 
                     const startValue = elements.appointmentStart.value;
                     const date = startValue ? startValue.split('T')[0] : today;
-
-                    fetch(`${routes.dentistScheduleBase}/${dentistId}/schedule?date=${encodeURIComponent(date)}`, {
+                     fetch(`${routes.dentistScheduleBase}/${dentistId}/schedule?date=${encodeURIComponent(date)}`, {
                         headers: { 'Accept': 'application/json' },
                     })
                         .then(handleResponse)
@@ -682,14 +1000,15 @@
                             .catch((error) => handleError(error, elements.patientFeedback));
                     }, 300);
                 });
-            
-
-            
-                elements.toggleNewPatientButton.addEventListener('click', () => {
+                 elements.toggleNewPatientButton.addEventListener('click', () => {
                     elements.newPatientFormWrapper.classList.toggle('hidden');
                 });
-
-                elements.quickPatientForm.addEventListener('submit', (event) => {
+                 if (elements.clearSelectedPatient) {
+                    elements.clearSelectedPatient.addEventListener('click', () => {
+                        setSelectedPatient(null);
+                    });
+                }
+                 elements.quickPatientForm.addEventListener('submit', (event) => {
                     event.preventDefault();
                     clearFeedback(elements.patientFeedback);
 
@@ -721,15 +1040,12 @@
                         })
                         .catch((error) => handleError(error, elements.patientFeedback));
                 });
-            
 
                 ['change', 'blur'].forEach((eventName) => {
                     elements.appointmentDentist.addEventListener(eventName, loadDentistSchedule);
                     elements.appointmentStart.addEventListener(eventName, loadDentistSchedule);
                 });
-            
 
-            
                 elements.appointmentForm.addEventListener('submit', (event) => {
                     event.preventDefault();
                     clearFeedback(elements.appointmentFeedback);
@@ -791,7 +1107,7 @@
                                 })
                                     .then(handleResponse)
                                     .then((checkInResponse) => {
-                                        replaceAppointmentCard(unwrapResource(checkInResponse));
+                                        syncAppointmentCard(unwrapResource(checkInResponse));
                                         elements.appointmentForm.reset();
                                         setSelectedPatient(state.selectedPatient);
                                         loadDentistSchedule();
@@ -823,7 +1139,6 @@
                         notes: elements.encounterNotes.value || null,
                     };
 
-           
                     fetch(routes.encounterStore, {
                         method: 'POST',
                         headers: {
@@ -873,7 +1188,7 @@
                                 },
                             })
                                 .then(handleResponse)
-                                .then((data) => replaceAppointmentCard(unwrapResource(data)))
+                                .then((data) => syncAppointmentCard(unwrapResource(data)))
                                 .catch((error) => {
                                     actionButton.disabled = false;
                                     handleError(error);
@@ -894,12 +1209,38 @@
                                 body: JSON.stringify({ status: action }),
                             })
                                 .then(handleResponse)
-                                .then((data) => replaceAppointmentCard(unwrapResource(data)))
+                                .then((data) => syncAppointmentCard(unwrapResource(data)))
                                 .catch((error) => {
                                     actionButton.disabled = false;
                                     handleError(error);
                                 });
                         }
+                    } else if (type === 'encounter') {
+                        if (action === 'cancelled' && !confirm('Vaka kaydını iptal etmek istediğinize emin misiniz?')) {
+                            return;
+                        }
+
+                        actionButton.disabled = true;
+                        fetch(`${routes.assignEncounterBase}/${id}/status`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: JSON.stringify({ status: action }),
+                        })
+                            .then(handleResponse)
+                            .then(() => {
+                                removeInServiceEncounterCard(id);
+                            })
+                            .catch((error) => {
+                                actionButton.disabled = false;
+                                handleError(error);
+                            })
+                            .finally(() => {
+                                actionButton.disabled = false;
+                            });
                     }
                 });
 
@@ -926,15 +1267,14 @@
                         body: JSON.stringify({ dentist_id: dentistId }),
                     })
                         .then(handleResponse)
-                        .then(() => {
+                        .then((data) => {
                             const card = document.getElementById(`encounter-${encounterId}`);
                             if (card) {
-                                card.style.transition = 'opacity 0.4s';
-                                card.style.opacity = '0';
-                                setTimeout(() => {
-                                    card.remove();
-                                    updateCount(elements.encountersCount, -1);
-                                }, 400);
+                                fadeOutAndRemove(card, elements.encountersCount);
+                            }
+                            const encounter = data?.encounter ?? unwrapResource(data);
+                            if (encounter) {
+                                addInServiceEncounterCard(encounter);
                             }
                             window.dispatchEvent(new CustomEvent('close-modal', { detail: { name: 'assign-doctor-modal' } }));
                         })
@@ -945,6 +1285,7 @@
                 });
 
                 setSelectedPatient(null);
+                toggleInServiceEmptyState();
             });
         </script>
     @endpush

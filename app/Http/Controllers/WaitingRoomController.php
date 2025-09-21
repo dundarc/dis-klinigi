@@ -28,7 +28,7 @@ class WaitingRoomController extends Controller
 
         $checkedInAppointments = Appointment::with(['patient', 'dentist'])
             ->where('status', AppointmentStatus::CHECKED_IN)
-             ->whereDate('start_at', $today)
+            ->whereDate('start_at', $today)
             ->orderBy('start_at')
             ->orderBy('checked_in_at')
             ->get();
@@ -46,6 +46,19 @@ class WaitingRoomController extends Controller
             ")
             ->orderBy('arrived_at', 'asc')
             ->get();
+
+        $inServiceAppointments = Appointment::with(['patient', 'dentist'])
+            ->where('status', AppointmentStatus::IN_SERVICE)
+            ->whereDate('start_at', $today)
+            ->orderBy('called_at')
+            ->orderBy('start_at')
+            ->get();
+
+        $inServiceEncounters = Encounter::with(['patient', 'dentist'])
+            ->where('status', EncounterStatus::IN_SERVICE)
+            ->orderBy('started_at')
+            ->orderBy('arrived_at')
+            ->get();
         
         // 3. Hekim atama modalı için tüm hekimlerin listesi.
         // --- EKSİK OLAN KISIM BUYDU ---
@@ -59,6 +72,7 @@ class WaitingRoomController extends Controller
         return view('waiting-room.index', [
             'checkedInAppointments' => $checkedInAppointments,
             'waitingEncounters' => $waitingEncounters,
+            'inServiceAppointments' => $inServiceAppointments,
             'allDentists' => $allDentists,
             'triageLevels' => $triageLevels,
             'encounterTypes' => $encounterTypes,
