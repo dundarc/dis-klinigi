@@ -62,3 +62,4 @@ class PatientController extends Controller
         ], 201);
     }
 }
+

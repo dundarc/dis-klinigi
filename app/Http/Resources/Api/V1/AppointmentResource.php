@@ -10,6 +10,7 @@ class AppointmentResource extends JsonResource
     {
         return [
             'id' => $this->id,
+       
             'start' => $this->start_at?->format('Y-m-d H:i:s'),
             'end' => $this->end_at?->format('Y-m-d H:i:s'),
             'status' => $this->status?->value,

@@ -4,7 +4,7 @@
             {{ __('Bekleme Odası') }}
         </h2>
     </x-slot>
-
+    
     @php
         $routeConfig = [
             'appointmentBase' => url('/waiting-room/appointments'),
@@ -91,15 +91,15 @@
                                         <x-text-input id="new_patient_national_id" name="national_id" type="text" class="mt-1 block w-full" maxlength="11" />
                                     </div>
                                     <div>
-                                        <x-input-label for="new_patient_phone" value="Telefon" />
+                                    <x-input-label for="new_patient_phone" value="Telefon" />
                                         <x-text-input id="new_patient_phone" name="phone_primary" type="text" class="mt-1 block w-full" required />
                                     </div>
                                     <div class="md:col-span-2">
                                         <x-input-label for="new_patient_notes" value="Notlar" />
                                         <textarea id="new_patient_notes" name="notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                                     </div>
-                                </div>
-                                <div class="mt-4 flex justify-end">
+                                                                    </div>
+ <div class="mt-4 flex justify-end">
                                     <x-primary-button type="submit">Hızlı Kaydet</x-primary-button>
                                 </div>
                             </form>
@@ -118,7 +118,7 @@
                                 <x-input-label for="appointment_start_at" value="Randevu Başlangıç" />
                                 <input id="appointment_start_at" type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required />
                             </div>
-                            <div>
+                             <div>
                                 <x-input-label for="appointment_end_at" value="Randevu Bitiş" />
                                 <input id="appointment_end_at" type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required />
                             </div>
@@ -194,7 +194,6 @@
                         </form>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                         <div class="flex items-center justify-between">
@@ -222,7 +221,8 @@
                                         <button type="button" class="action-btn inline-flex items-center px-4 py-2 bg-amber-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition ease-in-out duration-150" data-type="appointment" data-action="cancelled" data-id="{{ $appointment->id }}">İptal</button>
                                     </div>
                                 </div>
-                            @empty
+                                
+                                 @empty
                                 <p class="text-gray-500 dark:text-gray-400">Bekleyen randevulu hasta bulunmamaktadır.</p>
                             @endforelse
                         </div>
@@ -362,6 +362,7 @@
             </div>
         </div>
     </div>
+    
 
     <x-modal name="assign-doctor-modal" title="Hekim Ata ve İşleme Al">
         <form id="assign-doctor-form" onsubmit="return false;">
@@ -370,10 +371,12 @@
                 <strong id="modal_patient_name" class="dark:text-white"></strong> isimli hastayı yönlendirmek istediğiniz hekimi seçin.
             </p>
             <div>
-                <x-input-label for="modal_dentist_id" value="Hekimler" />
+            
+             <x-input-label for="modal_dentist_id" value="Hekimler" />
                 <x-select-input id="modal_dentist_id" name="dentist_id" class="mt-1 block w-full" required>
                     <option value="">-- Hekim Seçin --</option>
-                    @foreach($allDentists as $dentist)
+                    
+                     @foreach($allDentists as $dentist)
                         <option value="{{ $dentist->id }}">{{ $dentist->name }}</option>
                     @endforeach
                 </x-select-input>
@@ -390,7 +393,8 @@
     </x-modal>
 
     @push('scripts')
-        <script>
+    
+     <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const app = document.getElementById('waiting-room-app');
                 const routes = JSON.parse(app.dataset.routes);
@@ -398,7 +402,6 @@
                 const triageLabels = JSON.parse(app.dataset.triage);
                 const triageColors = JSON.parse(app.dataset.triageColors);
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
                 const state = {
                     selectedPatient: null,
                     dentistSchedule: [],
@@ -566,8 +569,7 @@
                     const hasActiveCard = Boolean(elements.inServiceContainer.querySelector('[data-scope="in-service"]'));
                     emptyElement.classList.toggle('hidden', hasActiveCard);
                 }
-
-                function getAppointmentStatusMeta(status) {
+                 function getAppointmentStatusMeta(status) {
                     switch (status) {
                         case 'in_service':
                             return { label: 'İŞLEMDE', className: 'status-badge text-sm font-medium text-green-600 dark:text-green-400' };
@@ -738,7 +740,7 @@
                 function removeInServiceAppointmentCard(id) {
                     const card = document.getElementById(`in-service-appointment-${id}`);
                     if (card) {
-                        fadeOutAndRemove(card, elements.inServiceCount, toggleInServiceEmptyState);
+                    fadeOutAndRemove(card, elements.inServiceCount, toggleInServiceEmptyState);
                     }
                 }
 
@@ -900,8 +902,7 @@
 
                     const startValue = elements.appointmentStart.value;
                     const date = startValue ? startValue.split('T')[0] : today;
-
-                    fetch(`${routes.dentistScheduleBase}/${dentistId}/schedule?date=${encodeURIComponent(date)}`, {
+                     fetch(`${routes.dentistScheduleBase}/${dentistId}/schedule?date=${encodeURIComponent(date)}`, {
                         headers: { 'Accept': 'application/json' },
                     })
                         .then(handleResponse)
@@ -993,18 +994,15 @@
                             .catch((error) => handleError(error, elements.patientFeedback));
                     }, 300);
                 });
-
-                elements.toggleNewPatientButton.addEventListener('click', () => {
+                 elements.toggleNewPatientButton.addEventListener('click', () => {
                     elements.newPatientFormWrapper.classList.toggle('hidden');
                 });
-
-                if (elements.clearSelectedPatient) {
+                 if (elements.clearSelectedPatient) {
                     elements.clearSelectedPatient.addEventListener('click', () => {
                         setSelectedPatient(null);
                     });
                 }
-
-                elements.quickPatientForm.addEventListener('submit', (event) => {
+                  elements.quickPatientForm.addEventListener('submit', (event) => {
                     event.preventDefault();
                     clearFeedback(elements.patientFeedback);
 

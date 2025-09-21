@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/waiting-room', [WaitingRoomController::class, 'index'])->name('waiting-room');
 
@@ -61,9 +62,11 @@ Route::middleware('auth')->group(function () {
     Route::post('encounters/{encounter}/assign-doctor', [ApiEncounterController::class, 'assignDoctor']);
     Route::get('/invoices/{invoice}/pdf', [PdfController::class, 'downloadInvoice'])->name('invoices.pdf');
     Route::get('/prescriptions/{prescription}/pdf', [PdfController::class, 'downloadPrescription'])->name('prescriptions.pdf');
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+ 
+     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
-    Route::resource('patients', PatientController::class);
+
+     Route::resource('patients', PatientController::class);
     Route::get('/accounting', [AccountingController::class, 'index'])->middleware('can:accessAccountingFeatures')->name('accounting');
 
 });

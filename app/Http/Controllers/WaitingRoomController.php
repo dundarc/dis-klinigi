@@ -23,7 +23,7 @@ class WaitingRoomController extends Controller
      */
     public function index()
     {
-        // 1. Durumu "Check-in" olan planlı randevular.
+      
         $today = Carbon::today();
 
         $pendingAppointments = Appointment::with(['patient', 'dentist'])
@@ -69,6 +69,7 @@ class WaitingRoomController extends Controller
         $allDentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get();
 
         // Tüm verileri view'e gönder.
+       
         $triageLevels = TriageLevel::cases();
         $encounterTypes = EncounterType::cases();
 
