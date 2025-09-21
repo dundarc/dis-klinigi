@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
     
-     @php
+    @php
         $routeConfig = [
             'appointmentBase' => url('/waiting-room/appointments'),
             'appointmentStore' => route('waiting-room.appointments.store'),
@@ -90,8 +90,8 @@
                                         <x-input-label for="new_patient_national_id" value="TC Kimlik (11 hane)" />
                                         <x-text-input id="new_patient_national_id" name="national_id" type="text" class="mt-1 block w-full" maxlength="11" />
                                     </div>
-                                                                        <div>
-                                                                         <x-input-label for="new_patient_phone" value="Telefon" />
+                                    <div>
+                                    <x-input-label for="new_patient_phone" value="Telefon" />
                                         <x-text-input id="new_patient_phone" name="phone_primary" type="text" class="mt-1 block w-full" required />
                                     </div>
                                     <div class="md:col-span-2">
@@ -118,7 +118,6 @@
                                 <x-input-label for="appointment_start_at" value="Randevu Başlangıç" />
                                 <input id="appointment_start_at" type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required />
                             </div>
-                            
                              <div>
                                 <x-input-label for="appointment_end_at" value="Randevu Bitiş" />
                                 <input id="appointment_end_at" type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:border-indigo-500 focus:ring-indigo-500" required />
@@ -195,17 +194,16 @@
                         </form>
                     </div>
                 </div>
-                
-                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                                Randevu Bekleyenler (<span id="appointments-count">{{ $checkedInAppointments->count() }}</span>)
+                                Randevu Bekleyenler (<span id="appointments-count">{{ $pendingAppointments->count() }}</span>)
                             </h3>
                             <span class="text-xs text-gray-500 dark:text-gray-400">Gün içindeki sıraya göre listelenir.</span>
                         </div>
                         <div id="appointments-container" class="mt-4 space-y-4">
-                            @forelse($checkedInAppointments as $appointment)
+                            @forelse($pendingAppointments as $appointment)
                                 <div id="appointment-{{ $appointment->id }}" class="p-4 border rounded-lg dark:border-gray-700" data-status="{{ $appointment->status?->value ?? '' }}" data-start="{{ optional($appointment->start_at)->format('Y-m-d H:i:s') }}">
                                     <div class="flex justify-between items-start gap-4">
                                         <div>
@@ -216,8 +214,7 @@
                                         </div>
                                         <span class="status-badge text-sm font-medium text-blue-600 dark:text-blue-400">BEKLİYOR</span>
                                     </div>
-                                    
-                                      <div class="mt-4 flex flex-wrap gap-2">
+                                    <div class="mt-4 flex flex-wrap gap-2">
                                         <x-primary-button class="action-btn" type="button" data-type="appointment" data-action="call" data-id="{{ $appointment->id }}">Çağır</x-primary-button>
                                         <x-secondary-button class="action-btn" type="button" data-type="appointment" data-action="in_service" data-id="{{ $appointment->id }}">İşlemde</x-secondary-button>
                                         <x-danger-button class="action-btn" type="button" data-type="appointment" data-action="completed" data-id="{{ $appointment->id }}">Tamamlandı</x-danger-button>
@@ -225,7 +222,7 @@
                                     </div>
                                 </div>
                                 
-                                  @empty
+                                 @empty
                                 <p class="text-gray-500 dark:text-gray-400">Bekleyen randevulu hasta bulunmamaktadır.</p>
                             @endforelse
                         </div>
@@ -366,7 +363,8 @@
         </div>
     </div>
     
-      <x-modal name="assign-doctor-modal" title="Hekim Ata ve İşleme Al">
+
+    <x-modal name="assign-doctor-modal" title="Hekim Ata ve İşleme Al">
         <form id="assign-doctor-form" onsubmit="return false;">
             <input type="hidden" id="modal_encounter_id" name="encounter_id">
             <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
@@ -396,7 +394,7 @@
 
     @push('scripts')
     
-      <script>
+     <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const app = document.getElementById('waiting-room-app');
                 const routes = JSON.parse(app.dataset.routes);
@@ -404,9 +402,7 @@
                 const triageLabels = JSON.parse(app.dataset.triage);
                 const triageColors = JSON.parse(app.dataset.triageColors);
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                
-                
-                 const state = {
+                const state = {
                     selectedPatient: null,
                     dentistSchedule: [],
                 };
@@ -573,8 +569,6 @@
                     const hasActiveCard = Boolean(elements.inServiceContainer.querySelector('[data-scope="in-service"]'));
                     emptyElement.classList.toggle('hidden', hasActiveCard);
                 }
-                
-                
                  function getAppointmentStatusMeta(status) {
                     switch (status) {
                         case 'in_service':
@@ -746,7 +740,7 @@
                 function removeInServiceAppointmentCard(id) {
                     const card = document.getElementById(`in-service-appointment-${id}`);
                     if (card) {
-  fadeOutAndRemove(card, elements.inServiceCount, toggleInServiceEmptyState);
+                    fadeOutAndRemove(card, elements.inServiceCount, toggleInServiceEmptyState);
                     }
                 }
 
@@ -1008,7 +1002,7 @@
                         setSelectedPatient(null);
                     });
                 }
-                 elements.quickPatientForm.addEventListener('submit', (event) => {
+                  elements.quickPatientForm.addEventListener('submit', (event) => {
                     event.preventDefault();
                     clearFeedback(elements.patientFeedback);
 
