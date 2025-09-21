@@ -20,7 +20,6 @@ use App\Http\Controllers\Api\V1\Accounting\FinancialReportController;
 
 
 
-use App\Http\Controllers\Api\V1\PatientController;
 
 
 

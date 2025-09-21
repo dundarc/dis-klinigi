@@ -264,7 +264,7 @@
                     <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
                             İçeride Muayene Olanlar (
-                            <span id="in-service-count">{{ $inServiceAppointments->count() + $inServiceEncounters->count() }}</span>
+                            <span id="in-service-count">{{ $inServiceAppointments->count() + $inServiceEncounters->count() ?? 0}}</span>
                             )
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Şu anda hekim yanında olan hastalar.</p>

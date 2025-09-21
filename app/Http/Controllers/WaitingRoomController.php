@@ -73,6 +73,8 @@ class WaitingRoomController extends Controller
             'checkedInAppointments' => $checkedInAppointments,
             'waitingEncounters' => $waitingEncounters,
             'inServiceAppointments' => $inServiceAppointments,
+                'inServiceEncounters'   => $inServiceEncounters, // <-- EKLEYİN
+
             'allDentists' => $allDentists,
             'triageLevels' => $triageLevels,
             'encounterTypes' => $encounterTypes,
