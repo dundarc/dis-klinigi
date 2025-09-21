@@ -8,7 +8,10 @@ use App\Models\Encounter;
 use App\Models\User;
 use App\Enums\AppointmentStatus;
 use App\Enums\EncounterStatus;
+use App\Enums\EncounterType;
+use App\Enums\TriageLevel;
 use App\Enums\UserRole;
+use Illuminate\Support\Carbon;
 
 class WaitingRoomController extends Controller
 {
@@ -21,9 +24,13 @@ class WaitingRoomController extends Controller
     public function index()
     {
         // 1. Durumu "Check-in" olan planlı randevular.
+        $today = Carbon::today();
+
         $checkedInAppointments = Appointment::with(['patient', 'dentist'])
             ->where('status', AppointmentStatus::CHECKED_IN)
-            ->orderBy('checked_in_at', 'asc')
+             ->whereDate('start_at', $today)
+            ->orderBy('start_at')
+            ->orderBy('checked_in_at')
             ->get();
 
         // 2. Durumu "Waiting" olan acil/walk-in vakaları.
@@ -45,10 +52,17 @@ class WaitingRoomController extends Controller
         $allDentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get();
 
         // Tüm verileri view'e gönder.
-        return view('waiting-room.index', compact(
-            'checkedInAppointments', 
-            'waitingEncounters',
-            'allDentists' // Değişkeni buraya ekliyoruz.
-        ));
+        
+        $triageLevels = TriageLevel::cases();
+        $encounterTypes = EncounterType::cases();
+
+        return view('waiting-room.index', [
+            'checkedInAppointments' => $checkedInAppointments,
+            'waitingEncounters' => $waitingEncounters,
+            'allDentists' => $allDentists,
+            'triageLevels' => $triageLevels,
+            'encounterTypes' => $encounterTypes,
+            'today' => $today->toDateString(),
+        ]);
     }
 }

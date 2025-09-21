@@ -10,6 +10,7 @@ use App\Enums\EncounterStatus;
 use Illuminate\Validation\Rules\Enum;
 use App\Services\NotificationService;
 use App\Http\Requests\Api\V1\AssignAndProcessEncounterRequest;
+use App\Http\Requests\Api\V1\StoreEncounterRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class EncounterController extends Controller
@@ -54,10 +55,38 @@ class EncounterController extends Controller
          $validated = $request->validate([
             'dentist_id' => 'required|exists:users,id',
         ]);
-        
-        $encounter->update($validated);
+
+         $encounter->update($validated);
 
         return response()->json(['message' => 'Hekim atandı.']);
+    }
+
+    public function store(StoreEncounterRequest $request)
+    {
+        $validated = $request->validated();
+
+        $encounter = Encounter::create([
+            'patient_id' => $validated['patient_id'],
+            'dentist_id' => $validated['dentist_id'] ?? null,
+            'type' => $validated['type'],
+            'triage_level' => $validated['triage_level'],
+            'notes' => $validated['notes'] ?? null,
+            'arrived_at' => now(),
+            'status' => EncounterStatus::WAITING,
+        ]);
+
+        if (! empty($validated['dentist_id'])) {
+            $this->notificationService->createNotification(
+                $encounter->dentist,
+                'Yeni Acil Hasta Kaydı',
+                "{$encounter->patient->first_name} {$encounter->patient->last_name} isimli hasta acil kaydına eklendi."
+            );
+        }
+
+        return response()->json([
+            'message' => 'Acil/randevusuz hasta kaydı oluşturuldu.',
+            'encounter' => $encounter->load(['patient', 'dentist']),
+        ], 201);
     }
 
     /**

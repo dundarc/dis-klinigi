@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Accounting\FinancialReportController;
 
 
 
+use App\Http\Controllers\Api\V1\PatientController;
 
 
 
@@ -41,6 +42,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
     Route::post('appointments/{appointment}/call', [AppointmentController::class, 'call']); // BU SATIRI EKLEYİN
     Route::post('encounters/{encounter}/assign-and-process', [EncounterController::class, 'assignAndProcess']);
+    Route::get('dentists/{dentist}/schedule', [AppointmentController::class, 'dentistSchedule']);
+    Route::post('encounters', [EncounterController::class, 'store']);
 
     Route::prefix('accounting')->middleware('can:accessAccountingFeatures')->group(function () {
         Route::patch('invoices/{invoice}/status', [InvoiceManagementController::class, 'updateStatus']);

@@ -13,6 +13,8 @@ class AppointmentResource extends JsonResource
             'start' => $this->start_at->format('Y-m-d H:i:s'),
             'end' => $this->end_at->format('Y-m-d H:i:s'),
             'status' => $this->status->value,
+            'checked_in_at' => $this->checked_in_at?->format('Y-m-d H:i:s'),
+            'called_at' => $this->called_at?->format('Y-m-d H:i:s'),
             'notes' => $this->notes,
             // İlişkili verileri resource'ları kullanarak yüklüyoruz
             'patient' => new PatientResource($this->whenLoaded('patient')),

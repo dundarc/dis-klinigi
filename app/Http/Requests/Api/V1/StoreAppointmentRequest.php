@@ -20,7 +20,7 @@ class StoreAppointmentRequest extends FormRequest
         return [
             'patient_id' => ['required', 'exists:patients,id'],
             'dentist_id' => ['required', 'exists:users,id'],
-            'start_at' => ['required', 'date_format:Y-m-d H:i:s', 'after:now'],
+            'start_at' => ['required', 'date_format:Y-m-d H:i:s', 'after_or_equal:now'],
             'notes' => ['nullable', 'string'],
             'end_at' => [
                 'required',
