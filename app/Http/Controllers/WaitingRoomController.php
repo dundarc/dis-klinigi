@@ -8,7 +8,10 @@ use App\Models\Encounter;
 use App\Models\User;
 use App\Enums\AppointmentStatus;
 use App\Enums\EncounterStatus;
+use App\Enums\EncounterType;
+use App\Enums\TriageLevel;
 use App\Enums\UserRole;
+use Illuminate\Support\Carbon;
 
 class WaitingRoomController extends Controller
 {
@@ -21,9 +24,17 @@ class WaitingRoomController extends Controller
     public function index()
     {
         // 1. Durumu "Check-in" olan planlı randevular.
-        $checkedInAppointments = Appointment::with(['patient', 'dentist'])
-            ->where('status', AppointmentStatus::CHECKED_IN)
-            ->orderBy('checked_in_at', 'asc')
+        $today = Carbon::today();
+
+        $pendingAppointments = Appointment::with(['patient', 'dentist'])
+            ->whereIn('status', [
+                AppointmentStatus::SCHEDULED,
+                AppointmentStatus::CONFIRMED,
+                AppointmentStatus::CHECKED_IN,
+            ])
+            ->whereDate('start_at', $today)
+            ->orderBy('start_at')
+            ->orderBy('checked_in_at')
             ->get();
 
         // 2. Durumu "Waiting" olan acil/walk-in vakaları.
@@ -39,16 +50,37 @@ class WaitingRoomController extends Controller
             ")
             ->orderBy('arrived_at', 'asc')
             ->get();
+
+        $inServiceAppointments = Appointment::with(['patient', 'dentist'])
+            ->where('status', AppointmentStatus::IN_SERVICE)
+            ->whereDate('start_at', $today)
+            ->orderBy('called_at')
+            ->orderBy('start_at')
+            ->get();
+
+        $inServiceEncounters = Encounter::with(['patient', 'dentist'])
+            ->where('status', EncounterStatus::IN_SERVICE)
+            ->orderBy('started_at')
+            ->orderBy('arrived_at')
+            ->get();
         
         // 3. Hekim atama modalı için tüm hekimlerin listesi.
         // --- EKSİK OLAN KISIM BUYDU ---
         $allDentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get();
 
         // Tüm verileri view'e gönder.
-        return view('waiting-room.index', compact(
-            'checkedInAppointments', 
-            'waitingEncounters',
-            'allDentists' // Değişkeni buraya ekliyoruz.
-        ));
+        $triageLevels = TriageLevel::cases();
+        $encounterTypes = EncounterType::cases();
+
+        return view('waiting-room.index', [
+            'pendingAppointments' => $pendingAppointments,
+            'waitingEncounters' => $waitingEncounters,
+            'inServiceAppointments' => $inServiceAppointments,
+            'inServiceEncounters' => $inServiceEncounters,
+            'allDentists' => $allDentists,
+            'triageLevels' => $triageLevels,
+            'encounterTypes' => $encounterTypes,
+            'today' => $today->toDateString(),
+        ]);
     }
 }
