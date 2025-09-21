@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\User;
 use App\Http\Requests\Api\V1\StoreAppointmentRequest;
 use App\Http\Requests\Api\V1\UpdateAppointmentRequest;
 use App\Http\Resources\Api\V1\AppointmentResource;
@@ -12,6 +13,7 @@ use App\Enums\UserRole;
 use App\Enums\AppointmentStatus;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Support\Carbon;
 
 class AppointmentController extends Controller
 {
@@ -26,7 +28,7 @@ class AppointmentController extends Controller
             'called_at' => now(), // Çağırılma zamanını kaydet
         ]);
 
-        return new AppointmentResource($appointment);
+        return new AppointmentResource($appointment->load(['patient', 'dentist']));
     }
     
     public function index(Request $request)
@@ -82,7 +84,7 @@ class AppointmentController extends Controller
             'status' => AppointmentStatus::CHECKED_IN,
             'checked_in_at' => now(),
         ]);
-        return new AppointmentResource($appointment);
+        return new AppointmentResource($appointment->load(['patient', 'dentist']));
     }
 
     public function updateStatus(Request $request, Appointment $appointment)
@@ -95,6 +97,44 @@ class AppointmentController extends Controller
 
         $appointment->update($validated);
 
-        return new AppointmentResource($appointment);
+        return new AppointmentResource($appointment->load(['patient', 'dentist']));
+    }
+
+    public function dentistSchedule(Request $request, User $dentist)
+    {
+        if ($dentist->role !== UserRole::DENTIST) {
+            abort(404);
+        }
+
+        $user = $request->user();
+
+        if ($user->role === UserRole::DENTIST && $user->id !== $dentist->id) {
+            abort(403);
+        }
+
+        if (! in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST, UserRole::DENTIST], true)) {
+            abort(403);
+        }
+
+        $date = $request->input('date');
+        $day = $date ? Carbon::parse($date) : Carbon::today();
+
+        $appointments = Appointment::with('patient')
+            ->where('dentist_id', $dentist->id)
+            ->whereBetween('start_at', [$day->copy()->startOfDay(), $day->copy()->endOfDay()])
+            ->orderBy('start_at')
+            ->get();
+
+        $data = $appointments->map(function (Appointment $appointment) {
+            return [
+                'id' => $appointment->id,
+                'start' => $appointment->start_at->toIso8601String(),
+                'end' => $appointment->end_at->toIso8601String(),
+                'patient' => $appointment->patient?->full_name,
+                'status' => $appointment->status->value,
+            ];
+        });
+
+        return response()->json(['data' => $data]);
     }
 }

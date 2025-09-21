@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\EncounterController; // Bu satırı da eklemiştik
+use App\Http\Controllers\Api\V1\PatientController;
 use App\Http\Controllers\Api\V1\AppointmentReferralController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\PatientTreatmentController;
@@ -40,6 +41,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn']);
     Route::post('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
     Route::post('appointments/{appointment}/call', [AppointmentController::class, 'call']); // BU SATIRI EKLEYİN
+    Route::get('dentists/{dentist}/schedule', [AppointmentController::class, 'dentistSchedule']);
+    Route::post('encounters', [EncounterController::class, 'store']);
     Route::post('encounters/{encounter}/assign-and-process', [EncounterController::class, 'assignAndProcess']);
 
     Route::prefix('accounting')->middleware('can:accessAccountingFeatures')->group(function () {
@@ -62,6 +65,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // Encounters için rotalar
     Route::post('encounters/{encounter}/status', [EncounterController::class, 'updateStatus']);
     Route::post('encounters/{encounter}/assign-doctor', [EncounterController::class, 'assignDoctor']);
+    Route::get('patients/search', [PatientController::class, 'search']);
+    Route::post('patients', [PatientController::class, 'store']);
 
      // Randevu Sevk Rotaları
     Route::post('appointments/{appointment}/refer', [AppointmentReferralController::class, 'store']);

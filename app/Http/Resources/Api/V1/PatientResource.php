@@ -13,8 +13,8 @@ class PatientResource extends JsonResource
             'firstName' => $this->first_name,
             'lastName' => $this->last_name,
             'fullName' => $this->first_name . ' ' . $this->last_name,
-            'birthDate' => $this->birth_date->format('d.m.Y'),
-            'gender' => $this->gender->value,
+            'birthDate' => $this->birth_date?->format('d.m.Y'),
+            'gender' => $this->gender?->value,
             'phonePrimary' => $this->phone_primary,
         ];
     }
