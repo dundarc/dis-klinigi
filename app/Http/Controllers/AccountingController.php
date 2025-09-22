@@ -2,61 +2,133 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Patient;
 use Illuminate\Http\Request;
 use App\Models\Invoice;
 use App\Enums\InvoiceStatus;
+use App\Http\Requests\UpdateInvoiceDetailsRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class AccountingController extends Controller
 {
-    public function index(Request $request)
+    use AuthorizesRequests;
+
+    /**
+     * Ana muhasebe sayfasını özet verilerle birlikte gösterir.
+     */
+    public function main()
     {
-        // Bu sayfaya sadece yetkili kişilerin erişebildiğinden emin olalım
-        $this->authorize('accessAccountingFeatures', 'App\Models\Invoice');
+        // Bu sayfaya erişim zaten rota seviyesinde kontrol ediliyor.
+        $recentInvoices = Invoice::whereHas('patient')->with('patient')->latest()->take(10)->get();
 
-        $query = Invoice::with('patient')->latest('issue_date');
+        $installmentInvoices = Invoice::whereHas('patient')->with('patient')
+            ->where('status', InvoiceStatus::INSTALLMENT)
+            ->get();
 
-        // Arama filtresi
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('invoice_no', 'like', "%{$search}%")
-                  ->orWhereHas('patient', function ($patientQuery) use ($search) {
-                      $patientQuery->where('first_name', 'like', "%{$search}%")
-                                   ->orWhere('last_name', 'like', "%{$search}%");
-                  });
-            });
-        }
+        $overdueInvoices = Invoice::whereHas('patient')->with('patient')
+            ->where('due_date', '<', now())
+            ->whereIn('status', [InvoiceStatus::UNPAID, InvoiceStatus::POSTPONED])
+            ->get();
 
-         $invoices = $query->paginate(20)->withQueryString();
-        $patients = Patient::select('id', 'first_name', 'last_name')->orderBy('first_name')->get();
-
-        return view('accounting.invoices.index', [
-            'invoices' => $invoices,
-            'statuses' => InvoiceStatus::cases(),
-            'patients' => $patients, // HASTA LİSTESİNİ EKLE
-        ]);
-
-        // Durum filtresi
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
-
-        $invoices = $query->paginate(20)->withQueryString();
-
-        return view('accounting.invoices.index', [
-            'invoices' => $invoices,
-            'statuses' => InvoiceStatus::cases(), // Filtre dropdown'ı için
-        ]);
+        return view('accounting.main', compact(
+            'recentInvoices',
+            'installmentInvoices',
+            'overdueInvoices'
+        ));
     }
-     public function show(Invoice $invoice)
+
+    /**
+     * Tek bir fatura için işlem sayfasını gösterir.
+     */
+    public function action(Invoice $invoice)
     {
-        $this->authorize('accessAccountingFeatures', $invoice);
-
+        $this->authorize('accessAccountingFeatures');
         $invoice->load(['patient', 'items.patientTreatment.treatment']);
-
-        return view('accounting.invoices.show', [
+        
+        return view('accounting.invoices.action', [
             'invoice' => $invoice,
             'statuses' => InvoiceStatus::cases(),
         ]);
     }
+
+    /**
+     * Fatura bilgilerini günceller.
+     */
+    public function update(UpdateInvoiceDetailsRequest $request, Invoice $invoice)
+    {
+        // DÜZELTME: Yetki kontrolü artık FormRequest içinde yapıldığı için bu satırı siliyoruz.
+        // $this->authorize('accessAccountingFeatures');
+        
+        $validated = $request->validated();
+        
+        $updateData = [
+            'status' => $validated['status'],
+            'payment_method' => $validated['payment_method'],
+            'due_date' => $validated['due_date'],
+            'notes' => $validated['notes'],
+            'insurance_coverage_amount' => $validated['insurance_coverage_amount'] ?? 0,
+        ];
+
+        if ($validated['status'] === InvoiceStatus::INSTALLMENT->value) {
+            $updateData['payment_details'] = [
+                'taksit_sayisi' => $validated['taksit_sayisi'],
+                'ilk_odeme_gunu' => $validated['ilk_odeme_gunu'],
+            ];
+        } else {
+            $updateData['payment_details'] = null;
+        }
+        
+        $invoice->update($updateData);
+
+        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura bilgileri başarıyla güncellendi.');
+    }
+    
+    /**
+     * Bir faturayı çöp kutusuna taşır (Soft Delete).
+     */
+    public function destroy(Invoice $invoice)
+    {
+        $this->authorize('accessAccountingFeatures');
+        $invoice->delete();
+        return redirect()->route('accounting.main')->with('success', 'Fatura başarıyla çöp kutusuna taşındı.');
+    }
+
+    /**
+     * Silinmiş faturaların olduğu çöp kutusunu gösterir.
+     */
+    public function trash()
+    {
+        $this->authorize('accessAccountingFeatures');
+        $trashedInvoices = Invoice::onlyTrashed()->with('patient')->latest('deleted_at')->get();
+
+        return view('accounting.trash', compact('trashedInvoices'));
+    }
+
+    /**
+     * Silinmiş bir faturayı geri yükler.
+     */
+    public function restore($id)
+    {
+        $this->authorize('accessAccountingFeatures');
+        $invoice = Invoice::onlyTrashed()->findOrFail($id);
+        $invoice->restore();
+
+        return redirect()->route('accounting.trash')->with('success', 'Fatura başarıyla geri yüklendi.');
+    }
+
+    /**
+     * Bir faturayı kalıcı olarak siler.
+     */
+    public function forceDelete($id)
+    {
+        $this->authorize('accessAccountingFeatures');
+        $invoice = Invoice::onlyTrashed()->findOrFail($id);
+
+        $invoice->items()->delete();
+        $invoice->payments()->delete();
+        
+        $invoice->forceDelete();
+
+        return redirect()->route('accounting.trash')->with('success', 'Fatura kalıcı olarak silindi.');
+    }
 }
+

@@ -1,50 +1,69 @@
 <?php
+
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\PatientTreatment;
 use App\Http\Requests\Api\V1\StoreInvoiceRequest;
-use App\Http\Requests\Api\V1\UpdateInvoiceRequest; // Bunu ekleyeceğiz
+use App\Http\Requests\Api\V1\UpdateInvoiceRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class InvoiceController extends Controller
 {
+    use AuthorizesRequests;
+
+    /**
+     * YENİ: Tek bir faturanın detaylarını, ilişkili kalemleriyle birlikte döndürür.
+     * Bu metod, fatura düzenleme modalının verilerini doldurmak için kullanılır.
+     */
+    public function show(Invoice $invoice)
+    {
+        $this->authorize('view', $invoice);
+        return response()->json($invoice->load('items'));
+    }
+
+    /**
+     * Yeni bir fatura oluşturur.
+     */
     public function store(StoreInvoiceRequest $request)
     {
         $validated = $request->validated();
         
         $invoice = DB::transaction(function () use ($validated) {
-            $subtotal = 0;
-            $vatTotal = 0;
+            $treatments = PatientTreatment::whereIn('id', $validated['treatment_ids'])
+                ->whereDoesntHave('invoiceItem')
+                ->get();
 
-            foreach ($validated['items'] as $item) {
-                $lineTotal = $item['qty'] * $item['unit_price'];
-                $subtotal += $lineTotal;
-                $vatTotal += $lineTotal * ($item['vat'] / 100);
+            if ($treatments->isEmpty()) {
+                abort(422, 'Seçilen tedaviler faturalandırmaya uygun değil.');
             }
+
+            $subtotal = $treatments->sum('unit_price');
+            $vatTotal = $treatments->sum(fn ($treatment) => $treatment->unit_price * ($treatment->vat / 100));
 
             $invoiceData = [
                 'patient_id' => $validated['patient_id'],
-                'invoice_no' => 'FAT-' . time(), // Basit bir fatura no
+                'invoice_no' => 'FAT-' . time(),
                 'issue_date' => $validated['issue_date'],
                 'notes' => $validated['notes'] ?? null,
                 'subtotal' => $subtotal,
                 'vat_total' => $vatTotal,
-                'discount_total' => 0, // Şimdilik indirim yok
+                'discount_total' => 0,
                 'grand_total' => $subtotal + $vatTotal,
             ];
             
             $invoice = Invoice::create($invoiceData);
 
-            foreach ($validated['items'] as $item) {
+            foreach ($treatments as $treatment) {
                 $invoice->items()->create([
-                    'patient_treatment_id' => $item['patient_treatment_id'] ?? null,
-                    'description' => $item['description'],
-                    'qty' => $item['qty'],
-                    'unit_price' => $item['unit_price'],
-                    'vat' => $item['vat'],
-                    'line_total' => $item['qty'] * $item['unit_price'],
+                    'patient_treatment_id' => $treatment->id,
+                    'description' => $treatment->treatment->name,
+                    'qty' => 1,
+                    'unit_price' => $treatment->unit_price,
+                    'vat' => $treatment->vat,
+                    'line_total' => $treatment->unit_price,
                 ]);
             }
             
@@ -53,35 +72,34 @@ class InvoiceController extends Controller
 
         return response()->json($invoice->load('items'), 201);
     }
-     
-     /**
-      * Summary of update
-      * @param \App\Http\Requests\Api\V1\UpdateInvoiceRequest $request
-      * @param \App\Models\Invoice $invoice
-      * @return \Illuminate\Http\JsonResponse
-      */
-     public function update(UpdateInvoiceRequest $request, Invoice $invoice)
+
+    /**
+     * Mevcut bir faturayı günceller.
+     */
+    public function update(UpdateInvoiceRequest $request, Invoice $invoice)
     {
         $validated = $request->validated();
         
         DB::transaction(function () use ($invoice, $validated) {
-            // Önce mevcut kalemleri silelim
             $invoice->items()->delete();
             
             $subtotal = 0;
             $vatTotal = 0;
+
             foreach ($validated['items'] as $item) {
                 $lineTotal = $item['qty'] * $item['unit_price'];
                 $subtotal += $lineTotal;
                 $vatTotal += $lineTotal * ($item['vat'] / 100);
+
+                $invoice->items()->create([
+                    'description' => $item['description'],
+                    'qty' => $item['qty'],
+                    'unit_price' => $item['unit_price'],
+                    'vat' => $item['vat'] ?? 20,
+                    'line_total' => $lineTotal,
+                ]);
             }
             
-            // Yeni kalemleri ekleyelim
-            foreach ($validated['items'] as $item) {
-                $invoice->items()->create($item + ['line_total' => $item['qty'] * $item['unit_price']]);
-            }
-            
-            // Ana faturayı güncelleyelim
             $invoice->update([
                 'patient_id' => $validated['patient_id'],
                 'issue_date' => $validated['issue_date'],
@@ -95,7 +113,9 @@ class InvoiceController extends Controller
         return response()->json($invoice->fresh()->load('items'));
     }
 
-    // YENİ: Destroy metodu
+    /**
+     * Bir faturayı siler.
+     */
     public function destroy(Invoice $invoice)
     {
         $this->authorize('delete', $invoice);
@@ -109,3 +129,4 @@ class InvoiceController extends Controller
         return response()->noContent();
     }
 }
+

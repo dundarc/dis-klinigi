@@ -11,59 +11,30 @@ class PatientTreatment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'patient_id',
-        'dentist_id',
-        'treatment_id',
-        'tooth_number',
-        'status',
-        'unit_price',
-        'vat',
-        'discount',
-        'performed_at',
-        'notes',
+        'patient_id', 'encounter_id', 'dentist_id', 'treatment_id', 'tooth_number', 
+        'status', 'unit_price', 'vat', 'discount', 'performed_at', 'notes',
     ];
 
     protected function casts(): array
     {
         return [
-            'status' => PatientTreatmentStatus::class,
             'performed_at' => 'datetime',
-            'unit_price' => 'decimal:2',
-            'vat' => 'decimal:2',
-            'discount' => 'decimal:2',
+            'status' => PatientTreatmentStatus::class,
         ];
     }
+    
+    // --- MEVCUT İLİŞKİLER ---
+    public function patient() { return $this->belongsTo(Patient::class); }
+    public function dentist() { return $this->belongsTo(User::class, 'dentist_id'); }
+    public function treatment() { return $this->belongsTo(Treatment::class); }
+    public function invoiceItem() { return $this->hasOne(InvoiceItem::class); }
 
+    // --- YENİ EKLENEN İLİŞKİ ---
     /**
-     * Bu tedavinin ait olduğu hasta.
+     * Bu tedavinin yapıldığı ziyaret.
      */
-    public function patient()
+    public function encounter()
     {
-        return $this->belongsTo(Patient::class);
-    }
-
-    /**
-     * Bu tedaviyi uygulayan hekim.
-     */
-    public function dentist()
-    {
-        return $this->belongsTo(User::class, 'dentist_id');
-    }
-
-    /**
-     * Bu tedavinin şablonu (adı, kodu vb.).
-     */
-    public function treatment()
-    {
-        return $this->belongsTo(Treatment::class);
-    }
-
-    /**
-     * Bu tedavinin ilişkili olduğu fatura kalemi (varsa).
-     * --- EKSİK OLAN İLİŞKİ BUYDU ---
-     */
-    public function invoiceItem()
-    {
-        return $this->hasOne(InvoiceItem::class);
+        return $this->belongsTo(Encounter::class);
     }
 }

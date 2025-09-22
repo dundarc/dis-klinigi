@@ -68,16 +68,27 @@ class PatientController extends Controller
         return redirect()->route('patients.index')->with('success', 'Hasta başarıyla eklendi.');
     }
 
-    public function show(Patient $patient)
+     public function show(Patient $patient)
     {
         $this->authorize('view', $patient);
+        
         $patient->load([
             'treatments' => fn($q) => $q->with(['dentist', 'treatment'])->latest('performed_at'),
+            // DÜZELTME: Fatura düzenleme için 'items' ilişkisinin de yüklendiğinden emin oluyoruz.
             'invoices' => fn($q) => $q->with('items')->latest('issue_date'),
             'files' => fn($q) => $q->with('uploader')->latest()
         ]);
+        
+        // Modal pencereler için gerekli veriler
         $treatmentsList = Treatment::orderBy('name')->get();
-        $uninvoicedTreatments = $patient->treatments()->whereDoesntHave('invoiceItem')->where('status', 'done')->with('treatment')->get();
+        
+        // Hastanın 'tamamlanmış' ama henüz faturalanmamış tedavileri
+        $uninvoicedTreatments = $patient->treatments()
+            ->where('status', 'done')
+            ->whereDoesntHave('invoiceItem')
+            ->with('treatment')
+            ->get();
+            
         return view('patients.show', compact('patient', 'treatmentsList', 'uninvoicedTreatments'));
     }
 

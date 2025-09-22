@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AppointmentController;
@@ -41,7 +42,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn']);
     Route::post('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
     Route::post('appointments/{appointment}/call', [AppointmentController::class, 'call']);
-    
+
     // Vaka (Encounter) Rotaları
     Route::post('encounters/{encounter}/status', [EncounterController::class, 'updateStatus']);
     Route::post('encounters/{encounter}/assign-doctor', [EncounterController::class, 'assignDoctor']);
@@ -52,21 +53,21 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('appointments/{appointment}/accept-referral', [AppointmentReferralController::class, 'update']);
     
     // Fatura, Tedavi ve Dosya Rotaları
-    Route::apiResource('invoices', InvoiceController::class)->except(['index', 'show']);
+    Route::apiResource('invoices', InvoiceController::class);
     Route::post('patient-treatments', [PatientTreatmentController::class, 'store']);
     Route::post('patients/{patient}/files', [PatientFileController::class, 'store']);
     Route::delete('files/{file}', [PatientFileController::class, 'destroy']);
-
-    // Admin'e Özel Rotalar
+    
+    // Admin'e özel rotalar
     Route::prefix('admin')->middleware('can:accessAdminFeatures')->group(function () {
         Route::post('assign-patient', [PatientAssignmentController::class, 'store']);
         Route::delete('patients/{patient}/erase', [PatientErasureController::class, 'erase']);
     });
     
-    // Bildirim Rotaları
+    // Tüm kullanıcılar için bildirim rotaları
     Route::get('notifications', [NotificationController::class, 'index']);
     
-    // Muhasebe Rotaları
+    // Muhasebe ve Admin'e özel rotalar
     Route::prefix('accounting')->middleware('can:accessAccountingFeatures')->group(function () {
         Route::patch('invoices/{invoice}/status', [InvoiceManagementController::class, 'updateStatus']);
         Route::patch('invoices/{invoice}/insurance', [InvoiceManagementController::class, 'updateInsurance']);

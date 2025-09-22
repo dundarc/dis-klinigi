@@ -25,6 +25,10 @@ class Appointment extends Model
         ];
     }
     
+    public function encounter()
+    {
+        return $this->hasOne(Encounter::class);
+    }
     // Relationships
     public function patient() { return $this->belongsTo(Patient::class); }
     public function dentist() { return $this->belongsTo(User::class, 'dentist_id'); }

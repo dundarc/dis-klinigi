@@ -1,13 +1,16 @@
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+    <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
+                <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
                         <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
                     </a>
                 </div>
 
+                <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
@@ -17,26 +20,35 @@
                         {{ __('Takvim') }}
                     </x-nav-link>
 
+                    {{-- Hekim, Resepsiyonist ve Admin görebilir --}}
                     @can('viewAny', App\Models\Patient::class)
                         <x-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
                             {{ __('Hastalar') }}
                         </x-nav-link>
                     @endcan
-
-                    @can('accessAdminFeatures')
-                         <x-nav-link :href="route('waiting-room')" :active="request()->routeIs('waiting-room')">
+                    
+                    {{-- Sadece Resepsiyonist ve Admin görebilir --}}
+                    @can('accessReceptionistFeatures')
+                         <x-nav-link :href="route('waiting-room.index')" :active="request()->routeIs('waiting-room.*')">
                             {{ __('Bekleme Odası') }}
                         </x-nav-link>
+                    @endcan
 
+                    {{-- Sadece Admin ve Muhasebeci görebilir --}}
+                    @can('accessAccountingFeatures')
                         <x-nav-link :href="route('reports')" :active="request()->routeIs('reports')">
                             {{ __('Raporlar') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('accounting.main')" :active="request()->routeIs('accounting.*')">
+                            {{ __('Muhasebe') }}
                         </x-nav-link>
                     @endcan
                 </div>
             </div>
 
+            <!-- Sağ Taraftaki Butonlar ve Kullanıcı Menüsü -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
-
+                <!-- Bildirimler Alanı -->
                 <div class="ms-3 relative" x-data="{ open: false, notifications: [], unreadCount: 0, loading: true }" 
                     x-init="
                         fetch('/api/v1/notifications', { headers: { 'Accept': 'application/json' } })
@@ -55,6 +67,7 @@
                         <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
                         <div x-show="unreadCount > 0" class="absolute inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full -top-1 -right-1 dark:border-gray-900" x-text="unreadCount" style="display: none;"></div>
                     </button>
+                    <!-- Dropdown menu -->
                     <div x-show="open" @click.away="open = false" x-transition style="display: none;" class="z-50 absolute right-0 mt-2 w-80 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600">
                         <div class="block px-4 py-2 font-medium text-center text-gray-700 rounded-t-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
                             Bildirimler
@@ -78,6 +91,7 @@
                     </div>
                 </div>
 
+                <!-- Dark Mode Düğmesi -->
                 <div x-data="{ darkMode: localStorage.getItem('dark-mode') === 'true' }" x-init="$watch('darkMode', val => localStorage.setItem('dark-mode', val))" class="ms-3">
                     <button @click="darkMode = !darkMode; document.documentElement.classList.toggle('dark', darkMode)" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
                         <svg x-show="!darkMode" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
@@ -89,6 +103,7 @@
                     </button>
                 </div>
                 
+                <!-- Settings Dropdown -->
                 <x-dropdown align="right" width="48" class="ms-3">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
@@ -117,6 +132,7 @@
                 </x-dropdown>
             </div>
 
+            <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -128,6 +144,7 @@
         </div>
     </div>
 
+    <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -141,30 +158,22 @@
                     {{ __('Hastalar') }}
                 </x-responsive-nav-link>
             @endcan
-
-           
-
-
-
-            @can('accessAdminFeatures')
-                 <x-responsive-nav-link :href="route('waiting-room')" :active="request()->routeIs('waiting-room')">
+            @can('accessReceptionistFeatures')
+                 <x-responsive-nav-link :href="route('waiting-room.index')" :active="request()->routeIs('waiting-room.*')">
                     {{ __('Bekleme Odası') }}
                 </x-responsive-nav-link>
+            @endcan
+            @can('accessAccountingFeatures')
                 <x-responsive-nav-link :href="route('reports')" :active="request()->routeIs('reports')">
                     {{ __('Raporlar') }}
                 </x-responsive-nav-link>
-                
-            @endcan
-
-
-            {{-- ... "Raporlar" linkinden sonra ekleyin --}}
-            @can('accessAccountingFeatures')
-                <x-nav-link :href="route('accounting.invoices.index')" :active="request()->routeIs('accounting.*')">
+                <x-responsive-nav-link :href="route('accounting.main')" :active="request()->routeIs('accounting.*')">
                     {{ __('Muhasebe') }}
-                </x-nav-link>
+                </x-responsive-nav-link>
             @endcan
         </div>
 
+        <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
@@ -187,3 +196,4 @@
         </div>
     </div>
 </nav>
+

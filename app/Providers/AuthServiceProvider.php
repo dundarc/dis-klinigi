@@ -31,6 +31,7 @@ class AuthServiceProvider extends ServiceProvider
         Invoice::class => InvoicePolicy::class,
         Prescription::class => PrescriptionPolicy::class,
         File::class => FilePolicy::class,
+        Encounter::class => EncounterPolicy::class, // Bu satırı ekleyin
     ];
 
     /**
@@ -64,6 +65,12 @@ class AuthServiceProvider extends ServiceProvider
         if ($user->role === 'admin') {
             return true;
         }
+    });
+
+
+     // YENİ GATE
+    Gate::define('accessReceptionistFeatures', function (User $user) {
+        return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]);
     });
 
 
