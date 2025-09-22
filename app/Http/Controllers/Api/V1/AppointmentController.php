@@ -4,60 +4,57 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
-use App\Models\User;
-use App\Http\Requests\Api\V1\StoreAppointmentRequest;
-use App\Http\Requests\Api\V1\UpdateAppointmentRequest;
+use App\Services\AppointmentService;
+use App\Http\Requests\StoreAppointmentRequest;
+use App\Http\Requests\UpdateAppointmentRequest;
 use App\Http\Resources\Api\V1\AppointmentResource;
 use Illuminate\Http\Request;
-use App\Enums\UserRole;
-use App\Enums\AppointmentStatus;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Validation\Rules\Enum;
-use Illuminate\Support\Carbon;
 
 class AppointmentController extends Controller
 {
     use AuthorizesRequests;
 
-    public function call(Request $request, Appointment $appointment)
+    protected $appointmentService;
+
+    public function __construct(AppointmentService $appointmentService)
     {
-        $this->authorize('update', $appointment);
-
-        $appointment->update([
-            'status' => AppointmentStatus::IN_SERVICE,
-            'called_at' => now(),
-        ]);
-
-        return new AppointmentResource($appointment->load(['patient', 'dentist']));
+        $this->appointmentService = $appointmentService;
     }
-    
+
     public function index(Request $request)
     {
-        $user = $request->user();
-        $query = Appointment::with(['patient', 'dentist']);
+        $this->authorize('viewAny', Appointment::class);
 
-        if ($user->role === UserRole::DENTIST) {
-            $query->where('dentist_id', $user->id);
-        } else {
-            $this->authorize('viewAny', Appointment::class);
-        }
+        // Boş filtre parametrelerini diziye çevir veya null yap
+        $request->merge([
+            'dentist_id' => $request->input('dentist_id') ? (array) $request->input('dentist_id') : null,
+            'status' => $request->input('status') ? (array) $request->input('status') : null,
+        ]);
+
+        $validated = $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after_or_equal:start',
+            'dentist_id' => 'nullable|array',
+            'dentist_id.*' => 'integer|exists:users,id',
+            'status' => 'nullable|array',
+            'status.*' => 'string',
+        ]);
+
+        $appointments = $this->appointmentService->getAppointments(
+            $validated['start'],
+            $validated['end'],
+            $validated['dentist_id'] ?? null,
+            $validated['status'] ?? null
+        );
         
-        if ($request->has('dentist_id')) {
-            $query->where('dentist_id', $request->dentist_id);
-        }
-        if ($request->has('from') && $request->has('to')) {
-            $query->whereBetween('start_at', [$request->from, $request->to]);
-        }
-
-        return AppointmentResource::collection($query->paginate(25));
+        // Resource collection'ı doğrudan döndürerek düz bir JSON dizisi elde ediyoruz.
+        return AppointmentResource::collection($appointments);
     }
 
     public function store(StoreAppointmentRequest $request)
     {
-        $this->authorize('create', Appointment::class);
-
-        $appointment = Appointment::create($request->validated());
-
+        $appointment = $this->appointmentService->createAppointment($request->validated());
         return new AppointmentResource($appointment->load(['patient', 'dentist']));
     }
 
@@ -69,79 +66,15 @@ class AppointmentController extends Controller
 
     public function update(UpdateAppointmentRequest $request, Appointment $appointment)
     {
-        $this->authorize('update', $appointment);
-
-        $appointment->update($request->validated());
-
-        return new AppointmentResource($appointment->load(['patient', 'dentist']));
+        $this->appointmentService->updateAppointment($appointment, $request->validated());
+        return new AppointmentResource($appointment->fresh()->load(['patient', 'dentist']));
     }
 
     public function destroy(Appointment $appointment)
     {
         $this->authorize('delete', $appointment);
-        $appointment->delete();
+        $this->appointmentService->deleteAppointment($appointment);
         return response()->noContent();
     }
-    
-    public function checkIn(Appointment $appointment)
-    {
-        $this->authorize('update', $appointment);
-        $appointment->update([
-            'status' => AppointmentStatus::CHECKED_IN,
-            'checked_in_at' => now(),
-        ]);
-
-        return new AppointmentResource($appointment->load(['patient', 'dentist']));
-    }
-
-    public function updateStatus(Request $request, Appointment $appointment)
-    {
-        $this->authorize('update', $appointment);
-        
-        $validated = $request->validate([
-            'status' => ['required', new Enum(AppointmentStatus::class)],
-        ]);
-
-        $appointment->update($validated);
-
-        return new AppointmentResource($appointment->load(['patient', 'dentist']));
-    }
-
-    public function dentistSchedule(Request $request, User $dentist)
-    {
-        if ($dentist->role !== UserRole::DENTIST) {
-            abort(404);
-        }
-
-        $user = $request->user();
-
-        if ($user->role === UserRole::DENTIST && $user->id !== $dentist->id) {
-            abort(403);
-        }
-
-        if (! in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST, UserRole::DENTIST], true)) {
-            abort(403);
-        }
-
-        $date = $request->input('date');
-        $day = $date ? Carbon::parse($date) : Carbon::today();
-
-        $appointments = Appointment::with('patient')
-            ->where('dentist_id', $dentist->id)
-            ->whereBetween('start_at', [$day->copy()->startOfDay(), $day->copy()->endOfDay()])
-            ->orderBy('start_at')
-            ->get();
-
-        $data = $appointments->map(function (Appointment $appointment) {
-            return [
-                'id' => $appointment->id,
-                'start' => $appointment->start_at->toIso8601String(),
-                'end' => $appointment->end_at->toIso8601String(),
-                'patient' => $appointment->patient?->full_name,
-                'status' => $appointment->status->value,
-            ];
-        });
-
-        return response()->json(['data' => $data]);
-    }
 }
+

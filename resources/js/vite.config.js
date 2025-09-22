@@ -6,8 +6,8 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/js/app.js',
-                'resources/js/reports.js',
+                'resources/js/app.js', // Sadece bu var, calendar.js silindi
+                'resources/js/patient-detail.js',
             ],
             refresh: true,
         }),

@@ -1,31 +1,26 @@
 <?php
 
-use App\Http\Controllers\AccountingController;
-use App\Http\Controllers\Api\V1\AppointmentController as ApiAppointmentController;
-use App\Http\Controllers\Api\V1\EncounterController as ApiEncounterController;
-use App\Http\Controllers\Api\V1\PatientController as ApiPatientController;
+use App\Http\Controllers\SystemSettingsController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\WaitingRoomController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PdfController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\WaitingRoomController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AppointmentCheckinController;
+use App\Http\Controllers\AccountingController;
 
-Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
-
-// Yeni röntgen görseli yükleme rotası (POST)
-Route::post('/patients/{patient}/xrays', [PatientController::class, 'storeXRay'])->name('patients.x-rays.store');
-
-
-// Hasta detay sayfası
-Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
-
-// Yeni tedavi ekleme formunu göstermek için (GET)
-Route::get('/patients/{patient}/treatments/create', [PatientController::class, 'createTreatment'])->name('patients.treatments.create');
-
-// Yeni tedavi formundan gelen veriyi kaydetmek için (POST)
-Route::post('/patients/{patient}/treatments', [PatientController::class, 'storeTreatment'])->name('patients.treatments.store');
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
 
 Route::get('/', function () {
     return view('welcome');
@@ -36,39 +31,62 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    // Profil Rotaları
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Takvim
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
-    Route::get('/waiting-room', [WaitingRoomController::class, 'index'])->name('waiting-room');
+    
+    // Raporlar
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
 
-    Route::prefix('waiting-room')->name('waiting-room.')->group(function () {
-        Route::post('appointments', [ApiAppointmentController::class, 'store'])->name('appointments.store');
-        Route::post('appointments/{appointment}/call', [ApiAppointmentController::class, 'call'])->name('appointments.call');
-        Route::post('appointments/{appointment}/status', [ApiAppointmentController::class, 'updateStatus'])->name('appointments.status');
-        Route::post('appointments/{appointment}/check-in', [ApiAppointmentController::class, 'checkIn'])->name('appointments.check-in');
-        Route::get('dentists/{dentist}/schedule', [ApiAppointmentController::class, 'dentistSchedule'])->name('dentists.schedule');
+    // Hasta Yönetimi
+    Route::resource('patients', PatientController::class);
+    Route::put('/patients/{patient}/notes', [PatientController::class, 'updateNotes'])->name('patients.updateNotes');
 
-        Route::post('encounters', [ApiEncounterController::class, 'store'])->name('encounters.store');
-        Route::post('encounters/{encounter}/assign-and-process', [ApiEncounterController::class, 'assignAndProcess'])->name('encounters.assign');
-        Route::post('encounters/{encounter}/status', [ApiEncounterController::class, 'updateStatus'])->name('encounters.status');
-
-        Route::get('patients/search', [ApiPatientController::class, 'search'])->name('patients.search');
-        Route::post('patients', [ApiPatientController::class, 'store'])->name('patients.store');
-    });
-
-    Route::post('encounters/{encounter}/status', [ApiEncounterController::class, 'updateStatus']);
-    Route::post('encounters/{encounter}/assign-doctor', [ApiEncounterController::class, 'assignDoctor']);
+    // PDF Rotaları
     Route::get('/invoices/{invoice}/pdf', [PdfController::class, 'downloadInvoice'])->name('invoices.pdf');
     Route::get('/prescriptions/{prescription}/pdf', [PdfController::class, 'downloadPrescription'])->name('prescriptions.pdf');
- 
-     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
-    Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
 
-     Route::resource('patients', PatientController::class);
-    Route::get('/accounting', [AccountingController::class, 'index'])->middleware('can:accessAccountingFeatures')->name('accounting');
+    // "Günün Randevuları" ve Check-in İşlemleri
+    Route::get('/todays-appointments', [AppointmentCheckinController::class, 'index'])->name('appointments.today');
+    Route::post('/appointments/{appointment}/check-in', [AppointmentCheckinController::class, 'checkIn'])->name('appointments.checkin');
+    
 
+    //Burası silinecek///
+    Route::get('/system/index', [SystemSettingsController::class, 'index'])->name('system.index');
+    Route::get('/system/details', [SystemSettingsController::class, 'index'])->name('system.details');
+    Route::get('/system/users', [SystemSettingsController::class, 'index'])->name('system.users.index');
+    Route::get('/system/backup', [SystemSettingsController::class, 'index'])->name('system.backup');
+    
+    // Muhasebe Rotaları
+    Route::prefix('accounting')->name('accounting.')->middleware('can:accessAccountingFeatures')->group(function () {
+        Route::get('/main', [AccountingController::class, 'main'])->name('main');
+        Route::get('/invoices/{invoice}/action', [AccountingController::class, 'action'])->name('invoices.action');
+        Route::put('/invoices/{invoice}', [AccountingController::class, 'update'])->name('invoices.update');
+        Route::delete('/invoices/{invoice}', [AccountingController::class, 'destroy'])->name('invoices.destroy');
+        Route::get('/trash', [AccountingController::class, 'trash'])->name('trash');
+        Route::post('/trash/{id}/restore', [AccountingController::class, 'restore'])->name('trash.restore');
+        Route::delete('/trash/{id}/force-delete', [AccountingController::class, 'forceDelete'])->name('trash.force-delete');
+    });
+    
+    // Bekleme Odası Rotaları
+    Route::prefix('waiting-room')->name('waiting-room.')->group(function () {
+        Route::get('/', [WaitingRoomController::class, 'index'])->name('index');
+        Route::get('/appointments', [WaitingRoomController::class, 'appointments'])->name('appointments');
+        Route::get('/appointments/create', [WaitingRoomController::class, 'createAppointment'])->name('appointments.create');
+        Route::post('/appointments', [WaitingRoomController::class, 'storeAppointment'])->name('appointments.store');
+        Route::get('/appointments/search', [WaitingRoomController::class, 'searchAppointments'])->name('appointments.search');
+        Route::get('/emergency', [WaitingRoomController::class, 'emergency'])->name('emergency');
+        Route::get('/emergency/add', [WaitingRoomController::class, 'createEmergency'])->name('emergency.create');
+        Route::post('/emergency', [WaitingRoomController::class, 'storeEmergency'])->name('emergency.store');
+        Route::get('/completed', [WaitingRoomController::class, 'completed'])->name('completed');
+        Route::get('/{encounter}/action', [WaitingRoomController::class, 'action'])->name('action');
+        Route::put('/{encounter}/action', [WaitingRoomController::class, 'updateAction'])->name('action.update');
+    });
 });
 
 require __DIR__.'/auth.php';
+

@@ -13,15 +13,8 @@ class Encounter extends Model
     use HasFactory;
 
     protected $fillable = [
-        'patient_id',
-        'dentist_id',
-        'type',
-        'triage_level',
-        'arrived_at',
-        'started_at',
-        'ended_at',
-        'status',
-        'notes',
+        'patient_id', 'appointment_id', 'dentist_id', 'type', 'triage_level', 
+        'arrived_at', 'started_at', 'ended_at', 'status', 'notes',
     ];
 
     protected function casts(): array
@@ -36,7 +29,7 @@ class Encounter extends Model
         ];
     }
 
-    // --- EKSİK OLAN İLİŞKİLER ---
+    // --- MEVCUT İLİŞKİLER ---
     public function patient()
     {
         return $this->belongsTo(Patient::class);
@@ -45,5 +38,27 @@ class Encounter extends Model
     public function dentist()
     {
         return $this->belongsTo(User::class, 'dentist_id');
+    }
+
+    // --- YENİ EKLENEN İLİŞKİLER ---
+    /**
+     * Bu ziyarette yapılan tüm tedaviler.
+     */
+    public function treatments()
+    {
+        return $this->hasMany(PatientTreatment::class);
+    }
+
+    /**
+     * Bu ziyarette yazılan tüm reçeteler.
+     */
+    public function prescriptions()
+    {
+        return $this->hasMany(Prescription::class);
+    }
+
+    public function appointment()
+    {
+        return $this->belongsTo(Appointment::class);
     }
 }

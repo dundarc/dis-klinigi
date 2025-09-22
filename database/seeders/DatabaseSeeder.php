@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             TreatmentSeeder::class,
             UserSeeder::class, // Hekim, asistan, resepsiyonistleri oluşturur
             ClinicDataSeeder::class, // Hastaları, randevuları ve vakaları oluşturur
+            SettingSeeder::class,
         ]);
     }
 }

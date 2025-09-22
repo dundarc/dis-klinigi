@@ -5,88 +5,62 @@ namespace App\Policies;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Enums\UserRole;
-use Illuminate\Auth\Access\Response;
 
 class AppointmentPolicy
 {
     /**
-     * Kullanıcı tüm randevuları listeleyebilir mi?
+     * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        // Admin ve Resepsiyonist tüm randevuları görebilir.
-        return $user->role === UserRole::ADMIN || $user->role === UserRole::RECEPTIONIST;
+        // Tüm roller randevu listesini görebilir (Controller'da kapsam daraltılacak).
+        return true;
     }
 
     /**
-     * Kullanıcı belirli bir randevuyu görüntüleyebilir mi?
+     * Determine whether the user can view the model.
      */
     public function view(User $user, Appointment $appointment): bool
     {
-        // Admin ve Resepsiyonist tüm randevuları görebilir.
-        if ($user->role === UserRole::ADMIN || $user->role === UserRole::RECEPTIONIST) {
+        // Admin, Resepsiyonist ve Asistan her şeyi görebilir.
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST, UserRole::ASSISTANT])) {
             return true;
         }
-
-        // Hekim ise sadece kendi randevusunu görebilir.
-        if ($user->role === UserRole::DENTIST) {
-            return $user->id === $appointment->dentist_id;
-        }
-        
-        return false;
+        // Hekim sadece kendi randevusunu görebilir.
+        return $user->id === $appointment->dentist_id;
     }
 
     /**
-     * Kullanıcı randevu oluşturabilir mi?
+     * Determine whether the user can create models.
      */
     public function create(User $user): bool
     {
-        // Sadece Admin ve Resepsiyonist randevu oluşturabilir.
-        return $user->role === UserRole::ADMIN || $user->role === UserRole::RECEPTIONIST;
+        // Tüm roller randevu oluşturabilir.
+        return true;
     }
 
     /**
-     * Kullanıcı belirli bir randevuyu güncelleyebilir mi?
+     * Determine whether the user can update the model.
      */
     public function update(User $user, Appointment $appointment): bool
     {
-        // Admin ve Resepsiyonist tüm randevuları güncelleyebilir.
-        if ($user->role === UserRole::ADMIN || $user->role === UserRole::RECEPTIONIST) {
+        // Admin, Resepsiyonist ve Asistan her şeyi güncelleyebilir.
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST, UserRole::ASSISTANT])) {
             return true;
         }
-
-        // Hekim ise sadece kendi randevusunu güncelleyebilir.
-        if ($user->role === UserRole::DENTIST) {
-            return $user->id === $appointment->dentist_id;
-        }
-        
-        return false;
+        // Hekim sadece kendi randevusunu güncelleyebilir.
+        return $user->id === $appointment->dentist_id;
     }
 
     /**
-     * Kullanıcı belirli bir randevuyu silebilir mi?
+     * Determine whether the user can delete the model.
      */
     public function delete(User $user, Appointment $appointment): bool
     {
-        // Sadece Admin'ler silebilir.
+        // Sadece Admin ve randevunun sahibi olan Hekim silebilir.
+        if ($user->role === UserRole::DENTIST) {
+            return $user->id === $appointment->dentist_id;
+        }
         return $user->role === UserRole::ADMIN;
     }
-
-    public function refer(User $user, Appointment $appointment): bool
-{
-    // Sadece hekimler, kendi randevularını sevk edebilir.
-    return $user->role === UserRole::DENTIST && $user->id === $appointment->dentist_id;
 }
-
-/**
- * Kullanıcı kendisine sevk edilen bir randevuyu kabul edebilir mi?
- */
-public function acceptReferral(User $user, Appointment $appointment): bool
-{
-    // Sadece hekimler, kendilerine sevk edilmiş ve durumu 'beklemede' olan bir randevuyu kabul edebilir.
-    return $user->role === UserRole::DENTIST && 
-           $user->id === $appointment->dentist_id && // Randevu artık bu hekime atanmış olmalı
-           $appointment->referral_status === 'pending'; // Örnek durum
-}
-}
-

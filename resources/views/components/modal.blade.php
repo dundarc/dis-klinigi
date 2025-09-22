@@ -1,8 +1,4 @@
-@props([
-    'name',
-    'show' => false,
-    'maxWidth' => '2xl'
-])
+@props(['name', 'show' => false, 'maxWidth' => '2xl'])
 
 @php
 $maxWidth = [
@@ -11,6 +7,7 @@ $maxWidth = [
     'lg' => 'sm:max-w-lg',
     'xl' => 'sm:max-w-xl',
     '2xl' => 'sm:max-w-2xl',
+    '3xl' => 'sm:max-w-2xl',
 ][$maxWidth];
 @endphp
 
@@ -26,25 +23,32 @@ $maxWidth = [
         },
         firstFocusable() { return this.focusables()[0] },
         lastFocusable() { return this.focusables().slice(-1)[0] },
-        nextFocusable() { return this.focusables()[this.nextFocusableIndex()] || this.firstFocusable() },
-        prevFocusable() { return this.focusables()[this.prevFocusableIndex()] || this.lastFocusable() },
-        nextFocusableIndex() { return (this.focusables().indexOf(document.activeElement) + 1) % (this.focusables().length + 1) },
-        prevFocusableIndex() { return Math.max(0, this.focusables().indexOf(document.activeElement)) -1 },
+        nextFocusable() {
+            let el = this.focusables().find(el => el === document.activeElement)
+            let index = this.focusables().indexOf(el)
+            if (index === this.focusables().length - 1) return this.firstFocusable().focus()
+            this.focusables()[index + 1].focus()
+        },
+        prevFocusable() {
+            let el = this.focusables().find(el => el === document.activeElement)
+            let index = this.focusables().indexOf(el)
+            if (index === 0) return this.lastFocusable().focus()
+            this.focusables()[index - 1].focus()
+        },
     }"
     x-init="$watch('show', value => {
         if (value) {
             document.body.classList.add('overflow-y-hidden');
-            {{ $attributes->has('focusable') ? 'setTimeout(() => firstFocusable().focus(), 100)' : '' }}
+            setTimeout(() => firstFocusable().focus(), 100);
         } else {
             document.body.classList.remove('overflow-y-hidden');
         }
     })"
-    x-on:open-modal.window="$event.detail == '{{ $name }}' ? show = true : null"
-    x-on:close-modal.window="$event.detail == '{{ $name }}' ? show = false : null"
+    x-on:open-modal.window="$event.detail.name === '{{ $name }}' ? show = true : null"
     x-on:close.stop="show = false"
     x-on:keydown.escape.window="show = false"
-    x-on:keydown.tab.prevent="$event.shiftKey || nextFocusable().focus()"
-    x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
+    x-on:keydown.tab.prevent="nextFocusable()"
+    x-on:keydown.shift.tab.prevent="prevFocusable()"
     x-show="show"
     class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
     style="display: {{ $show ? 'block' : 'none' }};"

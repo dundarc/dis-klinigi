@@ -2,103 +2,133 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\InvoiceStatus;
+use Illuminate\Http\Request;
 use App\Models\Invoice;
-use App\Models\Payment;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use App\Enums\InvoiceStatus;
+use App\Http\Requests\UpdateInvoiceDetailsRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class AccountingController extends Controller
 {
-    public function index()
+    use AuthorizesRequests;
+
+    /**
+     * Ana muhasebe sayfasını özet verilerle birlikte gösterir.
+     */
+    public function main()
     {
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth = Carbon::now()->endOfMonth();
+        // Bu sayfaya erişim zaten rota seviyesinde kontrol ediliyor.
+        $recentInvoices = Invoice::whereHas('patient')->with('patient')->latest()->take(10)->get();
 
-        $totalCollected = Payment::sum('amount');
-        $collectedThisMonth = Payment::whereBetween('paid_at', [$startOfMonth, $endOfMonth])->sum('amount');
-        $invoiceCountThisMonth = Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])->count();
-
-        $outstandingInvoices = Invoice::whereIn('status', [
-            InvoiceStatus::UNPAID,
-            InvoiceStatus::PARTIAL,
-            InvoiceStatus::POSTPONED,
-        ])->withSum('payments', 'amount')->get();
-
-        $outstandingReceivables = $outstandingInvoices->sum(function (Invoice $invoice) {
-            $paid = $invoice->payments_sum_amount ?? 0;
-            return max($invoice->patient_payable_amount - $paid, 0);
-        });
-
-        $recentInvoices = Invoice::with(['patient'])
-            ->withSum('payments', 'amount')
-            ->latest('issue_date')
-            ->take(8)
+        $installmentInvoices = Invoice::whereHas('patient')->with('patient')
+            ->where('status', InvoiceStatus::INSTALLMENT)
             ->get();
 
-        $overdueInvoices = Invoice::whereIn('status', [
-                InvoiceStatus::UNPAID,
-                InvoiceStatus::PARTIAL,
-                InvoiceStatus::POSTPONED,
-            ])
-            ->where('issue_date', '<', Carbon::now()->subDays(30))
-            ->with(['patient'])
-            ->withSum('payments', 'amount')
-            ->orderBy('issue_date')
-            ->take(5)
+        $overdueInvoices = Invoice::whereHas('patient')->with('patient')
+            ->where('due_date', '<', now())
+            ->whereIn('status', [InvoiceStatus::UNPAID, InvoiceStatus::POSTPONED])
             ->get();
 
-        $recentPayments = Payment::with(['invoice.patient'])
-            ->latest('paid_at')
-            ->take(5)
-            ->get();
+        return view('accounting.main', compact(
+            'recentInvoices',
+            'installmentInvoices',
+            'overdueInvoices'
+        ));
+    }
 
-        $paymentMethods = Payment::select('method', DB::raw('SUM(amount) as total'))
-            ->groupBy('method')
-            ->orderByDesc('total')
-            ->get();
-
-        $monthlyRevenue = Invoice::where('status', InvoiceStatus::PAID)
-            ->where('issue_date', '>=', Carbon::now()->subMonths(11)->startOfMonth())
-            ->selectRaw("DATE_FORMAT(issue_date, '%Y-%m') as month, SUM(grand_total) as total")
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-
-        $monthlyRevenueChart = [
-            'labels' => $monthlyRevenue->map(fn ($row) => Carbon::createFromFormat('Y-m', $row->month)
-                ->locale(app()->getLocale())
-                ->translatedFormat('M Y'))
-                ->values(),
-            'data' => $monthlyRevenue->pluck('total')->map(fn ($value) => (float) $value)->values(),
-        ];
-
-        $paymentMethodChart = [
-            'labels' => $paymentMethods->pluck('method')->values(),
-            'data' => $paymentMethods->pluck('total')->map(fn ($value) => (float) $value)->values(),
-        ];
-
-        $insuranceSummary = [
-            'coverage' => Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])->sum('insurance_coverage_amount'),
-            'patientPortion' => Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])->sum('patient_payable_amount'),
-            'insuredInvoices' => Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])
-                ->where('insurance_coverage_amount', '>', 0)
-                ->count(),
-        ];
-
-        return view('accounting.index', [
-            'metrics' => [
-                'totalCollected' => $totalCollected,
-                'collectedThisMonth' => $collectedThisMonth,
-                'outstandingReceivables' => $outstandingReceivables,
-                'invoiceCountThisMonth' => $invoiceCountThisMonth,
-            ],
-            'recentInvoices' => $recentInvoices,
-            'overdueInvoices' => $overdueInvoices,
-            'recentPayments' => $recentPayments,
-            'monthlyRevenueChart' => $monthlyRevenueChart,
-            'paymentMethodChart' => $paymentMethodChart,
-            'insuranceSummary' => $insuranceSummary,
+    /**
+     * Tek bir fatura için işlem sayfasını gösterir.
+     */
+    public function action(Invoice $invoice)
+    {
+        $this->authorize('accessAccountingFeatures');
+        $invoice->load(['patient', 'items.patientTreatment.treatment']);
+        
+        return view('accounting.invoices.action', [
+            'invoice' => $invoice,
+            'statuses' => InvoiceStatus::cases(),
         ]);
     }
+
+    /**
+     * Fatura bilgilerini günceller.
+     */
+    public function update(UpdateInvoiceDetailsRequest $request, Invoice $invoice)
+    {
+        // DÜZELTME: Yetki kontrolü artık FormRequest içinde yapıldığı için bu satırı siliyoruz.
+        // $this->authorize('accessAccountingFeatures');
+        
+        $validated = $request->validated();
+        
+        $updateData = [
+            'status' => $validated['status'],
+            'payment_method' => $validated['payment_method'],
+            'due_date' => $validated['due_date'],
+            'notes' => $validated['notes'],
+            'insurance_coverage_amount' => $validated['insurance_coverage_amount'] ?? 0,
+        ];
+
+        if ($validated['status'] === InvoiceStatus::INSTALLMENT->value) {
+            $updateData['payment_details'] = [
+                'taksit_sayisi' => $validated['taksit_sayisi'],
+                'ilk_odeme_gunu' => $validated['ilk_odeme_gunu'],
+            ];
+        } else {
+            $updateData['payment_details'] = null;
+        }
+        
+        $invoice->update($updateData);
+
+        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura bilgileri başarıyla güncellendi.');
+    }
+    
+    /**
+     * Bir faturayı çöp kutusuna taşır (Soft Delete).
+     */
+    public function destroy(Invoice $invoice)
+    {
+        $this->authorize('accessAccountingFeatures');
+        $invoice->delete();
+        return redirect()->route('accounting.main')->with('success', 'Fatura başarıyla çöp kutusuna taşındı.');
+    }
+
+    /**
+     * Silinmiş faturaların olduğu çöp kutusunu gösterir.
+     */
+    public function trash()
+    {
+        $this->authorize('accessAccountingFeatures');
+        $trashedInvoices = Invoice::onlyTrashed()->with('patient')->latest('deleted_at')->get();
+
+        return view('accounting.trash', compact('trashedInvoices'));
+    }
+
+    /**
+     * Silinmiş bir faturayı geri yükler.
+     */
+    public function restore($id)
+    {
+        $this->authorize('accessAccountingFeatures');
+        $invoice = Invoice::onlyTrashed()->findOrFail($id);
+        $invoice->restore();
+
+        return redirect()->route('accounting.trash')->with('success', 'Fatura başarıyla geri yüklendi.');
+    }
+
+    /**
+     * Bir faturayı kalıcı olarak siler.
+     */
+    public function forceDelete($id)
+    {
+        $this->authorize('accessAccountingFeatures');
+        $invoice = Invoice::onlyTrashed()->findOrFail($id);
+
+        $invoice->items()->delete();
+        $invoice->payments()->delete();
+        
+        $invoice->forceDelete();
+
+        return redirect()->route('accounting.trash')->with('success', 'Fatura kalıcı olarak silindi.');
+    }
 }
+
