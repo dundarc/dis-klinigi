@@ -20,7 +20,9 @@
     <div class="container">
         <div class="header">
             {{-- <img src="{{ public_path('logo.png') }}" alt="Logo"> --}}
-            <h1>FATURA</h1>
+            <h1>MAKBUZ</h1>
+                <p>Buradaki MAKBUZ resmi bir fatura bilgisi içermez. Resmi fatura için lütfen klinik ile iletişim kurun.</p>
+
         </div>
 
         <table style="width:100%; margin-bottom: 20px;">
@@ -32,7 +34,7 @@
                     {{ $invoice->patient->email }}
                 </td>
                 <td style="width: 50%; text-align: right;">
-                    <strong>Fatura No:</strong> {{ $invoice->invoice_no }}<br>
+                    <strong>Makbuz No:</strong> {{ $invoice->invoice_no }}<br>
                     <strong>Tarih:</strong> {{ $invoice->issue_date->format('d.m.Y') }}<br>
                     <strong>Durum:</strong> {{ $invoice->status->value }}
                 </td>
@@ -79,5 +81,6 @@
             </table>
         </div>
     </div>
+
 </body>
 </html>

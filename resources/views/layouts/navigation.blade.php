@@ -117,6 +117,13 @@
                     </x-slot>
 
                     <x-slot name="content">
+                        {{-- YENİ: Sistem Ayarları Linki --}}
+                        @can('accessSystemSettings')
+                            <x-dropdown-link :href="route('system.index')">
+                                {{ __('Sistem Ayarları') }}
+                            </x-dropdown-link>
+                        @endcan
+
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Profile') }}
                         </x-dropdown-link>

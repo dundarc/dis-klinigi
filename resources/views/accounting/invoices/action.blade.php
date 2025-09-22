@@ -18,6 +18,12 @@
                 <!-- Sol Taraf: Fatura Detayları -->
                 <div class="md:col-span-2 space-y-6">
                     <x-card>
+                        <h3 class="text-lg font-medium mb-4">Hasta Bilgileri</h3>
+                        <p><strong>Ad Soyad:</strong> {{ $invoice->patient->first_name }} {{ $invoice->patient->last_name }}</p>
+                        <p><strong>Telefon:</strong> {{ $invoice->patient->phone_primary }}</p>
+                        <p><strong>E-posta:</strong> {{ $invoice->patient->email }}</p>
+                    </x-card>
+                    <x-card>
                         <h3 class="text-lg font-medium mb-4">Fatura Kalemleri</h3>
                         <table class="w-full text-sm text-left">
                             <tbody>
@@ -63,7 +69,7 @@
                                     </x-select-input>
                                 </div>
                                 
-                                <div x-show="status === 'paid'">
+                                <div x-show="status === 'paid'" x-transition>
                                     <x-input-label for="payment_method" value="Ödeme Yöntemi" />
                                     <x-select-input id="payment_method" name="payment_method" class="mt-1 block w-full">
                                         <option value="">Seçiniz...</option>
@@ -74,12 +80,12 @@
                                     </x-select-input>
                                 </div>
                                 
-                                <div x-show="status === 'ileri_tarihte_odenecek'">
+                                <div x-show="status === 'ileri_tarihte_odenecek'" x-transition>
                                     <x-input-label for="due_date" value="Vade Tarihi" />
                                     <x-text-input id="due_date" name="due_date" type="date" class="mt-1 block w-full" :value="$invoice->due_date?->format('Y-m-d')" />
                                 </div>
 
-                                <div x-show="status === 'taksitlendirildi'" class="space-y-4">
+                                <div x-show="status === 'taksitlendirildi'" x-transition class="space-y-4">
                                     <div>
                                         <x-input-label for="taksit_sayisi" value="Taksit Sayısı" />
                                         <x-text-input id="taksit_sayisi" name="taksit_sayisi" type="number" class="mt-1 block w-full" :value="$invoice->payment_details['taksit_sayisi'] ?? ''" />

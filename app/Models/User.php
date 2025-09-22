@@ -10,7 +10,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable; // HasApiTokens'i buraya ekleyin
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'role', 'locale', 'dark_mode',
+        'name', 'email', 'password', 'phone', 'role', 'locale', 'dark_mode', 'is_active',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -22,6 +22,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'dark_mode' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
     public function notifications()

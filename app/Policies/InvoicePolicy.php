@@ -25,7 +25,7 @@ class InvoicePolicy
         if (in_array($user->role, [UserRole::RECEPTIONIST, UserRole::ACCOUNTANT])) {
             return true;
         }
-        // Hekim, sadece kendi yaptığı bir işleme ait faturayı görebilir.
+        // DÜZELTME: 'use ($user)' kaldırıldı.
         return $invoice->items()->whereHas('patientTreatment', fn($q) => $q->where('dentist_id', $user->id))->exists();
     }
 
@@ -51,6 +51,7 @@ class InvoicePolicy
         
         // Hekim sadece kendi oluşturduğu faturayı düzenleyebilir
         if ($user->role === UserRole::DENTIST) {
+            // DÜZELTME: 'use ($user)' kaldırıldı.
             return $invoice->items()->whereHas('patientTreatment', fn($q) => $q->where('dentist_id', $user->id))->exists();
         }
 
@@ -66,6 +67,7 @@ class InvoicePolicy
         
         // Hekim sadece kendi faturasını silebilir
         if ($user->role === UserRole::DENTIST) {
+            // DÜZELTME: 'use ($user)' kaldırıldı.
             return $invoice->items()->whereHas('patientTreatment', fn($q) => $q->where('dentist_id', $user->id))->exists();
         }
 

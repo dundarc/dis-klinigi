@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SystemSettingsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CalendarController;
@@ -52,6 +53,13 @@ Route::middleware('auth')->group(function () {
     // "Günün Randevuları" ve Check-in İşlemleri
     Route::get('/todays-appointments', [AppointmentCheckinController::class, 'index'])->name('appointments.today');
     Route::post('/appointments/{appointment}/check-in', [AppointmentCheckinController::class, 'checkIn'])->name('appointments.checkin');
+    
+
+    //Burası silinecek///
+    Route::get('/system/index', [SystemSettingsController::class, 'index'])->name('system.index');
+    Route::get('/system/details', [SystemSettingsController::class, 'index'])->name('system.details');
+    Route::get('/system/users', [SystemSettingsController::class, 'index'])->name('system.users.index');
+    Route::get('/system/backup', [SystemSettingsController::class, 'index'])->name('system.backup');
     
     // Muhasebe Rotaları
     Route::prefix('accounting')->name('accounting.')->middleware('can:accessAccountingFeatures')->group(function () {
