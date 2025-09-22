@@ -2,103 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\InvoiceStatus;
+use App\Models\Patient;
+use Illuminate\Http\Request;
 use App\Models\Invoice;
-use App\Models\Payment;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use App\Enums\InvoiceStatus;
 
 class AccountingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth = Carbon::now()->endOfMonth();
+        // Bu sayfaya sadece yetkili kişilerin erişebildiğinden emin olalım
+        $this->authorize('accessAccountingFeatures', 'App\Models\Invoice');
 
-        $totalCollected = Payment::sum('amount');
-        $collectedThisMonth = Payment::whereBetween('paid_at', [$startOfMonth, $endOfMonth])->sum('amount');
-        $invoiceCountThisMonth = Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])->count();
+        $query = Invoice::with('patient')->latest('issue_date');
 
-        $outstandingInvoices = Invoice::whereIn('status', [
-            InvoiceStatus::UNPAID,
-            InvoiceStatus::PARTIAL,
-            InvoiceStatus::POSTPONED,
-        ])->withSum('payments', 'amount')->get();
+        // Arama filtresi
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_no', 'like', "%{$search}%")
+                  ->orWhereHas('patient', function ($patientQuery) use ($search) {
+                      $patientQuery->where('first_name', 'like', "%{$search}%")
+                                   ->orWhere('last_name', 'like', "%{$search}%");
+                  });
+            });
+        }
 
-        $outstandingReceivables = $outstandingInvoices->sum(function (Invoice $invoice) {
-            $paid = $invoice->payments_sum_amount ?? 0;
-            return max($invoice->patient_payable_amount - $paid, 0);
-        });
+         $invoices = $query->paginate(20)->withQueryString();
+        $patients = Patient::select('id', 'first_name', 'last_name')->orderBy('first_name')->get();
 
-        $recentInvoices = Invoice::with(['patient'])
-            ->withSum('payments', 'amount')
-            ->latest('issue_date')
-            ->take(8)
-            ->get();
+        return view('accounting.invoices.index', [
+            'invoices' => $invoices,
+            'statuses' => InvoiceStatus::cases(),
+            'patients' => $patients, // HASTA LİSTESİNİ EKLE
+        ]);
 
-        $overdueInvoices = Invoice::whereIn('status', [
-                InvoiceStatus::UNPAID,
-                InvoiceStatus::PARTIAL,
-                InvoiceStatus::POSTPONED,
-            ])
-            ->where('issue_date', '<', Carbon::now()->subDays(30))
-            ->with(['patient'])
-            ->withSum('payments', 'amount')
-            ->orderBy('issue_date')
-            ->take(5)
-            ->get();
+        // Durum filtresi
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
 
-        $recentPayments = Payment::with(['invoice.patient'])
-            ->latest('paid_at')
-            ->take(5)
-            ->get();
+        $invoices = $query->paginate(20)->withQueryString();
 
-        $paymentMethods = Payment::select('method', DB::raw('SUM(amount) as total'))
-            ->groupBy('method')
-            ->orderByDesc('total')
-            ->get();
+        return view('accounting.invoices.index', [
+            'invoices' => $invoices,
+            'statuses' => InvoiceStatus::cases(), // Filtre dropdown'ı için
+        ]);
+    }
+     public function show(Invoice $invoice)
+    {
+        $this->authorize('accessAccountingFeatures', $invoice);
 
-        $monthlyRevenue = Invoice::where('status', InvoiceStatus::PAID)
-            ->where('issue_date', '>=', Carbon::now()->subMonths(11)->startOfMonth())
-            ->selectRaw("DATE_FORMAT(issue_date, '%Y-%m') as month, SUM(grand_total) as total")
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+        $invoice->load(['patient', 'items.patientTreatment.treatment']);
 
-        $monthlyRevenueChart = [
-            'labels' => $monthlyRevenue->map(fn ($row) => Carbon::createFromFormat('Y-m', $row->month)
-                ->locale(app()->getLocale())
-                ->translatedFormat('M Y'))
-                ->values(),
-            'data' => $monthlyRevenue->pluck('total')->map(fn ($value) => (float) $value)->values(),
-        ];
-
-        $paymentMethodChart = [
-            'labels' => $paymentMethods->pluck('method')->values(),
-            'data' => $paymentMethods->pluck('total')->map(fn ($value) => (float) $value)->values(),
-        ];
-
-        $insuranceSummary = [
-            'coverage' => Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])->sum('insurance_coverage_amount'),
-            'patientPortion' => Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])->sum('patient_payable_amount'),
-            'insuredInvoices' => Invoice::whereBetween('issue_date', [$startOfMonth, $endOfMonth])
-                ->where('insurance_coverage_amount', '>', 0)
-                ->count(),
-        ];
-
-        return view('accounting.index', [
-            'metrics' => [
-                'totalCollected' => $totalCollected,
-                'collectedThisMonth' => $collectedThisMonth,
-                'outstandingReceivables' => $outstandingReceivables,
-                'invoiceCountThisMonth' => $invoiceCountThisMonth,
-            ],
-            'recentInvoices' => $recentInvoices,
-            'overdueInvoices' => $overdueInvoices,
-            'recentPayments' => $recentPayments,
-            'monthlyRevenueChart' => $monthlyRevenueChart,
-            'paymentMethodChart' => $paymentMethodChart,
-            'insuranceSummary' => $insuranceSummary,
+        return view('accounting.invoices.show', [
+            'invoice' => $invoice,
+            'statuses' => InvoiceStatus::cases(),
         ]);
     }
 }

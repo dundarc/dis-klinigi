@@ -142,11 +142,7 @@
                 </x-responsive-nav-link>
             @endcan
 
-             @can('accessAccountingFeatures')
-                        <x-nav-link :href="route('accounting')" :active="request()->routeIs('accounting')">
-                            {{ __('Muhasebe') }}
-                        </x-nav-link>
-                    @endcan
+           
 
 
 
@@ -158,6 +154,14 @@
                     {{ __('Raporlar') }}
                 </x-responsive-nav-link>
                 
+            @endcan
+
+
+            {{-- ... "Raporlar" linkinden sonra ekleyin --}}
+            @can('accessAccountingFeatures')
+                <x-nav-link :href="route('accounting.invoices.index')" :active="request()->routeIs('accounting.*')">
+                    {{ __('Muhasebe') }}
+                </x-nav-link>
             @endcan
         </div>
 

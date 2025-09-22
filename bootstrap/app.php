@@ -6,7 +6,6 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
-        // --- YENİ EKLENEN BÖLÜM ---
         // Bu, AuthServiceProvider'ın boot() metodunun
         // her zaman çalışmasını ve admin kuralımızın aktif olmasını garanti eder.
         App\Providers\AuthServiceProvider::class,
@@ -18,9 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
-                $middleware->statefulApi(); 
+        // --- BU SATIR ÇOK ÖNEMLİ ---
+        // Bu, /api/* ile başlayan rotaların da web gibi
+        // session ve cookie kullanarak kimlik doğrulaması yapmasını sağlar.
+        $middleware->statefulApi(); 
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
+
