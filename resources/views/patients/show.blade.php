@@ -1,292 +1,368 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Hasta Detay: {{ $patient->first_name }} {{ $patient->last_name }}
-            </h2>
-            @can('update', $patient)
-                <x-primary-button-link href="{{ route('patients.edit', $patient) }}">
-                    Bilgileri Düzenle
-                </x-primary-button-link>
-            @endcan
-        </div>
-    </x-slot>
-
-    {{-- TÜM SAYFAYI YÖNETEN ANA ALPINE.JS BİLEŞENİ --}}
-    <div class="py-12" x-data="patientDetailManager({
-        patientId: {{ $patient->id }},
-        treatmentsList: {{ json_encode($treatmentsList) }},
-        patientIndexUrl: '{{ route('patients.index') }}',
-        uninvoicedTreatments: {{ json_encode($uninvoicedTreatments) }}
-    })">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="space-y-6">
-                
-                <!-- Tedaviler Bölümü -->
-                <div>
-                    <x-card>
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Uygulanan Tedaviler</h3>
-                            @can('create', App\Models\PatientTreatment::class)
-                                <x-primary-button @click="$dispatch('open-modal', { name: 'add-treatment-modal' })">Yeni Tedavi Ekle</x-primary-button>
-                            @endcan
-                        </div>
-                        <ul class="divide-y dark:divide-gray-700">
-                            @forelse($patient->treatments as $pt)
-                                <li class="py-2">Diş #{{ $pt->tooth_number ?? 'N/A' }}: {{ $pt->treatment->name }} - {{ $pt->performed_at?->format('d.m.Y') }} (Dr. {{ $pt->dentist->name }})</li>
-                            @empty
-                                <li class="py-4 text-gray-500">Hastaya uygulanmış bir tedavi bulunmamaktadır.</li>
-                            @endforelse
-                        </ul>
-                    </x-card>
-                </div>
-
-                <!-- Faturalar Bölümü -->
-                <div>
-                    <x-card>
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Faturalar</h3>
-                            @can('create', App\Models\Invoice::class)
-                                <x-primary-button @click="openInvoiceModal()">Yeni Fatura Oluştur</x-primary-button>
-                            @endcan
-                        </div>
-                        <ul class="divide-y dark:divide-gray-700">
-                            @forelse($patient->invoices as $invoice)
-                                <li class="py-2 flex justify-between items-center" id="invoice-{{$invoice->id}}">
-                                    <span> <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" class="text-indigo-600 hover:underline">{{ $invoice->invoice_no }}</a> - {{ $invoice->issue_date->format('d.m.Y') }} ({{ number_format($invoice->grand_total, 2) }} TL) </span>
-                                    <div class="flex space-x-2">
-                                        @can('update', $invoice)
-                                            <x-secondary-button @click="openInvoiceModal({{ json_encode($invoice) }})">Düzenle</x-secondary-button>
-                                        @endcan
-                                        @can('delete', $invoice)
-                                            <x-danger-button @click="deleteInvoice({{ $invoice->id }})">Sil</x-danger-button>
-                                        @endcan
-                                    </div>
-                                </li>
-                            @empty
-                                <li class="py-4 text-gray-500">Hastaya ait fatura bulunmamaktadır.</li>
-                            @endforelse
-                        </ul>
-                    </x-card>
-                </div>
-
-                <!-- Dosyalar/Röntgen Bölümü -->
-                <div>
-                    <x-card>
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Dosyalar / Röntgenler</h3>
-                            @can('create', App\Models\File::class)
-                                <x-primary-button @click="$dispatch('open-modal', { name: 'upload-file-modal' })">Dosya Yükle</x-primary-button>
-                            @endcan
-                        </div>
-                        <ul class="divide-y dark:divide-gray-700">
-                            @forelse($patient->files as $file)
-                                <li class="py-2 flex justify-between items-center" id="file-{{ $file->id }}">
-                                    <a href="{{ Storage::url($file->file_path) }}" target="_blank" class="text-indigo-600 hover:underline">{{ $file->type->value }}: {{ basename($file->file_path) }}</a>
-                                    @can('delete', $file)
-                                        <x-danger-button @click="deleteFile({{ $file->id }})">Sil</x-danger-button>
-                                    @endcan
-                                </li>
-                            @empty
-                                <li class="py-4 text-gray-500">Hastaya ait dosya bulunmamaktadır.</li>
-                            @endforelse
-                        </ul>
-                    </x-card>
-                </div>
-
-                <!-- Notlar Bölümü -->
-                <div>
-                    <x-card>
-                        <form action="{{ route('patients.updateNotes', $patient) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            <div class="space-y-4">
-                                <div>
-                                    <x-input-label for="medications_used" value="Sürekli Kullandığı İlaçlar" />
-                                    <textarea name="medications_used" id="medications_used" rows="3" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">{{ old('medications_used', $patient->medications_used) }}</textarea>
-                                </div>
-                                <div>
-                                    <x-input-label for="notes" value="Genel Notlar" />
-                                    <textarea name="notes" id="notes" rows="5" class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">{{ old('notes', $patient->notes) }}</textarea>
-                                </div>
-                                <div class="flex justify-end">
-                                    <x-primary-button>Notları Kaydet</x-primary-button>
-                                </div>
+    <div class="py-10" x-data x-init="$store.prescriptions.init({ patientId: {{ $patient->id }} })">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+            <x-card>
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {{ $patient->first_name }} {{ $patient->last_name }}
+                        </h1>
+                        <dl class="mt-4 grid gap-4 text-sm text-gray-600 dark:text-gray-300 md:grid-cols-2">
+                            <div>
+                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.age') }}</dt>
+                                <dd>{{ $age ? $age . ' ' . __('patient.age_unit') : __('patient.not_available') }}</dd>
                             </div>
-                        </form>
-                    </x-card>
-                </div>
-
-                <!-- Tehlikeli Alan -->
-                @can('delete', $patient)
-                    <div class="mt-8 p-4 border border-red-300 dark:border-red-700 rounded-lg bg-red-50 dark:bg-gray-800">
-                        <h3 class="text-lg font-medium text-red-800 dark:text-red-300">Tehlikeli Alan</h3>
-                        <div class="mt-2 max-w-xl text-sm text-red-600 dark:text-red-400">
-                            <p>Bu hastayı arşivlemek, listeden kaldırır ancak verileri geri getirilebilir. Kalıcı olarak silmek ise hastaya ait tüm randevuları, faturaları ve dosyaları geri döndürülemez şekilde yok eder.</p>
-                        </div>
-                        <div class="mt-5 flex gap-4">
-                            <x-secondary-button x-on:click.prevent="$dispatch('open-modal', { name: 'confirm-patient-archive' })">
-                                Hastayı Arşivle
-                            </x-secondary-button>
-                            <x-danger-button x-on:click.prevent="$dispatch('open-modal', { name: 'confirm-patient-erasure' })">
-                                Hastayı Kalıcı Olarak Sil
-                            </x-danger-button>
+                            <div>
+                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.primary_phone') }}</dt>
+                                <dd>{{ $patient->phone_primary ?? __('patient.not_available') }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.secondary_phone') }}</dt>
+                                <dd>{{ $patient->phone_secondary ?? __('patient.not_available') }}</dd>
+                            </div>
+                            <div>
+                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.email') }}</dt>
+                                <dd>{{ $patient->email ?? __('patient.not_available') }}</dd>
+                            </div>
+                            <div class="md:col-span-2">
+                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.address') }}</dt>
+                                <dd>{{ $patient->address_text ?? __('patient.not_available') }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                    <div class="flex flex-col items-start gap-4 md:items-end">
+                        @can('update', $patient)
+                            <x-primary-button-link href="{{ route('patients.edit', $patient) }}">
+                                {{ __('patient.edit_button') }}
+                            </x-primary-button-link>
+                        @endcan
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            <p>{{ __('patient.private_insurance') }}:
+                                <span class="font-semibold text-gray-900 dark:text-gray-100">
+                                    {{ $patient->has_private_insurance ? __('patient.yes') : __('patient.no') }}
+                                </span>
+                            </p>
+                            @if($patient->consent_kvkk_at)
+                                <p>{{ __('patient.consent_date') }}: {{ $patient->consent_kvkk_at->format('d.m.Y H:i') }}</p>
+                            @endif
                         </div>
                     </div>
-                @endcan
-            </div>
+                </div>
+            </x-card>
+
+            <x-card>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ __('patient.upcoming_appointments') }}</h2>
+                </div>
+                <div class="space-y-4">
+                    @forelse($upcomingAppointments as $appointment)
+                        @php
+                            $statusValue = $appointment->status->value;
+                            $badgeClass = $appointmentStatusStyles[$statusValue] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200';
+                        @endphp
+                        <div class="rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-700">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        {{ $appointment->start_at->format('d.m.Y H:i') }}
+                                    </p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                                        {{ $appointment->dentist?->name }}
+                                    </p>
+                                </div>
+                                <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide {{ $badgeClass }}">
+                                    {{ $appointmentStatusLabels[$statusValue] ?? ucfirst($statusValue) }}
+                                </span>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('patient.no_upcoming') }}</p>
+                    @endforelse
+                </div>
+            </x-card>
+
+            <x-card>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">{{ __('patient.clinical_history') }}</h2>
+                <div class="space-y-4">
+                    @forelse($encounters as $encounter)
+                        @php
+                            $encounterDate = $encounter->arrived_at ?? $encounter->created_at;
+                            $typeLabel = $encounterTypeLabels[$encounter->type->value] ?? ucfirst($encounter->type->value);
+                            $statusLabel = $encounterStatusLabels[$encounter->status->value] ?? ucfirst($encounter->status->value);
+                        @endphp
+                        <details class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+                            <summary class="cursor-pointer list-none px-4 py-3">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            {{ $encounterDate?->format('d.m.Y H:i') ?? '—' }}
+                                        </p>
+                                        <p class="text-xs text-gray-600 dark:text-gray-300">
+                                            {{ $typeLabel }} · {{ $encounter->dentist?->name ?? __('patient.unknown_dentist') }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                                            {{ $statusLabel }}
+                                        </span>
+                                        @can('update', $encounter)
+                                            <x-secondary-button-link href="{{ route('waiting-room.action', $encounter) }}">{{ __('patient.edit') }}</x-secondary-button-link>
+                                        @endcan
+                                    </div>
+                                </div>
+                            </summary>
+                            <div class="border-t border-gray-200 px-4 py-4 dark:border-gray-700">
+                                <div class="space-y-6">
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.treatments') }}</h3>
+                                        <ul class="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                            @forelse($encounter->treatments as $treatment)
+                                                <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                                        <span>{{ $treatment->performed_at?->format('d.m.Y H:i') ?? '—' }}</span>
+                                                        <span>{{ $treatment->dentist?->name }}</span>
+                                                    </div>
+                                                    <p class="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                                                        {{ $treatment->treatment?->name ?? __('patient.unknown_treatment') }}
+                                                        @if($treatment->tooth_number)
+                                                            <span class="text-xs text-gray-500 dark:text-gray-400">#{{ $treatment->tooth_number }}</span>
+                                                        @endif
+                                                    </p>
+                                                    @if($treatment->notes)
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $treatment->notes }}</p>
+                                                    @endif
+                                                </li>
+                                            @empty
+                                                <li class="text-xs text-gray-500 dark:text-gray-400">{{ __('patient.no_treatments') }}</li>
+                                            @endforelse
+                                        </ul>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.prescriptions') }}</h3>
+                                            @can('create', \App\Models\Prescription::class)
+                                                <x-primary-button type="button" @click="$store.prescriptions.openCreate({ encounterId: {{ $encounter->id }} }); $dispatch('open-modal', { name: 'prescription-modal' })">
+                                                    {{ __('patient.add_prescription') }}
+                                                </x-primary-button>
+                                            @endcan
+                                        </div>
+                                        <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                                            @forelse($encounter->prescriptions as $prescription)
+                                                <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                                        <div>
+                                                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $prescription->dentist?->name }}</p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $prescription->created_at?->format('d.m.Y H:i') }}</p>
+                                                        </div>
+                                                        <div class="flex gap-2">
+                                                            @can('update', $prescription)
+                                                                <x-secondary-button type="button" @click="$store.prescriptions.openEdit({ id: {{ $prescription->id }} }); $dispatch('open-modal', { name: 'prescription-modal' })">
+                                                                    {{ __('patient.edit') }}
+                                                                </x-secondary-button>
+                                                            @endcan
+                                                            @can('delete', $prescription)
+                                                                <x-danger-button type="button" @click="$store.prescriptions.remove({ id: {{ $prescription->id }} })">
+                                                                    {{ __('patient.delete') }}
+                                                                </x-danger-button>
+                                                            @endcan
+                                                        </div>
+                                                    </div>
+                                                    <p class="mt-3 whitespace-pre-line text-gray-700 dark:text-gray-200">{{ $prescription->text }}</p>
+                                                </li>
+                                            @empty
+                                                <li class="text-xs text-gray-500 dark:text-gray-400">{{ __('patient.no_prescriptions') }}</li>
+                                            @endforelse
+                                        </ul>
+                                    </div>
+
+                                    @if($encounter->notes)
+                                        <div>
+                                            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.encounter_notes') }}</h3>
+                                            <p class="mt-2 whitespace-pre-line text-sm text-gray-600 dark:text-gray-300">{{ $encounter->notes }}</p>
+                                        </div>
+                                    @endif
+
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.encounter_files') }}</h3>
+                                        <ul class="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                            @forelse($encounter->files as $file)
+                                                <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                                        <a href="{{ Storage::url($file->file_path) }}" target="_blank" class="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                                                            {{ $file->type->value ? __('file.type.' . $file->type->value) : __('file.type.other') }}
+                                                        </a>
+                                                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                            {{ $file->created_at?->format('d.m.Y H:i') }} · {{ $file->uploader?->name }}
+                                                        </span>
+                                                    </div>
+                                                    @if($file->notes)
+                                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $file->notes }}</p>
+                                                    @endif
+                                                </li>
+                                            @empty
+                                                <li class="text-xs text-gray-500 dark:text-gray-400">{{ __('patient.no_files_for_encounter') }}</li>
+                                            @endforelse
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                    @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('patient.no_encounters') }}</p>
+                    @endforelse
+                </div>
+            </x-card>
+
+            <x-card>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ __('patient.general_notes') }}</h2>
+                <form method="POST" action="{{ route('patients.updateNotes', $patient) }}" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <x-input-label for="notes" value="{{ __('patient.notes_label') }}" />
+                        <textarea id="notes" name="notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $patient->notes) }}</textarea>
+                        <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="medications_used" value="{{ __('patient.medications_label') }}" />
+                        <textarea id="medications_used" name="medications_used" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">{{ old('medications_used', $patient->medications_used) }}</textarea>
+                        <x-input-error :messages="$errors->get('medications_used')" class="mt-2" />
+                    </div>
+                    <div class="flex justify-end">
+                        <x-primary-button>{{ __('patient.save_changes') }}</x-primary-button>
+                    </div>
+                </form>
+            </x-card>
         </div>
-
-        <!-- Modallar -->
-        @include('patients.partials.modal-treatment')
-        @include('patients.partials.modal-invoice')
-        @include('patients.partials.modal-file-upload')
-
-        <x-modal name="confirm-patient-archive" title="Hastayı Arşivle">
-            <div class="p-6">
-                <p>Bu hastayı arşivlemek istediğinizden emin misiniz?</p>
-                <div class="mt-6 flex justify-end">
-                    <x-secondary-button x-on:click="$dispatch('close')">İptal</x-secondary-button>
-                    <form method="POST" action="{{ route('patients.destroy', $patient) }}" class="inline">
-                        @csrf @method('DELETE')
-                        <x-danger-button class="ms-3">Evet, Arşivle</x-danger-button>
-                    </form>
-                </div>
-            </div>
-        </x-modal>
-
-        <x-modal name="confirm-patient-erasure" title="Hastayı Kalıcı Olarak Sil">
-            <div class="p-6">
-                <p>BU İŞLEM GERİ ALINAMAZ. Hastaya ait TÜM verileri kalıcı olarak silmek istediğinizden emin misiniz?</p>
-                <div class="mt-6 flex justify-end">
-                    <x-secondary-button x-on:click="$dispatch('close')">İptal</x-secondary-button>
-                    <x-danger-button @click="erasePatient" class="ms-3">Evet, Kalıcı Olarak Sil</x-danger-button>
-                </div>
-            </div>
-        </x-modal>
     </div>
+
+    <x-modal name="prescription-modal" maxWidth="3xl">
+        <div class="p-6 space-y-4" x-data>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100" x-text="$store.prescriptions.heading"></h2>
+            <form class="space-y-4" @submit.prevent="$store.prescriptions.submit()">
+                <input type="hidden" x-model="$store.prescriptions.form.encounter_id">
+                <div>
+                    <x-input-label for="prescription-text" value="{{ __('patient.prescription_text_label') }}" />
+                    <textarea id="prescription-text" rows="6" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500" x-model="$store.prescriptions.form.text" required></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <x-secondary-button type="button" @click="$dispatch('close')">{{ __('patient.cancel') }}</x-secondary-button>
+                    <x-primary-button type="submit" x-bind:disabled="$store.prescriptions.isSubmitting">
+                        <span x-show="!$store.prescriptions.isSubmitting">{{ __('patient.save_prescription') }}</span>
+                        <span x-show="$store.prescriptions.isSubmitting">{{ __('patient.saving') }}</span>
+                    </x-primary-button>
+                </div>
+            </form>
+        </div>
+    </x-modal>
 
     @push('scripts')
         <script>
-            // JAVASCRIPT'İ DOĞRUDAN BLADE İÇİNE GÖMÜYORUZ
-            function patientDetailManager(config) {
-                return {
-                    // --- STATE (DURUM) ---
-                    tab: 'treatments',
-                    invoice: {},
-                    treatmentsList: config.treatmentsList || [],
-                    
-                    // --- METODLAR ---
-                    openInvoiceModal(invoiceData = null) {
-                        if (invoiceData && invoiceData.id) { // Düzenleme Modu
-                            this.invoice = { 
-                                ...invoiceData, 
-                                issue_date: invoiceData.issue_date.slice(0, 10), 
-                                items: invoiceData.items ? invoiceData.items.map(item => ({...item})) : [] 
-                            };
-                        } else { // Oluşturma Modu
-                            this.invoice = { 
-                                id: null, 
-                                patient_id: config.patientId, 
-                                issue_date: new Date().toISOString().slice(0, 10), 
-                                treatment_ids: [], 
-                                items: [] 
-                            };
-                        }
-                        this.$dispatch('open-modal', { name: 'invoice-form-modal' });
+            document.addEventListener('alpine:init', () => {
+                Alpine.store('prescriptions', {
+                    patientId: null,
+                    form: { id: null, encounter_id: null, text: '' },
+                    heading: '',
+                    isSubmitting: false,
+                    init(config) {
+                        this.patientId = config.patientId;
                     },
-                    updatePrice(selectElement) {
-                        const selectedOption = selectElement.options[selectElement.selectedIndex];
-                        const priceInput = selectElement.closest('form').querySelector('#unit_price');
-                        if (priceInput && selectedOption) priceInput.value = selectedOption.dataset.price || 0;
+                    resetForm() {
+                        this.form = { id: null, encounter_id: null, text: '' };
                     },
-                    
-                    // --- API İŞLEMLERİ ---
-                    async handleResponse(response) {
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.message || 'Bir hata oluştu.');
-                        }
-                        return response.json();
+                    openCreate({ encounterId }) {
+                        this.resetForm();
+                        this.form.encounter_id = encounterId || null;
+                        this.heading = '{{ __('patient.add_prescription_heading') }}';
                     },
-                    handleError(error) {
-                        console.error('API Hatası:', error);
-                        const message = error.errors ? Object.values(error.errors).flat().join('\n') : error.message;
-                        alert(message);
-                    },
-                    submitTreatment(form) {
-                        const data = {
-                            patient_id: config.patientId,
-                            treatment_id: form.querySelector('[name=treatment_id]').value,
-                            tooth_number: form.querySelector('[name=tooth_number]').value,
-                            unit_price: form.querySelector('[name=unit_price]').value,
-                            vat: 20
-                        };
-                        fetch('/api/v1/patient-treatments', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                            body: JSON.stringify(data)
-                        }).then(this.handleResponse).then(() => { alert('Tedavi başarıyla eklendi.'); location.reload(); }).catch(this.handleError);
-                    },
-                    submitInvoice() {
-                        const isEdit = !!this.invoice.id;
-                        const url = isEdit ? `/api/v1/invoices/${this.invoice.id}` : '/api/v1/invoices';
-                        const method = isEdit ? 'PUT' : 'POST';
-                        let payload;
-                        if (isEdit) {
-                            payload = { patient_id: this.invoice.patient_id, issue_date: this.invoice.issue_date, items: this.invoice.items };
-                        } else {
-                            if (this.invoice.treatment_ids.length === 0) return alert('Lütfen faturalandırılacak en az bir tedavi seçin.');
-                            payload = { patient_id: this.invoice.patient_id, issue_date: this.invoice.issue_date, treatment_ids: this.invoice.treatment_ids.map(id => parseInt(id, 10)) };
-                        }
-                        fetch(url, {
-                            method: method,
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                            body: JSON.stringify(payload)
+                    openEdit({ id }) {
+                        this.isSubmitting = true;
+                        fetch(`/api/v1/prescriptions/${id}`, {
+                            headers: { 'Accept': 'application/json' },
                         })
-                        .then(res => res.json().then(data => ({ok: res.ok, data}))).then(({ok, data}) => {
-                            if (!ok) throw new Error(data.message || 'Bir hata oluştu');
-                            alert(isEdit ? 'Fatura güncellendi!' : 'Fatura oluşturuldu!');
-                            window.location.reload();
-                        }).catch(this.handleError);
+                            .then(response => response.json())
+                            .then(data => {
+                                this.form = { id: data.id, encounter_id: data.encounter_id, text: data.text };
+                                this.heading = '{{ __('patient.edit_prescription_heading') }}';
+                            })
+                            .catch(() => alert('{{ __('patient.prescription_load_error') }}'))
+                            .finally(() => { this.isSubmitting = false; });
                     },
-                    submitFile(form) {
-                        const formData = new FormData(form);
-                        fetch(`/api/v1/patients/${config.patientId}/files`, {
-                            method: 'POST',
-                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                            body: formData
-                        }).then(this.handleResponse).then(() => { alert('Dosya başarıyla yüklendi.'); location.reload(); }).catch(this.handleError);
+                    submit() {
+                        if (!this.form.text) {
+                            alert('{{ __('patient.prescription_text_required') }}');
+                            return;
+                        }
+
+                        const isEdit = !!this.form.id;
+                        const url = isEdit
+                            ? `/api/v1/prescriptions/${this.form.id}`
+                            : '/api/v1/prescriptions';
+                        const method = isEdit ? 'PUT' : 'POST';
+                        const payload = {
+                            text: this.form.text,
+                        };
+
+                        if (!isEdit) {
+                            payload.patient_id = this.patientId;
+                            payload.encounter_id = this.form.encounter_id;
+                        } else if (this.form.encounter_id !== undefined) {
+                            payload.encounter_id = this.form.encounter_id;
+                        }
+
+                        this.isSubmitting = true;
+
+                        fetch(url, {
+                            method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                            body: JSON.stringify(payload),
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.json().then(data => Promise.reject(data));
+                                }
+
+                                return response.json();
+                            })
+                            .then(() => {
+                                window.location.reload();
+                            })
+                            .catch(error => {
+                                const message = error?.message || '{{ __('patient.prescription_save_error') }}';
+                                alert(message);
+                            })
+                            .finally(() => {
+                                this.isSubmitting = false;
+                            });
                     },
-                    deleteInvoice(invoiceId) {
-                        if (!confirm('Bu faturayı silmek istediğinizden emin misiniz?')) return;
-                        fetch(`/api/v1/invoices/${invoiceId}`, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } })
-                            .then(response => { if (!response.ok) throw new Error('Fatura silinemedi.'); document.getElementById(`invoice-${invoiceId}`)?.remove(); })
-                            .catch(this.handleError);
-                    },
-                    deleteFile(fileId) {
-                        if (!confirm('Bu dosyayı kalıcı olarak silmek istediğinizden emin misiniz?')) return;
-                        fetch(`/api/v1/files/${fileId}`, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } })
-                            .then(response => { if (!response.ok) throw new Error('Dosya silinemedi.'); document.getElementById(`file-${fileId}`)?.remove(); })
-                            .catch(this.handleError);
-                    },
-                    erasePatient(event) {
-                        const button = event.target;
-                        button.disabled = true; button.textContent = 'Siliniyor...';
-                        fetch(`/api/v1/admin/patients/${config.patientId}/erase`, {
+                    remove({ id }) {
+                        if (!confirm('{{ __('patient.confirm_delete_prescription') }}')) {
+                            return;
+                        }
+
+                        fetch(`/api/v1/prescriptions/${id}`, {
                             method: 'DELETE',
-                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                        }).then(this.handleResponse).then(data => {
-                            alert(data.message);
-                            window.location.href = config.patientIndexUrl;
-                        }).catch(error => {
-                            this.handleError(error);
-                            button.disabled = false; button.textContent = 'Evet, Kalıcı Olarak Sil';
-                        });
-                    }
-                }
-            }
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    return Promise.reject();
+                                }
+
+                                window.location.reload();
+                            })
+                            .catch(() => alert('{{ __('patient.prescription_delete_error') }}'));
+                    },
+                });
+            });
         </script>
     @endpush
 </x-app-layout>
-

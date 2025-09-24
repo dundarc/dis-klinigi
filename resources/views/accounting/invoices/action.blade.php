@@ -15,7 +15,6 @@
             @endif
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Sol Taraf: Fatura Detayları -->
                 <div class="md:col-span-2 space-y-6">
                     <x-card>
                         <h3 class="text-lg font-medium mb-4">Hasta Bilgileri</h3>

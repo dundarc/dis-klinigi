@@ -29,6 +29,12 @@ class User extends Authenticatable
 {
     return $this->hasMany(\App\Models\Notification::class);
 }
+
+    public function hasRole(UserRole $role): bool
+    {
+        return $this->role === $role;
+    }
+
     // Relationships
     public function workingHours() { return $this->hasMany(WorkingHour::class); }
     public function unavailabilities() { return $this->hasMany(UserUnavailability::class); }

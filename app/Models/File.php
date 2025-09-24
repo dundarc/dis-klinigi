@@ -17,7 +17,8 @@ class File extends Model
      */
     protected $fillable = [
         'patient_id',
-        'uploaded_by', // This field has been added
+        'encounter_id',
+        'uploaded_by',
         'type',
         'file_path',
         'mime',
@@ -37,17 +38,16 @@ class File extends Model
         ];
     }
 
-    /**
-     * Get the patient that owns the file.
-     */
     public function patient()
     {
         return $this->belongsTo(Patient::class);
     }
 
-    /**
-     * Get the user who uploaded the file.
-     */
+    public function encounter()
+    {
+        return $this->belongsTo(Encounter::class);
+    }
+
     public function uploader()
     {
         return $this->belongsTo(User::class, 'uploaded_by');

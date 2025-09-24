@@ -36,10 +36,10 @@
 
                     {{-- Sadece Admin ve Muhasebeci görebilir --}}
                     @can('accessAccountingFeatures')
-                        <x-nav-link :href="route('reports')" :active="request()->routeIs('reports')">
-                            {{ __('Raporlar') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('accounting.main')" :active="request()->routeIs('accounting.*')">
+                        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+    Raporlar
+</x-nav-link>
+                        <x-nav-link :href="route('accounting.index')" :active="request()->routeIs('accounting.*')">
                             {{ __('Muhasebe') }}
                         </x-nav-link>
                     @endcan
@@ -49,7 +49,7 @@
             <!-- Sağ Taraftaki Butonlar ve Kullanıcı Menüsü -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <!-- Bildirimler Alanı -->
-                <div class="ms-3 relative" x-data="{ open: false, notifications: [], unreadCount: 0, loading: true }" 
+                <div class="ms-3 relative" x-data="{ open: false, notifications: [], unreadCount: 0, loading: true }"
                     x-init="
                         fetch('/api/v1/notifications', { headers: { 'Accept': 'application/json' } })
                             .then(response => response.json())
@@ -80,7 +80,7 @@
                                  <p class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">Yeni bildirim yok.</p>
                             </template>
                             <template x-for="notification in notifications" :key="notification.id">
-                                <a :href="notification.link_url || '#'" class="flex px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <a :href="notification.link_url || '#" class="flex px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="w-full">
                                         <div class="text-gray-500 text-sm mb-1.5 dark:text-gray-400" x-text="notification.title"></div>
                                         <div class="text-xs text-gray-900 dark:text-white" x-text="notification.body"></div>
@@ -117,12 +117,11 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        {{-- YENİ: Sistem Ayarları Linki --}}
-                        @can('accessSystemSettings')
-                            <x-dropdown-link :href="route('system.index')">
-                                {{ __('Sistem Ayarları') }}
-                            </x-dropdown-link>
-                        @endcan
+                        @if(auth()->user()->role === \App\Enums\UserRole::ADMIN)
+                        <x-dropdown-link :href="route('system.index')">
+                            {{ __('Sistem Ayarları') }}
+                        </x-dropdown-link>
+                        @endif
 
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Profile') }}
@@ -171,10 +170,10 @@
                 </x-responsive-nav-link>
             @endcan
             @can('accessAccountingFeatures')
-                <x-responsive-nav-link :href="route('reports')" :active="request()->routeIs('reports')">
-                    {{ __('Raporlar') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('accounting.main')" :active="request()->routeIs('accounting.*')">
+                <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+    Raporlar
+</x-nav-link>
+                <x-responsive-nav-link :href="route('accounting.index')" :active="request()->routeIs('accounting.*')">
                     {{ __('Muhasebe') }}
                 </x-responsive-nav-link>
             @endcan
@@ -188,6 +187,11 @@
             </div>
 
             <div class="mt-3 space-y-1">
+                @if(auth()->user()->role === \App\Enums\UserRole::ADMIN)
+                <x-responsive-nav-link :href="route('system.index')">
+                    {{ __('Sistem Ayarları') }}
+                </x-responsive-nav-link>
+                @endif
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>

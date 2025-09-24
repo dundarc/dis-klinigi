@@ -16,9 +16,10 @@ class StorePatientFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,dicom', 'max:10240'], // Max 10MB
+            'file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf,dicom', 'max:10240'],
             'type' => ['required', new Enum(FileType::class)],
             'notes' => ['nullable', 'string'],
+            'encounter_id' => ['nullable', 'integer', 'exists:encounters,id'],
         ];
     }
 }

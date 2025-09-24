@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -9,11 +9,14 @@ use App\Http\Controllers\Api\V1\AppointmentReferralController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\PatientTreatmentController;
 use App\Http\Controllers\Api\V1\PatientFileController;
+use App\Http\Controllers\Api\V1\PrescriptionController;
 use App\Http\Controllers\Api\V1\Admin\PatientAssignmentController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Accounting\InvoiceManagementController;
 use App\Http\Controllers\Api\V1\Accounting\FinancialReportController;
 use App\Http\Controllers\Api\V1\Admin\PatientErasureController;
+use App\Http\Controllers\PatientController; // EKLENDÄ°
+use App\Http\Controllers\PatientController as ApiPatientController; // API Controller iÃ§in alias
 
 /*
 |--------------------------------------------------------------------------
@@ -26,48 +29,54 @@ use App\Http\Controllers\Api\V1\Admin\PatientErasureController;
 |
 */
 
-// Herkese açık rotalar (Giriş)
+// Herkese aÃ§Ä±k rotalar (GiriÅŸ)
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
 });
 
-// Kimlik doğrulaması gerektiren rotalar
+// Kimlik doÄŸrulamasÄ± gerektiren rotalar
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    // Auth Rotaları
+    // Auth RotalarÄ±
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
 
-    // Randevu Rotaları
+    // Randevu RotalarÄ±
     Route::apiResource('appointments', AppointmentController::class);
+    Route::apiResource('prescriptions', PrescriptionController::class)->except(['index']);
     Route::post('appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn']);
     Route::post('appointments/{appointment}/status', [AppointmentController::class, 'updateStatus']);
     Route::post('appointments/{appointment}/call', [AppointmentController::class, 'call']);
 
-    // Vaka (Encounter) Rotaları
+    // Vaka (Encounter) RotalarÄ±
     Route::post('encounters/{encounter}/status', [EncounterController::class, 'updateStatus']);
     Route::post('encounters/{encounter}/assign-doctor', [EncounterController::class, 'assignDoctor']);
     Route::post('encounters/{encounter}/assign-and-process', [EncounterController::class, 'assignAndProcess']);
 
-    // Randevu Sevk Rotaları
+    // Randevu Sevk RotalarÄ±
     Route::post('appointments/{appointment}/refer', [AppointmentReferralController::class, 'store']);
     Route::post('appointments/{appointment}/accept-referral', [AppointmentReferralController::class, 'update']);
     
-    // Fatura, Tedavi ve Dosya Rotaları
+    // Fatura, Tedavi ve Dosya RotalarÄ±
     Route::apiResource('invoices', InvoiceController::class);
     Route::post('patient-treatments', [PatientTreatmentController::class, 'store']);
     Route::post('patients/{patient}/files', [PatientFileController::class, 'store']);
     Route::delete('files/{file}', [PatientFileController::class, 'destroy']);
     
-    // Admin'e özel rotalar
+    // Admin'e Ã¶zel rotalar
     Route::prefix('admin')->middleware('can:accessAdminFeatures')->group(function () {
         Route::post('assign-patient', [PatientAssignmentController::class, 'store']);
         Route::delete('patients/{patient}/erase', [PatientErasureController::class, 'erase']);
     });
     
-    // Tüm kullanıcılar için bildirim rotaları
+    // TÃ¼m kullanÄ±cÄ±lar iÃ§in bildirim rotalarÄ±
     Route::get('notifications', [NotificationController::class, 'index']);
     
-    // Muhasebe ve Admin'e özel rotalar
+
+        Route::get('/patients/{patient}/uninvoiced-treatments', [PatientController::class, 'getUninvoicedTreatments']);
+        Route::get('/patients/{patient}/uninvoiced-treatments', [ApiPatientController::class, 'getUninvoicedTreatments']);
+
+
+    // Muhasebe ve Admin'e Ã¶zel rotalar
     Route::prefix('accounting')->middleware('can:accessAccountingFeatures')->group(function () {
         Route::patch('invoices/{invoice}/status', [InvoiceManagementController::class, 'updateStatus']);
         Route::patch('invoices/{invoice}/insurance', [InvoiceManagementController::class, 'updateInsurance']);

@@ -36,8 +36,16 @@ class Invoice extends Model
         ];
     }
 
+    
+
     // Relationships
     public function patient() { return $this->belongsTo(Patient::class); }
     public function items() { return $this->hasMany(InvoiceItem::class); }
     public function payments() { return $this->hasMany(Payment::class); }
+
+    // Scopes
+    public function scopeStatus($query, InvoiceStatus $status)
+    {
+        return $query->where('status', $status);
+    }
 }

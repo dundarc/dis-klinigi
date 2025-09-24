@@ -7,44 +7,58 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Sol Taraf: Özet Bilgiler -->
-                <div class="lg:col-span-2">
-                    <x-card>
-                        <h3 class="text-lg font-semibold border-b pb-2 mb-4 dark:border-gray-700">Klinik Özet Bilgileri</h3>
-                        <div class="space-y-3 text-gray-700 dark:text-gray-300">
-                            <p><strong>Klinik Adı:</strong> {{ $clinicDetails['name'] ?? 'Belirtilmemiş' }}</p>
-                            <p><strong>Adres:</strong> {{ $clinicDetails['address'] ?? '' }}, {{ $clinicDetails['district'] ?? '' }}/{{ $clinicDetails['city'] ?? '' }}</p>
-                            <p><strong>Vergi Dairesi:</strong> {{ $clinicDetails['tax_office'] ?? '' }} - <strong>VKN:</strong> {{ $clinicDetails['tax_id'] ?? '' }}</p>
-                            <p><strong>Telefon:</strong> {{ $clinicDetails['phone'] ?? '' }}</p>
-                            <p><strong>E-posta:</strong> {{ $clinicDetails['email'] ?? '' }}</p>
-                            <p><strong>Web Sitesi:</strong> <a href="{{ $clinicDetails['website'] ?? '#' }}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ $clinicDetails['website'] ?? '' }}</a></p>
-                        </div>
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900 dark:text-gray-100">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Özet Bilgiler</h3>
+                    <div class="mt-4 space-y-2">
+                        <p><strong>Klinik Adı:</strong> {{ $settings['clinic_name'] ?? '' }}</p>
+                        <p><strong>Adres:</strong> {{ $settings['clinic_city'] ?? '' }}, {{ $settings['clinic_district'] ?? '' }}</p>
+                        <p><strong>Vergi Kimlik Numarası:</strong> {{ $settings['clinic_tax_id'] ?? '' }}</p>
+                        <p><strong>Vergi Dairesi:</strong> {{ $settings['clinic_tax_office'] ?? '' }}</p>
+                        <p><strong>Klinik Telefon Numarası:</strong> {{ $settings['clinic_phone'] ?? '' }}</p>
+                        <p><strong>Klinik E-posta Adresi:</strong> {{ $settings['clinic_email'] ?? '' }}</p>
+                        <p><strong>Klinik Web Adresi:</strong> {{ $settings['clinic_web'] ?? '' }}</p>
+                        <hr class="my-4">
+                        <p><strong>Yönetici:</strong> {{ $userCounts[App\Enums\UserRole::ADMIN->value] ?? 0 }} adet</p>
+                        <p><strong>Doktor:</strong> {{ $userCounts[App\Enums\UserRole::DENTIST->value] ?? 0 }} adet</p>
+                        <p><strong>Resepsiyonist:</strong> {{ $userCounts[App\Enums\UserRole::RECEPTIONIST->value] ?? 0 }} adet</p>
+                        <p><strong>Muhasebeci:</strong> {{ $userCounts[App\Enums\UserRole::ACCOUNTANT->value] ?? 0 }} adet</p>
+                    </div>
+                </div>
+            </div>
 
-                        <h3 class="text-lg font-semibold border-b pb-2 mt-8 mb-4 dark:border-gray-700">Kullanıcı İstatistikleri</h3>
-                        <div class="space-y-3 text-gray-700 dark:text-gray-300">
-                            <p><strong>Yönetici:</strong> {{ $userCounts[App\Enums\UserRole::ADMIN->value] ?? 0 }} adet</p>
-                            <p><strong>Doktor:</strong> {{ $userCounts[App\Enums\UserRole::DENTIST->value] ?? 0 }} adet</p>
-                            <p><strong>Resepsiyonist:</strong> {{ $userCounts[App\Enums\UserRole::RECEPTIONIST->value] ?? 0 }} adet</p>
-                            <p><strong>Muhasebeci:</strong> {{ $userCounts[App\Enums\UserRole::ACCOUNTANT->value] ?? 0 }} adet</p>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Kullanıcılar Card -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Kullanıcılar</h3>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Kullanıcıları yönetin, yeni kullanıcılar ekleyin veya mevcut kullanıcıları düzenleyin.</p>
+                        <div class="mt-4">
+                            <a href="{{ route('system.users.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Kullanıcıları Yönet</a>
                         </div>
-                    </x-card>
+                    </div>
                 </div>
 
-                <!-- Sağ Taraf: Yönetim Kartları -->
-                <div class="space-y-6">
-                    <a href="{{ route('system.details') }}" class="block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <h5 class="mb-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Klinik Detayları</h5>
-                        <p class="font-normal text-gray-700 dark:text-gray-400">Klinik adı, adres ve vergi bilgilerini düzenleyin.</p>
-                    </a>
-                    <a href="{{ route('system.users.index') }}" class="block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <h5 class="mb-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Kullanıcılar</h5>
-                        <p class="font-normal text-gray-700 dark:text-gray-400">Yeni kullanıcı ekleyin, mevcutları düzenleyin veya silin.</p>
-                    </a>
-                    <a href="{{ route('system.backup') }}" class="block p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <h5 class="mb-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Yedekleme İşlemleri</h5>
-                        <p class="font-normal text-gray-700 dark:text-gray-400">Sistem verilerini yedekleyin, geri yükleyin veya temizleyin.</p>
-                    </a>
+                <!-- Klinik Detayları Card -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Klinik Detayları</h3>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Klinik adı, adres ve vergi bilgileri gibi detayları düzenleyin.</p>
+                        <div class="mt-4">
+                            <a href="{{ route('system.details') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Detayları Düzenle</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yedekleme Card -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Yedekleme</h3>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Veritabanı yedekleme ve geri yükleme işlemlerini yapın.</p>
+                        <div class="mt-4">
+                            <a href="{{ route('system.backup') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Yedekleme İşlemleri</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

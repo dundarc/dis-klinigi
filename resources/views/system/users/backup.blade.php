@@ -39,6 +39,17 @@
                         <div class="flex justify-between items-center p-2 border rounded-md dark:border-gray-700">
                             <span class="font-mono text-sm">{{ $backup->path() }}</span>
                             <span class="text-sm text-gray-500">{{ $backup->sizeInBytes() / 1024 / 1024 > 1 ? number_format($backup->sizeInBytes() / 1024 / 1024, 2) . ' MB' : number_format($backup->sizeInBytes() / 1024, 2) . ' KB' }}</span>
+                            <div>
+                                <span class="font-mono text-sm">{{ $backup->path() }}</span>
+                                <span class="text-sm text-gray-500 ml-4">{{ $backup->sizeInBytes() / 1024 / 1024 > 1 ? number_format($backup->sizeInBytes() / 1024 / 1024, 2) . ' MB' : number_format($backup->sizeInBytes() / 1024, 2) . ' KB' }}</span>
+                            </div>
+                            <div>
+                                {{-- <form method="POST" action="{{ route('system.backup.restore') }}" onsubmit="return confirm('Bu yedekten geri dönmek istediğinize emin misiniz? Mevcut verileriniz bu yedekle değiştirilecektir!')">
+                                    @csrf
+                                    <input type="hidden" name="backup_path" value="{{ $backup->path() }}">
+                                    <x-secondary-button type="submit">Geri Yükle</x-secondary-button>
+                                </form> --}}
+                            </div>
                         </div>
                      @empty
                         <p class="text-sm text-gray-500">Henüz hiç yedek oluşturulmamış.</p>

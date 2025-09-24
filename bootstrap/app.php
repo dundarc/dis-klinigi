@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Bu, /api/* ile başlayan rotaların da web gibi
         // session ve cookie kullanarak kimlik doğrulaması yapmasını sağlar.
         $middleware->statefulApi(); 
+
+        $middleware->alias([
+            'accounting.access' => \App\Http\Middleware\CheckAccountingAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

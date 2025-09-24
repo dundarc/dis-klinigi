@@ -11,6 +11,7 @@ use App\Models\Appointment;
 use App\Enums\UserRole;
 use App\Enums\EncounterStatus;
 use App\Enums\EncounterType;
+use App\Enums\FileType;
 use App\Http\Requests\StoreEmergencyRequest;
 use App\Http\Requests\StoreAppointmentRequest;
 use Illuminate\Validation\Rules\Enum;
@@ -22,21 +23,37 @@ class WaitingRoomController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Bekleme Odası ana sayfasını gösterir.
+     * Bekleme OdasÄ± ana sayfasÄ±nÄ± gÃ¶sterir.
      */
     public function index()
     {
-        return view('waiting-room.index');
+        $doctorEncounters = collect();
+        $user = auth()->user();
+
+        if ($user && $user->role === UserRole::DENTIST) {
+            $doctorEncounters = Encounter::with(['patient:id,first_name,last_name', 'appointment:id,start_at'])
+                ->where('dentist_id', $user->id)
+                ->whereIn('status', [EncounterStatus::WAITING, EncounterStatus::IN_SERVICE])
+                ->whereIn('type', [EncounterType::SCHEDULED, EncounterType::EMERGENCY, EncounterType::WALK_IN])
+                ->orderByRaw("CASE type WHEN 'emergency' THEN 1 WHEN 'walk_in' THEN 2 ELSE 3 END")
+                ->orderBy('arrived_at')
+                ->orderBy('created_at')
+                ->get();
+        }
+
+        return view('waiting-room.index', [
+            'doctorEncounters' => $doctorEncounters,
+        ]);
     }
 
     /**
-     * Kliniğe giriş yapmış ve henüz tamamlanmamış SADECE RANDEVULU hastaları listeler.
+     * KliniÄŸe giriÅŸ yapmÄ±ÅŸ ve henÃ¼z tamamlanmamÄ±ÅŸ SADECE RANDEVULU hastalarÄ± listeler.
      */
     public function appointments()
     {
         $waitingEncounters = Encounter::with(['patient', 'dentist', 'appointment'])
-            // DÜZELTME: Sadece 'bekliyor' değil, 'işlemde' olanları da dahil ederek
-            // tamamlanmış veya iptal edilmiş olanları bu listeden çıkarıyoruz.
+            // DÃœZELTME: Sadece 'bekliyor' deÄŸil, 'iÅŸlemde' olanlarÄ± da dahil ederek
+            // tamamlanmÄ±ÅŸ veya iptal edilmiÅŸ olanlarÄ± bu listeden Ã§Ä±karÄ±yoruz.
             ->whereIn('status', [EncounterStatus::WAITING, EncounterStatus::IN_SERVICE])
             ->where('type', EncounterType::SCHEDULED)
             ->orderBy('arrived_at', 'asc')
@@ -46,7 +63,7 @@ class WaitingRoomController extends Controller
     }
 
     /**
-     * Bekleme odası üzerinden yeni randevu oluşturma formunu gösterir.
+     * Bekleme odasÄ± Ã¼zerinden yeni randevu oluÅŸturma formunu gÃ¶sterir.
      */
     public function createAppointment()
     {
@@ -59,16 +76,16 @@ class WaitingRoomController extends Controller
     }
 
     /**
-     * Bekleme odası formundan gelen yeni randevuyu kaydeder.
+     * Bekleme odasÄ± formundan gelen yeni randevuyu kaydeder.
      */
     public function storeAppointment(StoreAppointmentRequest $request)
     {
         Appointment::create($request->validated());
-        return redirect()->route('appointments.today')->with('success', 'Randevu başarıyla oluşturuldu.');
+        return redirect()->route('appointments.today')->with('success', 'Randevu baÅŸarÄ±yla oluÅŸturuldu.');
     }
 
     /**
-     * Randevuları arama formunu ve sonuçlarını gösterir.
+     * RandevularÄ± arama formunu ve sonuÃ§larÄ±nÄ± gÃ¶sterir.
      */
     public function searchAppointments(Request $request)
     {
@@ -102,7 +119,7 @@ class WaitingRoomController extends Controller
     }
 
     /**
-     * Acil bekleyen hastaların listesini gösterir.
+     * Acil bekleyen hastalarÄ±n listesini gÃ¶sterir.
      */
     public function emergency()
     {
@@ -117,7 +134,7 @@ class WaitingRoomController extends Controller
     }
     
     /**
-     * Yeni acil hasta kayıt formunu gösterir.
+     * Yeni acil hasta kayÄ±t formunu gÃ¶sterir.
      */
     public function createEmergency()
     {
@@ -130,7 +147,7 @@ class WaitingRoomController extends Controller
     }
     
     /**
-     * Yeni acil hasta kaydını veritabanına ekler.
+     * Yeni acil hasta kaydÄ±nÄ± veritabanÄ±na ekler.
      */
     public function storeEmergency(StoreEmergencyRequest $request)
     {
@@ -140,25 +157,34 @@ class WaitingRoomController extends Controller
             'status' => EncounterStatus::WAITING,
             'arrived_at' => now(),
         ]);
-        return redirect()->route('waiting-room.emergency')->with('success', 'Acil hasta kaydı başarıyla oluşturuldu.');
+        return redirect()->route('waiting-room.emergency')->with('success', 'Acil hasta kaydÄ± baÅŸarÄ±yla oluÅŸturuldu.');
     }
 
     /**
-     * Belirli bir ziyaret (encounter) için işlem ekranını gösterir.
+     * Belirli bir ziyaret (encounter) iÃ§in iÅŸlem ekranÄ±nÄ± gÃ¶sterir.
      */
     public function action(Encounter $encounter)
     {
         $this->authorize('update', $encounter);
-        $encounter->load(['patient', 'dentist', 'treatments.treatment', 'prescriptions']);
-        
+
+        $encounter->load([
+            'patient',
+            'dentist',
+            'treatments.treatment',
+            'treatments.dentist',
+            'prescriptions.dentist',
+            'files.uploader',
+        ]);
+
         $statuses = EncounterStatus::cases();
         $treatments = Treatment::orderBy('name')->get();
+        $fileTypes = FileType::cases();
 
-        return view('waiting-room.action', compact('encounter', 'statuses', 'treatments'));
+        return view('waiting-room.action', compact('encounter', 'statuses', 'treatments', 'fileTypes'));
     }
 
     /**
-     * Ziyaret (encounter) bilgilerini, tedavileri ve reçeteleri günceller.
+     * Ziyaret (encounter) bilgilerini, tedavileri ve reÃ§eteleri gÃ¼nceller.
      */
     public function updateAction(Request $request, Encounter $encounter)
     {
@@ -202,11 +228,11 @@ class WaitingRoomController extends Controller
             }
         });
 
-        return redirect()->route('waiting-room.index')->with('success', 'Ziyaret kaydı başarıyla güncellendi.');
+        return redirect()->route('waiting-room.index')->with('success', 'Ziyaret kaydÄ± baÅŸarÄ±yla gÃ¼ncellendi.');
     }
 
     /**
-     * O gün tamamlanmış işlemlerin listesini gösterir.
+     * O gÃ¼n tamamlanmÄ±ÅŸ iÅŸlemlerin listesini gÃ¶sterir.
      */
     public function completed()
     {

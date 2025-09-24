@@ -32,6 +32,7 @@
                                     <td class="px-6 py-4 text-right space-x-2">
                                         <form action="{{ route('accounting.trash.restore', $invoice->id) }}" method="POST" class="inline">
                                             @csrf
+                                            @method('PUT') {{-- RESTful prensiplere uygunluk için PUT metodu eklendi --}}
                                             <x-secondary-button type="submit">Geri Yükle</x-secondary-button>
                                         </form>
                                         <form action="{{ route('accounting.trash.force-delete', $invoice->id) }}" method="POST" class="inline" onsubmit="return confirm('Bu faturayı KALICI OLARAK silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');">

@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Enums\AppointmentStatus;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rules\Enum;
 
 class UpdateAppointmentRequest extends FormRequest
@@ -10,6 +12,19 @@ class UpdateAppointmentRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()->can('update', $this->route('appointment'));
+    }
+
+    protected function prepareForValidation(): void
+    {
+        foreach (['start_at', 'end_at'] as $field) {
+            $value = $this->input($field);
+
+            if ($value && str_contains($value, 'T')) {
+                $this->merge([
+                    $field => Carbon::parse($value)->format('Y-m-d H:i:s'),
+                ]);
+            }
+        }
     }
 
     public function rules(): array

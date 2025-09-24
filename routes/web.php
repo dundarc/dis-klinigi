@@ -1,15 +1,16 @@
-<?php
+﻿<?php
 
-use App\Http\Controllers\SystemSettingsController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\AppointmentCheckinController;
 use App\Http\Controllers\CalendarController;
-use App\Http\Controllers\WaitingRoomController;
-use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PdfController;
-use App\Http\Controllers\AppointmentCheckinController;
-use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SystemSettingsController;
+use App\Http\Controllers\WaitingRoomController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,9 +27,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     // Profil Rotaları
@@ -38,9 +39,19 @@ Route::middleware('auth')->group(function () {
 
     // Takvim
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
-    
+    Route::get('/calendar/show/{appointment}', [CalendarController::class, 'show'])->name('calendar.show');
+    Route::put('/calendar/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
+    Route::delete('/calendar/{appointment}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
+
     // Raporlar
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/financial-summary', [ReportController::class, 'financialSummary'])->name('financial-summary');
+        Route::get('/dentist-performance', [ReportController::class, 'dentistPerformance'])->name('dentist-performance');
+        Route::get('/treatment-revenue', [ReportController::class, 'treatmentRevenue'])->name('treatment-revenue');
+        Route::get('/appointment-analysis', [ReportController::class, 'appointmentAnalysis'])->name('appointment-analysis');
+        Route::get('/new-patient-acquisition', [ReportController::class, 'newPatientAcquisition'])->name('new-patient-acquisition');
+    });
 
     // Hasta Yönetimi
     Route::resource('patients', PatientController::class);
@@ -53,25 +64,42 @@ Route::middleware('auth')->group(function () {
     // "Günün Randevuları" ve Check-in İşlemleri
     Route::get('/todays-appointments', [AppointmentCheckinController::class, 'index'])->name('appointments.today');
     Route::post('/appointments/{appointment}/check-in', [AppointmentCheckinController::class, 'checkIn'])->name('appointments.checkin');
-    
 
-    //Burası silinecek///
-    Route::get('/system/index', [SystemSettingsController::class, 'index'])->name('system.index');
-    Route::get('/system/details', [SystemSettingsController::class, 'index'])->name('system.details');
-    Route::get('/system/users', [SystemSettingsController::class, 'index'])->name('system.users.index');
-    Route::get('/system/backup', [SystemSettingsController::class, 'index'])->name('system.backup');
-    
+    // Sistem Ayarları Rotaları (Sadece Admin erişebilir)
+    Route::prefix('system')->name('system.')->middleware('can:accessAdminFeatures')->group(function () {
+        Route::get('/', [SystemSettingsController::class, 'index'])->name('index');
+        Route::get('/details', [SystemSettingsController::class, 'details'])->name('details');
+        Route::post('/details', [SystemSettingsController::class, 'updateDetails'])->name('details.update');
+        Route::get('/users', [SystemSettingsController::class, 'users'])->name('users.index');
+        Route::get('/users/create', [SystemSettingsController::class, 'createUser'])->name('users.create');
+        Route::post('/users', [SystemSettingsController::class, 'storeUser'])->name('users.store');
+        Route::get('/users/{user}/edit', [SystemSettingsController::class, 'editUser'])->name('users.edit');
+        Route::put('/users/{user}', [SystemSettingsController::class, 'updateUser'])->name('users.update');
+        Route::delete('/users/{user}', [SystemSettingsController::class, 'destroyUser'])->name('users.destroy');
+        Route::get('/backup', [SystemSettingsController::class, 'backup'])->name('backup');
+        Route::post('/backup/create', [SystemSettingsController::class, 'createBackup'])->name('backup.create');
+        Route::post('/backup/restore', [SystemSettingsController::class, 'restoreBackup'])->name('backup.restore');
+        Route::post('/backup/delete-data', [SystemSettingsController::class, 'deleteData'])->name('backup.delete-data');
+    });
+
     // Muhasebe Rotaları
     Route::prefix('accounting')->name('accounting.')->middleware('can:accessAccountingFeatures')->group(function () {
-        Route::get('/main', [AccountingController::class, 'main'])->name('main');
+        Route::get('/', [AccountingController::class, 'index'])->name('index');
+
+        // DÜZELTME: Rota, Controller'daki doğru metod adı olan 'create' metodunu işaret ediyor.
+        Route::get('/new', [AccountingController::class, 'create'])->name('new');
+
+        Route::post('/prepare', [AccountingController::class, 'prepare'])->name('prepare');
+        Route::post('/', [AccountingController::class, 'store'])->name('store');
+
         Route::get('/invoices/{invoice}/action', [AccountingController::class, 'action'])->name('invoices.action');
         Route::put('/invoices/{invoice}', [AccountingController::class, 'update'])->name('invoices.update');
         Route::delete('/invoices/{invoice}', [AccountingController::class, 'destroy'])->name('invoices.destroy');
         Route::get('/trash', [AccountingController::class, 'trash'])->name('trash');
-        Route::post('/trash/{id}/restore', [AccountingController::class, 'restore'])->name('trash.restore');
-        Route::delete('/trash/{id}/force-delete', [AccountingController::class, 'forceDelete'])->name('trash.force-delete');
+        Route::post('/trash/{invoice}/restore', [AccountingController::class, 'restore'])->name('trash.restore');
+        Route::delete('/trash/{invoice}/remove', [AccountingController::class, 'forceDelete'])->name('trash.remove');
     });
-    
+
     // Bekleme Odası Rotaları
     Route::prefix('waiting-room')->name('waiting-room.')->group(function () {
         Route::get('/', [WaitingRoomController::class, 'index'])->name('index');
@@ -89,4 +117,3 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
