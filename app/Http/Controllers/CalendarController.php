@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AppointmentStatus;
-use App\Enums\UserRole;
+use App\Enums\EncounterStatus;
+use App\Enums\EncounterType;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\Encounter;
 use App\Models\Patient;
 use App\Models\User;
 use App\Services\AppointmentService;
@@ -23,12 +25,12 @@ class CalendarController extends Controller
     {
     }
 
-    /**
-     * Takvim sayfasını, filtreler için gerekli verilerle birlikte görüntüler.
-     */
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Appointment::class);
+
+        $user = $request->user();
+        $isDentist = $user && $user->isDentist();
 
         $referenceMonth = $this->resolveReferenceMonth($request->query('month'));
         $gridStart = $referenceMonth->copy()->startOfWeek(Carbon::MONDAY);
@@ -38,10 +40,14 @@ class CalendarController extends Controller
         $selectedDentists = array_map('intval', $this->normalizeArrayQuery($request->query('dentists', [])));
         $selectedStatuses = $this->normalizeArrayQuery($request->query('statuses', []));
 
+        if ($isDentist) {
+            $selectedDentists = [$user->id];
+        }
+
         $appointments = $this->appointmentService->getAppointments(
             $gridStart->toDateTimeString(),
             $gridEnd->toDateTimeString(),
-            !empty($selectedDentists) ? $selectedDentists : null,
+            !empty($selectedDentists) ? $selectedDentists : ($isDentist ? [$user->id] : null),
             !empty($selectedStatuses) ? $selectedStatuses : null
         );
 
@@ -71,7 +77,7 @@ class CalendarController extends Controller
         $monthLabel = mb_convert_case($monthLabel, MB_CASE_TITLE, 'UTF-8');
 
         $baseQuery = [];
-        if (!empty($selectedDentists)) {
+        if (!$isDentist && !empty($selectedDentists)) {
             $baseQuery['dentists'] = $selectedDentists;
         }
         if (!empty($selectedStatuses)) {
@@ -80,11 +86,13 @@ class CalendarController extends Controller
 
         $previousMonthUrl = $this->buildMonthUrl($baseQuery, $referenceMonth->copy()->subMonth());
         $nextMonthUrl = $this->buildMonthUrl($baseQuery, $referenceMonth->copy()->addMonth());
-        $todayUrl = $this->buildMonthUrl($baseQuery, now()->startOfMonth());
+        $todayUrl = route('calendar.today');
 
-        $dentists = User::where('role', UserRole::DENTIST)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $dentistsQuery = User::where('role', 'dentist')->orderBy('name');
+        if ($isDentist) {
+            $dentistsQuery->where('id', $user->id);
+        }
+        $dentists = $dentistsQuery->get(['id', 'name']);
 
         $statusOptions = collect(AppointmentStatus::cases())
             ->map(fn (AppointmentStatus $status) => [
@@ -97,7 +105,7 @@ class CalendarController extends Controller
         $statusStyles = [
             'scheduled' => 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/40 dark:text-blue-100',
             'confirmed' => 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-900/40 dark:text-emerald-100',
-            'checked_in' => 'border-amber-500 bg-amber-50 text-amber-700 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100',
+            'checked_in' => 'border-amber-500 bg-amber-100 text-amber-900 dark:border-amber-400 dark:bg-amber-800/60 dark:text-amber-50',
             'in_service' => 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/40 dark:text-indigo-100',
             'completed' => 'border-slate-400 bg-slate-100 text-slate-700 dark:border-slate-400 dark:bg-slate-800/60 dark:text-slate-100',
             'cancelled' => 'border-rose-500 bg-rose-50 text-rose-700 dark:border-rose-400 dark:bg-rose-900/40 dark:text-rose-100',
@@ -119,26 +127,106 @@ class CalendarController extends Controller
             'statusStyles' => $statusStyles,
             'selectedDentists' => $selectedDentists,
             'selectedStatuses' => $selectedStatuses,
-            'filtersApplied' => !empty($selectedDentists) || !empty($selectedStatuses),
+            'filtersApplied' => !$isDentist && (!empty($selectedDentists) || !empty($selectedStatuses)),
+            'showDentistFilter' => !$isDentist,
         ]);
     }
 
-    /**
-     * Belirli bir randevu için detay sayfasını gösterir.
-     */
+    public function today(Request $request): View
+    {
+        $this->authorize('viewAny', Appointment::class);
+
+        $user = $request->user();
+        $isDentist = $user && $user->isDentist();
+
+        $date = today();
+        $selectedDentists = array_map('intval', $this->normalizeArrayQuery($request->query('dentists', [])));
+
+        if ($isDentist) {
+            $selectedDentists = [$user->id];
+        }
+
+        $appointments = $this->appointmentService->getAppointments(
+            $date->copy()->startOfDay()->toDateTimeString(),
+            $date->copy()->endOfDay()->toDateTimeString(),
+            !empty($selectedDentists) ? $selectedDentists : ($isDentist ? [$user->id] : null),
+            null
+        )->sortBy(fn (Appointment $appointment) => $appointment->start_at);
+
+        $hourlySlots = $appointments
+            ->groupBy(fn (Appointment $appointment) => $appointment->start_at->format('H:00'))
+            ->sortKeys()
+            ->map(fn ($items, $hourLabel) => [
+                'label' => $hourLabel,
+                'appointments' => $items->sortBy(fn (Appointment $appointment) => $appointment->start_at)->values(),
+            ])->values();
+
+        $dentistsQuery = User::where('role', 'dentist')->orderBy('name');
+        if ($isDentist) {
+            $dentistsQuery->where('id', $user->id);
+        }
+        $dentists = $dentistsQuery->get(['id', 'name']);
+
+        $statusLabels = collect(AppointmentStatus::cases())->mapWithKeys(fn (AppointmentStatus $status) => [
+            $status->value => mb_convert_case(str_replace('_', ' ', $status->value), MB_CASE_TITLE, 'UTF-8'),
+        ]);
+
+        $statusStyles = [
+            'scheduled' => 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/40 dark:text-blue-100',
+            'confirmed' => 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-900/40 dark:text-emerald-100',
+            'checked_in' => 'border-amber-500 bg-amber-100 text-amber-900 dark:border-amber-400 dark:bg-amber-800/60 dark:text-amber-50',
+            'in_service' => 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-900/40 dark:text-indigo-100',
+            'completed' => 'border-slate-400 bg-slate-100 text-slate-700 dark:border-slate-400 dark:bg-slate-800/60 dark:text-slate-100',
+            'cancelled' => 'border-rose-500 bg-rose-50 text-rose-700 dark:border-rose-400 dark:bg-rose-900/40 dark:text-rose-100',
+            'no_show' => 'border-orange-500 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-900/40 dark:text-orange-100',
+            'default' => 'border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-200',
+        ];
+
+        $emergencyQuery = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+            ->whereIn('type', [EncounterType::EMERGENCY, EncounterType::WALK_IN])
+            ->where('status', EncounterStatus::WAITING)
+            ->whereDate('arrived_at', $date)
+            ->orderByRaw("CASE triage_level WHEN 'red' THEN 1 WHEN 'yellow' THEN 2 WHEN 'green' THEN 3 ELSE 4 END")
+            ->orderBy('arrived_at');
+
+        if ($isDentist) {
+            $emergencyQuery->where('dentist_id', $user->id);
+        }
+
+        $emergencyEncounters = $emergencyQuery->get();
+
+        $locale = app()->getLocale();
+        $todayLabel = $date->copy()->locale($locale)->isoFormat('dddd, D MMMM YYYY');
+        $todayLabel = mb_convert_case($todayLabel, MB_CASE_TITLE, 'UTF-8');
+
+        return view('calendar.today', [
+            'todayLabel' => $todayLabel,
+            'hourlySlots' => $hourlySlots,
+            'appointments' => $appointments,
+            'dentists' => $dentists,
+            'statusLabels' => $statusLabels,
+            'statusStyles' => $statusStyles,
+            'selectedDentists' => $selectedDentists,
+            'filtersApplied' => !$isDentist && !empty($selectedDentists),
+            'emergencyEncounters' => $emergencyEncounters,
+            'showDentistFilter' => !$isDentist,
+        ]);
+    }
+
     public function show(Appointment $appointment): View
     {
         $this->authorize('view', $appointment);
 
         $appointment->load(['dentist', 'patient']);
 
-        $dentists = User::where('role', UserRole::DENTIST)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $user = auth()->user();
+        $dentistsQuery = User::where('role', 'dentist')->orderBy('name');
+        if ($user && $user->isDentist()) {
+            $dentistsQuery->where('id', $user->id);
+        }
+        $dentists = $dentistsQuery->get(['id', 'name']);
 
-        $patients = Patient::orderBy('first_name')
-            ->get(['id', 'first_name', 'last_name']);
-
+        $patients = Patient::orderBy('first_name')->get(['id', 'first_name', 'last_name']);
         $statuses = AppointmentStatus::cases();
 
         return view('calendar.show', [
@@ -146,33 +234,24 @@ class CalendarController extends Controller
             'dentists' => $dentists,
             'patients' => $patients,
             'statuses' => $statuses,
+            'canEdit' => $user ? $user->can('update', $appointment) : false,
         ]);
     }
 
-    /**
-     * Randevuyu günceller.
-     */
     public function update(UpdateAppointmentRequest $request, Appointment $appointment): RedirectResponse
     {
         $this->appointmentService->updateAppointment($appointment, $request->validated());
 
-        return redirect()
-            ->route('calendar.show', $appointment)
-            ->with('status', __('Randevu başarıyla güncellendi.'));
+        return redirect()->route('calendar.show', $appointment)->with('status', __('Randevu basariyla guncellendi.'));
     }
 
-    /**
-     * Randevuyu siler.
-     */
     public function destroy(Appointment $appointment): RedirectResponse
     {
         $this->authorize('delete', $appointment);
 
         $this->appointmentService->deleteAppointment($appointment);
 
-        return redirect()
-            ->route('calendar')
-            ->with('status', __('Randevu başarıyla silindi.'));
+        return redirect()->route('calendar')->with('status', __('Randevu basariyla silindi.'));
     }
 
     private function resolveReferenceMonth(?string $month): Carbon
@@ -181,17 +260,13 @@ class CalendarController extends Controller
             try {
                 return Carbon::createFromFormat('Y-m', $month)->startOfMonth();
             } catch (\Throwable) {
-                // fall through to current month
+                // ignore and fall back to current month
             }
         }
 
         return now()->startOfMonth();
     }
 
-    /**
-     * @param mixed $value
-     * @return array<int, string>
-     */
     private function normalizeArrayQuery(mixed $value): array
     {
         if (is_null($value)) {
@@ -203,8 +278,11 @@ class CalendarController extends Controller
         return array_values(array_filter($items, static fn ($item) => $item !== null && $item !== ''));
     }
 
-    private function buildMonthUrl(array $baseQuery, Carbon $target): string
+    private function buildMonthUrl(array $baseQuery, Carbon $target, array $extraQuery = []): string
     {
-        return route('calendar', $baseQuery + ['month' => $target->format('Y-m')]);
+        $query = array_merge($baseQuery, $extraQuery);
+        $query['month'] = $target->copy()->startOfMonth()->format('Y-m');
+
+        return route('calendar', $query);
     }
 }

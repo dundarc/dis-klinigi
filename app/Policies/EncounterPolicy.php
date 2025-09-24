@@ -2,27 +2,31 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Encounter;
 use App\Models\User;
-use App\Enums\UserRole;
 
 class EncounterPolicy
 {
-    /**
-     * Determine whether the user can create emergency encounters.
-     */
     public function createEmergency(User $user): bool
     {
-        // Acil kaydı sadece Admin ve Resepsiyonist oluşturabilir.
-        return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]);
+        return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST, UserRole::DENTIST]);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     * Bu metodu bir sonraki adımda dolduracağız.
-     */
     public function update(User $user, Encounter $encounter): bool
     {
-        return in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST]);
+        if ($user->role === UserRole::ADMIN) {
+            return true;
+        }
+
+        if ($user->role === UserRole::RECEPTIONIST) {
+            return true;
+        }
+
+        if ($user->role === UserRole::DENTIST) {
+            return $encounter->dentist_id === $user->id;
+        }
+
+        return false;
     }
 }

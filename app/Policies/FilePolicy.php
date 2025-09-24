@@ -9,10 +9,15 @@ class FilePolicy
 {
     public function view(User $user, File $file): bool
     {
-        if ($user->role === UserRole::RECEPTIONIST) return true;
-        // Hekim, hastanın herhangi bir dosyasını görebilir (şimdilik)
-        // Daha detaylı olarak "sadece kendi hastasının" diye kısıtlanabilir.
-        return $user->role === UserRole::DENTIST;
+        if (in_array($user->role, [UserRole::ADMIN, UserRole::RECEPTIONIST], true)) {
+            return true;
+        }
+
+        if ($user->role === UserRole::DENTIST) {
+            return true;
+        }
+
+        return $user->id === $file->uploaded_by;
     }
 
     public function create(User $user): bool

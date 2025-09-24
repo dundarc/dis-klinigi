@@ -15,8 +15,8 @@ class InvoiceController extends Controller
     use AuthorizesRequests;
 
     /**
-     * YENİ: Tek bir faturanın detaylarını, ilişkili kalemleriyle birlikte döndürür.
-     * Bu metod, fatura düzenleme modalının verilerini doldurmak için kullanılır.
+     * YENÄ°: Tek bir faturanÄ±n detaylarÄ±nÄ±, iliÅŸkili kalemleriyle birlikte dÃ¶ndÃ¼rÃ¼r.
+     * Bu metod, fatura dÃ¼zenleme modalÄ±nÄ±n verilerini doldurmak iÃ§in kullanÄ±lÄ±r.
      */
     public function show(Invoice $invoice)
     {
@@ -25,7 +25,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Yeni bir fatura oluşturur.
+     * Yeni bir fatura oluÅŸturur.
      */
     public function store(StoreInvoiceRequest $request)
     {
@@ -34,10 +34,11 @@ class InvoiceController extends Controller
         $invoice = DB::transaction(function () use ($validated) {
             $treatments = PatientTreatment::whereIn('id', $validated['treatment_ids'])
                 ->whereDoesntHave('invoiceItem')
+                ->with('treatment')
                 ->get();
 
             if ($treatments->isEmpty()) {
-                abort(422, 'Seçilen tedaviler faturalandırmaya uygun değil.');
+                abort(422, 'SeÃ§ilen tedaviler faturalandÄ±rmaya uygun deÄŸil.');
             }
 
             $subtotal = $treatments->sum('unit_price');
@@ -59,7 +60,7 @@ class InvoiceController extends Controller
             foreach ($treatments as $treatment) {
                 $invoice->items()->create([
                     'patient_treatment_id' => $treatment->id,
-                    'description' => $treatment->treatment->name,
+                    'description' => $treatment->display_treatment_name,
                     'qty' => 1,
                     'unit_price' => $treatment->unit_price,
                     'vat' => $treatment->vat,
@@ -74,7 +75,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Mevcut bir faturayı günceller.
+     * Mevcut bir faturayÄ± gÃ¼nceller.
      */
     public function update(UpdateInvoiceRequest $request, Invoice $invoice)
     {
@@ -114,7 +115,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Bir faturayı siler.
+     * Bir faturayÄ± siler.
      */
     public function destroy(Invoice $invoice)
     {
@@ -129,4 +130,6 @@ class InvoiceController extends Controller
         return response()->noContent();
     }
 }
+
+
 

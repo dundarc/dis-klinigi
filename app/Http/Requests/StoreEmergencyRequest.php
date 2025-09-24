@@ -19,6 +19,13 @@ class StoreEmergencyRequest extends FormRequest
         return $this->user()->can('createEmergency', \App\Models\Encounter::class);
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->user() && $this->user()->role === UserRole::DENTIST) {
+            $this->merge(['dentist_id' => $this->user()->id]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

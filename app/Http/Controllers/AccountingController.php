@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Patient;
 use App\Models\PatientTreatment;
+use App\Models\Payment;
 use App\Enums\InvoiceStatus;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Http\Requests\UpdateInvoiceDetailsRequest;
@@ -18,7 +20,7 @@ class AccountingController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Ana muhasebe sayfasını özet verilerle birlikte gösterir.
+     * Ana muhasebe sayfasÄ±nÄ± Ã¶zet verilerle birlikte gÃ¶sterir.
      */
     public function index()
     {
@@ -36,7 +38,7 @@ class AccountingController extends Controller
                 $query->whereNull('due_date')
                       ->orWhere('due_date', '>=', now()->startOfDay());
             })->get();
-        $allInvoices = Invoice::with('patient')->latest()->paginate(15);
+        $allInvoices = Invoice::with('patient')->latest()->paginate(10);
 
         return view('accounting.index', compact(
             'paidInvoices',
@@ -47,8 +49,52 @@ class AccountingController extends Controller
         ));
     }
 
+    public function search(Request $request)
+    {
+        $this->authorize('accessAccountingFeatures');
+
+        $query = Invoice::with('patient')->latest('issue_date');
+
+        $patientId = $request->input('patient_id');
+        if ($patientId) {
+            $query->where('patient_id', $patientId);
+        }
+
+        $status = $request->input('status');
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $dateFrom = $request->input('date_from');
+        if ($dateFrom) {
+            $query->whereDate('issue_date', '>=', $dateFrom);
+        }
+
+        $dateTo = $request->input('date_to');
+        if ($dateTo) {
+            $query->whereDate('issue_date', '<=', $dateTo);
+        }
+
+        $invoices = $query->paginate(15)->withQueryString();
+
+        $patients = Patient::orderBy('first_name')->orderBy('last_name')->get(['id', 'first_name', 'last_name']);
+        $statuses = InvoiceStatus::cases();
+
+        return view('accounting.search', [
+            'invoices' => $invoices,
+            'patients' => $patients,
+            'statuses' => $statuses,
+            'filters' => [
+                'patient_id' => $patientId,
+                'status' => $status,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+            ],
+        ]);
+    }
+
     /**
-     * Yeni fatura oluşturma sürecinin ilk adımı olan tedavi seçim ekranını gösterir.
+     * Yeni fatura oluÅŸturma sÃ¼recinin ilk adÄ±mÄ± olan tedavi seÃ§im ekranÄ±nÄ± gÃ¶sterir.
      */
     public function create()
     {
@@ -62,7 +108,7 @@ class AccountingController extends Controller
     }
 
     /**
-     * Seçilen tedavilerden bir fatura önizlemesi hazırlar ve gösterir.
+     * SeÃ§ilen tedavilerden bir fatura Ã¶nizlemesi hazÄ±rlar ve gÃ¶sterir.
      */
     public function prepare(Request $request)
     {
@@ -78,7 +124,7 @@ class AccountingController extends Controller
 
         $items = $treatments->map(function ($treatment) {
             return [
-                'description' => $treatment->treatment->name,
+                'description' => $treatment->display_treatment_name,
                 'qty' => 1,
                 'unit_price' => $treatment->unit_price,
                 'vat' => $treatment->vat,
@@ -90,7 +136,7 @@ class AccountingController extends Controller
     }
 
     /**
-     * Önizleme ekranından gelen son fatura verisini kaydeder.
+     * Ã–nizleme ekranÄ±ndan gelen son fatura verisini kaydeder.
      */
     public function store(StoreInvoiceRequest $request)
     {
@@ -112,7 +158,7 @@ class AccountingController extends Controller
                 'issue_date' => now(),
                 'subtotal' => $subtotal,
                 'vat_total' => $vatTotal,
-                'discount_total' => 0, // DÜZELTME: Eksik olan alan eklendi.
+                'discount_total' => 0, // DÃœZELTME: Eksik olan alan eklendi.
                 'grand_total' => $subtotal + $vatTotal,
             ]);
 
@@ -122,75 +168,249 @@ class AccountingController extends Controller
             return $invoice;
         });
 
-        return redirect()->route('accounting.invoices.action', $invoice)->with('success', "Fatura başarıyla oluşturuldu.");
+        return redirect()->route('accounting.invoices.action', $invoice)->with('success', "Fatura baÅŸarÄ±yla oluÅŸturuldu.");
     }
     
     /**
-     * Tek bir fatura için işlem sayfasını gösterir.
+     * Tek bir fatura iÃ§in iÅŸlem sayfasÄ±nÄ± gÃ¶sterir.
      */
     public function action(Invoice $invoice)
     {
         $this->authorize('accessAccountingFeatures');
-        $invoice->load(['patient', 'items.patientTreatment.treatment']);
-        return view('accounting.invoices.action', ['invoice' => $invoice, 'statuses' => InvoiceStatus::cases()]);
+
+        $invoice->load([
+            'patient',
+            'items.patientTreatment.treatment',
+            'payments' => fn ($query) => $query->orderBy('paid_at'),
+        ]);
+
+        $paymentDetails = $invoice->payment_details ?? [];
+        $partialDetails = $paymentDetails['partial'] ?? null;
+        $installmentPlan = collect($paymentDetails['installments'] ?? [])
+            ->map(function ($installment, $index) {
+                $installment['sequence'] = $installment['sequence'] ?? $index + 1;
+                return $installment;
+            })
+            ->all();
+
+        $statuses = InvoiceStatus::cases();
+        $vatOptions = [0, 1, 8, 10, 18, 20];
+        $totalPaid = $invoice->payments->sum('amount');
+        $outstandingBalance = max($invoice->patient_payable_amount - $totalPaid, 0);
+
+        return view('accounting.invoices.action', [
+            'invoice' => $invoice,
+            'statuses' => $statuses,
+            'vatOptions' => $vatOptions,
+            'partialDetails' => $partialDetails,
+            'installmentPlan' => $installmentPlan,
+            'totalPaid' => $totalPaid,
+            'outstandingBalance' => $outstandingBalance,
+        ]);
+    }
+
+    public function addItem(Request $request, Invoice $invoice)
+    {
+        $this->authorize('accessAccountingFeatures');
+
+        $data = $request->validate([
+            'description' => ['required', 'string', 'max:255'],
+            'qty' => ['required', 'integer', 'min:1'],
+            'unit_price' => ['required', 'numeric', 'min:0'],
+            'vat' => ['required', 'numeric', 'min:0', 'max:100'],
+            'patient_treatment_id' => ['nullable', 'exists:patient_treatments,id'],
+        ]);
+
+        $lineTotal = $data['qty'] * $data['unit_price'];
+
+        $invoice->items()->create([
+            'description' => $data['description'],
+            'qty' => $data['qty'],
+            'unit_price' => $data['unit_price'],
+            'vat' => $data['vat'],
+            'line_total' => $lineTotal,
+            'patient_treatment_id' => $data['patient_treatment_id'] ?? null,
+        ]);
+
+        $this->recalculateInvoiceTotals($invoice);
+
+        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura kalemi eklendi.');
+    }
+
+    public function updateItem(Request $request, Invoice $invoice, InvoiceItem $item)
+    {
+        $this->authorize('accessAccountingFeatures');
+
+        if ($item->invoice_id !== $invoice->id) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'description' => ['required', 'string', 'max:255'],
+            'qty' => ['required', 'integer', 'min:1'],
+            'unit_price' => ['required', 'numeric', 'min:0'],
+            'vat' => ['required', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $lineTotal = $data['qty'] * $data['unit_price'];
+
+        $item->update([
+            'description' => $data['description'],
+            'qty' => $data['qty'],
+            'unit_price' => $data['unit_price'],
+            'vat' => $data['vat'],
+            'line_total' => $lineTotal,
+        ]);
+
+        $this->recalculateInvoiceTotals($invoice);
+
+        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura kalemi güncellendi.');
+    }
+
+    public function destroyItem(Invoice $invoice, InvoiceItem $item)
+    {
+        $this->authorize('accessAccountingFeatures');
+
+        if ($item->invoice_id !== $invoice->id) {
+            abort(404);
+        }
+
+        $item->delete();
+        $this->recalculateInvoiceTotals($invoice);
+
+        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura kalemi silindi.');
     }
 
     /**
-     * Fatura bilgilerini günceller.
+     * Fatura bilgilerini gÃ¼nceller.
      */
     public function update(UpdateInvoiceDetailsRequest $request, Invoice $invoice)
     {
         $this->authorize('accessAccountingFeatures');
+
         $validated = $request->validated();
-        $updateData = [
-            'status' => $validated['status'],
-            'payment_method' => $validated['payment_method'],
-            'paid_at' => $validated['paid_at'],
-            'due_date' => $validated['due_date'],
-            'notes' => $validated['notes'],
-            'insurance_coverage_amount' => $validated['insurance_coverage_amount'] ?? 0,
-        ];
-        if ($validated['status'] === InvoiceStatus::INSTALLMENT->value) {
-            $updateData['payment_details'] = ['taksit_sayisi' => $validated['taksit_sayisi'], 'ilk_odeme_gunu' => $validated['ilk_odeme_gunu']];
-        } else {
-            $updateData['payment_details'] = null;
+        $status = $validated['status'];
+
+        $insuranceCoverage = max(0, $validated['insurance_coverage_amount'] ?? 0);
+        if ($insuranceCoverage > $invoice->grand_total) {
+            $insuranceCoverage = $invoice->grand_total;
         }
+
+        $updateData = [
+            'status' => $status,
+            'notes' => $validated['notes'] ?? null,
+            'insurance_coverage_amount' => $insuranceCoverage,
+            'payment_method' => null,
+            'paid_at' => null,
+            'due_date' => null,
+        ];
+
+        $paymentDetails = $invoice->payment_details ?? [];
+        unset($paymentDetails['installment_meta']);
+
+        if ($status === InvoiceStatus::PAID->value) {
+            $updateData['payment_method'] = $validated['payment_method'];
+            $updateData['paid_at'] = $validated['paid_at'] ?? now();
+            $paymentDetails['partial'] = null;
+            $paymentDetails['installments'] = null;
+        } elseif ($status === InvoiceStatus::POSTPONED->value) {
+            $updateData['due_date'] = $validated['due_date'];
+            $paymentDetails['installments'] = null;
+        } elseif ($status === InvoiceStatus::PARTIAL->value) {
+            $partialAmount = isset($validated['partial_payment_amount']) ? round($validated['partial_payment_amount'], 2) : null;
+            $partialMethod = $validated['partial_payment_method'] ?? null;
+            $partialDateInput = $validated['partial_payment_date'] ?? now()->format('Y-m-d');
+
+            $totalPaid = $invoice->payments()->sum('amount');
+            if ($partialAmount !== null && $partialAmount > 0) {
+                $remainingBefore = max($invoice->patient_payable_amount - $totalPaid, 0);
+                $partialAmount = min($partialAmount, $remainingBefore);
+
+                if ($partialAmount > 0) {
+                    $invoice->payments()->create([
+                        'amount' => $partialAmount,
+                        'method' => $partialMethod,
+                        'paid_at' => Carbon::parse($partialDateInput),
+                    ]);
+                    $totalPaid += $partialAmount;
+                }
+            }
+
+            $paymentDetails['partial'] = [
+                'last_payment' => [
+                    'amount' => $partialAmount,
+                    'method' => $partialMethod,
+                    'paid_at' => $partialDateInput,
+                ],
+                'total_paid' => round($totalPaid, 2),
+                'remaining' => max(round($invoice->patient_payable_amount - $totalPaid, 2), 0),
+            ];
+            $updateData['payment_method'] = $partialMethod;
+            $paymentDetails['installments'] = null;
+        } elseif ($status === InvoiceStatus::INSTALLMENT->value) {
+            $installmentCount = (int) $validated['taksit_sayisi'];
+            $firstDueDate = $validated['ilk_odeme_gunu'];
+            $plan = $this->generateInstallmentPlan($invoice, $installmentCount, $firstDueDate);
+            $paymentDetails['installments'] = $plan;
+            $paymentDetails['installment_meta'] = [
+                'count' => $installmentCount,
+                'first_due_date' => $firstDueDate,
+            ];
+            $lastInstallment = end($plan) ?: null;
+            $updateData['due_date'] = $lastInstallment['due_date'] ?? $firstDueDate;
+            $paymentDetails['partial'] = null;
+        } else {
+            $paymentDetails['partial'] = null;
+            $paymentDetails['installments'] = null;
+        }
+
+        $cleanedDetails = [];
+        foreach ($paymentDetails as $key => $value) {
+            if ($value !== null) {
+                $cleanedDetails[$key] = $value;
+            }
+        }
+
+        $updateData['payment_details'] = !empty($cleanedDetails) ? $cleanedDetails : null;
+
         $invoice->update($updateData);
-        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura bilgileri başarıyla güncellendi.');
+
+        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura bilgileri basariyla guncellendi.');
     }
 
+
     /**
-     * Bir faturayı çöp kutusuna taşır (Soft Delete).
+     * Bir faturayÄ± Ã§Ã¶p kutusuna taÅŸÄ±r (Soft Delete).
      */
     public function destroy(Invoice $invoice)
     {
         $this->authorize('accessAccountingFeatures');
         $invoice->delete();
-        return redirect()->route('accounting.index')->with('success', 'Fatura başarıyla çöp kutusuna taşındı.');
+        return redirect()->route('accounting.index')->with('success', 'Fatura baÅŸarÄ±yla Ã§Ã¶p kutusuna taÅŸÄ±ndÄ±.');
     }
 
     /**
-     * Silinmiş faturaların olduğu çöp kutusunu gösterir.
+     * SilinmiÅŸ faturalarÄ±n olduÄŸu Ã§Ã¶p kutusunu gÃ¶sterir.
      */
     public function trash()
     {
         $this->authorize('accessAccountingFeatures');
-        $trashedInvoices = Invoice::onlyTrashed()->with('patient')->latest('deleted_at')->paginate(15);
+        $trashedInvoices = Invoice::onlyTrashed()->with('patient')->latest('deleted_at')->paginate(10);
         return view('accounting.trash', compact('trashedInvoices'));
     }
 
     /**
-     * Çöp kutusundaki bir faturayı geri yükler.
+     * Ã‡Ã¶p kutusundaki bir faturayÄ± geri yÃ¼kler.
      */
     public function restore(Invoice $invoice)
     {
         $this->authorize('accessAccountingFeatures');
         $invoice->restore();
-        return redirect()->route('accounting.trash')->with('success', 'Fatura başarıyla geri yüklendi.');
+        return redirect()->route('accounting.trash')->with('success', 'Fatura baÅŸarÄ±yla geri yÃ¼klendi.');
     }
 
     /**
-     * Bir faturayı kalıcı olarak siler.
+     * Bir faturayÄ± kalÄ±cÄ± olarak siler.
      */
     public function forceDelete(Invoice $invoice)
     {
@@ -200,7 +420,111 @@ class AccountingController extends Controller
             $invoice->payments()->delete();
             $invoice->forceDelete();
         });
-        return redirect()->route('accounting.trash')->with('success', 'Fatura kalıcı olarak silindi.');
+        return redirect()->route('accounting.trash')->with('success', 'Fatura kalÄ±cÄ± olarak silindi.');
     }
-}
+    public function updateOverdueInvoices()
+    {
+        $this->authorize('accessAccountingFeatures');
 
+        $today = now()->startOfDay();
+        $updatedCount = 0;
+
+        $installmentInvoices = Invoice::where('status', InvoiceStatus::INSTALLMENT)->get();
+        foreach ($installmentInvoices as $invoice) {
+            $paymentDetails = $invoice->payment_details ?? [];
+            $plan = $paymentDetails['installments'] ?? [];
+            $planChanged = false;
+
+            foreach ($plan as $index => $row) {
+                $dueDate = isset($row['due_date']) ? Carbon::parse($row['due_date'])->startOfDay() : null;
+                $rowStatus = $row['status'] ?? 'pending';
+
+                if ($dueDate && $dueDate->lt($today) && $rowStatus !== 'paid' && $rowStatus !== 'overdue') {
+                    $plan[$index]['status'] = 'overdue';
+                    $planChanged = true;
+                }
+            }
+
+            $paymentDetails['installments'] = $plan;
+
+            $totalPaid = $invoice->payments()->sum('amount');
+            $outstanding = max($invoice->patient_payable_amount - $totalPaid, 0);
+            $hasOverdueInstallment = collect($plan)->contains(fn ($row) => ($row['status'] ?? '') === 'overdue');
+
+            $statusChanged = false;
+            if ($hasOverdueInstallment && $outstanding > 0 && $invoice->status !== InvoiceStatus::OVERDUE) {
+                $invoice->status = InvoiceStatus::OVERDUE;
+                $statusChanged = true;
+            }
+
+            if ($planChanged || $statusChanged) {
+                $invoice->payment_details = array_filter($paymentDetails, fn ($value) => $value !== null && $value !== []);
+                $invoice->save();
+                $updatedCount++;
+            }
+        }
+
+        $postponedInvoices = Invoice::where('status', InvoiceStatus::POSTPONED)
+            ->whereNotNull('due_date')
+            ->where('due_date', '<', $today)
+            ->get();
+
+        foreach ($postponedInvoices as $invoice) {
+            if ($invoice->status !== InvoiceStatus::OVERDUE) {
+                $invoice->status = InvoiceStatus::OVERDUE;
+                $invoice->save();
+                $updatedCount++;
+            }
+        }
+
+        $message = $updatedCount
+            ? $updatedCount . ' fatura guncellendi.'
+            : 'Guncellenecek fatura bulunamadi.';
+
+        return redirect()->route('accounting.index')->with('success', $message);
+    }
+
+    protected function recalculateInvoiceTotals(Invoice $invoice): void
+    {
+        $invoice->loadMissing('items');
+
+        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->qty * $item->unit_price);
+        $vatTotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->qty * $item->unit_price * (($item->vat ?? 0) / 100));
+        $grandTotal = $subtotal + $vatTotal;
+
+        $invoice->forceFill([
+            'subtotal' => $subtotal,
+            'vat_total' => $vatTotal,
+            'grand_total' => $grandTotal,
+        ])->save();
+    }
+
+    protected function generateInstallmentPlan(Invoice $invoice, int $installmentCount, string $firstDueDate): array
+    {
+        $startDate = Carbon::parse($firstDueDate);
+        $total = (float) $invoice->patient_payable_amount;
+        $baseAmount = $installmentCount > 0 ? round($total / $installmentCount, 2) : 0.0;
+
+        $plan = [];
+        $accumulated = 0.0;
+
+        for ($index = 0; $index < $installmentCount; $index++) {
+            $dueDate = $startDate->copy()->addMonths($index);
+            $amount = ($index === $installmentCount - 1)
+                ? round($total - $accumulated, 2)
+                : $baseAmount;
+
+            $plan[] = [
+                'sequence' => $index + 1,
+                'due_date' => $dueDate->format('Y-m-d'),
+                'amount' => $amount,
+                'status' => 'pending',
+            ];
+
+            $accumulated += $amount;
+        }
+
+        return $plan;
+    }
+
+}

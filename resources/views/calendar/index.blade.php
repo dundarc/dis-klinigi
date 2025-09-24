@@ -12,6 +12,9 @@
                     <x-secondary-button-link :href="$previousMonthUrl">&larr; {{ __('calendar.previous') }}</x-secondary-button-link>
                     <x-secondary-button-link :href="$todayUrl">{{ __('calendar.today') }}</x-secondary-button-link>
                     <x-secondary-button-link :href="$nextMonthUrl">{{ __('calendar.next') }} &rarr;</x-secondary-button-link>
+                    <x-secondary-button-link href="{{ route('waiting-room.appointments.search') }}">
+                        Randevu Ara
+                    </x-secondary-button-link>
                     @can('create', \App\Models\Appointment::class)
                         <x-primary-button-link :href="route('waiting-room.appointments.create')">
                             {{ __('calendar.new_appointment') }}
@@ -86,8 +89,9 @@
                             $dayClasses = $day['isCurrentMonth']
                                 ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                                 : 'bg-gray-50 dark:bg-gray-900/40 text-gray-400 dark:text-gray-500';
+                            $cellId = ($day['isToday'] ?? false) ? ($todayAnchorId ?? null) : null;
                         @endphp
-                        <div class="min-h-[10rem] p-3 {{ $dayClasses }}">
+                        <div @if($cellId) id="{{ $cellId }}" @endif class="min-h-[10rem] p-3 scroll-mt-24 {{ $dayClasses }}">
                             <div class="flex items-baseline justify-between">
                                 <span class="text-sm font-semibold">{{ $day['date']->format('j') }}</span>
                                 @if($day['isToday'])

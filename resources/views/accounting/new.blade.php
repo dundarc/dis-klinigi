@@ -47,7 +47,7 @@
                                                        :disabled="selectedPatientId && selectedPatientId != {{ $patient->id }}"
                                                        class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                                 <div class="ms-3 text-sm text-gray-600 dark:text-gray-400 flex-grow">
-                                                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ $treatment->treatment->name }}</span>
+                                                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ $treatment->display_treatment_name }}</span>
                                                     <span class="text-xs block">({{ $treatment->performed_at->format('d.m.Y') }} - Dr. {{ $treatment->dentist->name }})</span>
                                                 </div>
                                                 <span class="font-semibold text-gray-800 dark:text-gray-200">
@@ -73,4 +73,3 @@
         </div>
     </div>
 </x-app-layout>
-

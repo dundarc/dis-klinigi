@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Enums\UserRole;
 use App\Models\User;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class ReportController extends Controller
 {
@@ -54,7 +56,58 @@ class ReportController extends Controller
         return view('reports.financial-summary', [
             'summary' => $summary,
             'dailyBreakdown' => $dailyBreakdown,
+            'startDate' => $startDate->format('Y-m-d'),
+            'endDate' => $endDate->format('Y-m-d'),
         ]);
+    }
+
+    /**
+     * Rapor 1.1: Finansal Özet ve Gelir Raporu PDF Çıktısı
+     */
+    public function financialSummaryPdf(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = isset($validated['start_date']) ? Carbon::parse($validated['start_date'])->startOfDay() : now()->startOfMonth();
+        $endDate = isset($validated['end_date']) ? Carbon::parse($validated['end_date'])->endOfDay() : now()->endOfMonth();
+
+        $query = Invoice::whereBetween('created_at', [$startDate, $endDate]);
+
+        $summary = $query->selectRaw(
+            "SUM(grand_total) as total_revenue,
+            SUM(CASE WHEN status = ? THEN grand_total ELSE 0 END) as collected_amount,
+            SUM(insurance_coverage_amount) as insurance_pending,
+            SUM(CASE WHEN status = ? THEN grand_total ELSE 0 END) as postponed_amount"
+        , [InvoiceStatus::PAID->value, InvoiceStatus::POSTPONED->value])->first();
+
+        $dailyBreakdown = Invoice::where('status', InvoiceStatus::PAID->value)
+            ->whereBetween('paid_at', [$startDate, $endDate])
+            ->selectRaw('DATE(paid_at) as date, SUM(grand_total) as total')
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        $data = [
+            'summary' => $summary,
+            'dailyBreakdown' => $dailyBreakdown,
+            'startDate' => $startDate->format('d.m.Y'),
+            'endDate' => $endDate->format('d.m.Y'),
+        ];
+
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $html = view('reports.financial-summary-pdf', $data)->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->stream('finansal_ozet_raporu_' . Carbon::now()->format('Ymd_His') . '.pdf');
     }
 
     /**
@@ -83,7 +136,7 @@ class ReportController extends Controller
                 'users.name as dentist_name',
                 DB::raw('COUNT(DISTINCT patient_treatments.patient_id) as total_patients'),
                 DB::raw('COUNT(patient_treatments.id) as total_treatments'),
-                DB::raw('SUM(invoice_items.unit_price * invoice_items.quantity) as total_revenue')
+                DB::raw('SUM(invoice_items.unit_price * invoice_items.qty) as total_revenue')
             )
             ->groupBy('users.id', 'users.name')
             ->orderBy('users.name');
@@ -120,8 +173,8 @@ class ReportController extends Controller
             ->select(
                 'treatments.name as treatment_name',
                 DB::raw('COUNT(patient_treatments.id) as total_applications'),
-                DB::raw('SUM(invoice_items.unit_price * invoice_items.quantity) as total_revenue'),
-                DB::raw('AVG(invoice_items.unit_price * invoice_items.quantity) as average_revenue')
+                DB::raw('SUM(invoice_items.unit_price * invoice_items.qty) as total_revenue'),
+                DB::raw('AVG(invoice_items.unit_price * invoice_items.qty) as average_revenue')
             )
             ->groupBy('treatments.id', 'treatments.name')
             ->orderByDesc('total_revenue')
@@ -137,8 +190,12 @@ class ReportController extends Controller
      */
     public function appointmentAnalysis(Request $request): View
     {
+        $dentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get();
+
         // Randevu analiz raporunun mantığı burada olacak.
-        return view('reports.appointment-analysis');
+        return view('reports.appointment-analysis', [
+            'dentists' => $dentists,
+        ]);
     }
 
     /**

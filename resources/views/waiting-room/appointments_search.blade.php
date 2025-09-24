@@ -71,18 +71,27 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $appointment->dentist->name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $appointment->status->value }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            @if($appointment->encounter)
-                                                <x-secondary-button-link href="{{ route('waiting-room.action', $appointment->encounter) }}">
-                                                    Ziyareti Gör
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <x-secondary-button-link href="{{ route('calendar.show', $appointment) }}">
+                                                    İşlem
                                                 </x-secondary-button-link>
-                                            @else
-                                                <span class="text-xs text-gray-500 dark:text-gray-400">Check-in yapılmamış</span>
-                                            @endif
+                                                @if($appointment->encounter)
+                                                    <x-secondary-button-link href="{{ route('waiting-room.action', $appointment->encounter) }}">
+                                                        Ziyareti Gör
+                                                    </x-secondary-button-link>
+                                                @else
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400">Check-in yapılmamış</span>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
                             @else
-                                <tr><td colspan="5" class="text-center py-4 text-gray-500 dark:text-gray-400">Arama kriterlerinize uygun randevu bulunamadı.</td></tr>
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                        Arama kriterlerinize uygun randevu bulunamadı.
+                                    </td>
+                                </tr>
                             @endif
                         </tbody>
                     </table>
@@ -96,4 +105,3 @@
         </div>
     </div>
 </x-app-layout>
-

@@ -4,7 +4,13 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Muhasebe') }}
             </h2>
-            <div class="flex items-center space-x-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <form action="{{ route('accounting.update') }}" method="POST" class="inline-block">
+                    @csrf
+                    <x-secondary-button type="submit">
+                        Veritabanı Güncelle
+                    </x-secondary-button>
+                </form>
                 <a href="{{ route('accounting.trash') }}" class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:underline">
                     <svg class="w-5 h-5 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     Çöp Kutusu
@@ -18,7 +24,6 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Özet Bilgi Kartları -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <div class="bg-green-100 dark:bg-green-900/50 p-6 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-green-800 dark:text-green-300">Ödenmiş</h3>
@@ -33,7 +38,7 @@
                 <div class="bg-yellow-100 dark:bg-yellow-900/50 p-6 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-300">Taksitlendirilmiş</h3>
                     <p class="text-3xl font-bold text-yellow-900 dark:text-yellow-200 mt-2">{{ $installmentInvoices->count() }} Adet</p>
-                     <p class="text-md text-yellow-700 dark:text-yellow-400">{{ number_format($installmentInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
+                    <p class="text-md text-yellow-700 dark:text-yellow-400">{{ number_format($installmentInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
                 </div>
                 <div class="bg-blue-100 dark:bg-blue-900/50 p-6 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-300">Vadeli</h3>
@@ -42,9 +47,11 @@
                 </div>
             </div>
 
-            <!-- Tüm Faturalar Tablosu -->
             <x-card>
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Tüm Faturalar</h3>
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Tüm Faturalar</h3>
+                    <x-secondary-button-link href="{{ route('accounting.search') }}">Fatura Ara</x-secondary-button-link>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
@@ -70,13 +77,22 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ $invoice->status->value }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="text-center py-4 text-gray-500">Sistemde fatura bulunmuyor.</td></tr>
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-gray-500">Sistemde fatura bulunmuyor.</td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+                @if ($allInvoices->total() > 0)
+                    <p class="mt-4 text-sm text-gray-700 dark:text-gray-300">
+                        Sistemde {{ $allInvoices->total() }} adet fatura var. Kayıtların {{ $allInvoices->firstItem() ?? 0 }} - {{ $allInvoices->lastItem() ?? 0 }} arasını görüyorsunuz.
+                    </p>
+                @else
+                    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Sistemde fatura bulunmuyor.</p>
+                @endif
                 @if ($allInvoices->hasPages())
-                    <div class="mt-4">
+                    <div class="mt-2">
                         {{ $allInvoices->links() }}
                     </div>
                 @endif
@@ -84,4 +100,3 @@
         </div>
     </div>
 </x-app-layout>
-

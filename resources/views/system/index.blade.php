@@ -32,7 +32,9 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Kullanıcılar</h3>
-                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Kullanıcıları yönetin, yeni kullanıcılar ekleyin veya mevcut kullanıcıları düzenleyin.</p>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Kullanıcıları yönetin, yeni kullanıcılar ekleyin veya mevcut kullanıcıları düzenleyin.
+                        </p>
                         <div class="mt-4">
                             <a href="{{ route('system.users.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Kullanıcıları Yönet</a>
                         </div>
@@ -43,9 +45,24 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Klinik Detayları</h3>
-                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Klinik adı, adres ve vergi bilgileri gibi detayları düzenleyin.</p>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Klinik adı, adres ve vergi bilgileri gibi detayları düzenleyin.
+                        </p>
                         <div class="mt-4">
                             <a href="{{ route('system.details') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Detayları Düzenle</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tedaviler Card -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Tedavi Tanımları</h3>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Klinikte kullanılan tedavi kodlarını ve fiyatlarını yönetin.
+                        </p>
+                        <div class="mt-4">
+                            <a href="{{ route('system.treatments.index') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Tedavileri Yönet</a>
                         </div>
                     </div>
                 </div>
@@ -54,7 +71,9 @@
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Yedekleme</h3>
-                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Veritabanı yedekleme ve geri yükleme işlemlerini yapın.</p>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Veritabanı yedekleme ve geri yükleme işlemlerini yapın.
+                        </p>
                         <div class="mt-4">
                             <a href="{{ route('system.backup') }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">Yedekleme İşlemleri</a>
                         </div>

@@ -11,6 +11,7 @@ use App\Models\Appointment;
 use App\Enums\UserRole;
 use App\Enums\EncounterStatus;
 use App\Enums\EncounterType;
+use App\Enums\AppointmentStatus;
 use App\Enums\FileType;
 use App\Http\Requests\StoreEmergencyRequest;
 use App\Http\Requests\StoreAppointmentRequest;
@@ -41,8 +42,42 @@ class WaitingRoomController extends Controller
                 ->get();
         }
 
+        $today = today();
+
+        $pendingAppointments = Appointment::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+            ->whereDate('start_at', $today)
+            ->whereIn('status', [AppointmentStatus::SCHEDULED, AppointmentStatus::CONFIRMED])
+            ->orderBy('start_at')
+            ->get();
+
+        $checkedInEncounters = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+            ->where('type', EncounterType::SCHEDULED)
+            ->whereIn('status', [EncounterStatus::WAITING, EncounterStatus::IN_SERVICE])
+            ->whereDate('arrived_at', $today)
+            ->orderBy('arrived_at')
+            ->orderBy('created_at')
+            ->get();
+
+        $emergencyEncounters = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+            ->whereIn('type', [EncounterType::EMERGENCY, EncounterType::WALK_IN])
+            ->where('status', EncounterStatus::WAITING)
+            ->whereDate('arrived_at', $today)
+            ->orderByRaw("CASE triage_level WHEN 'red' THEN 1 WHEN 'yellow' THEN 2 WHEN 'green' THEN 3 ELSE 4 END")
+            ->orderBy('arrived_at')
+            ->get();
+
+        $completedEncounters = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+            ->where('status', EncounterStatus::DONE)
+            ->whereDate('ended_at', $today)
+            ->latest('ended_at')
+            ->get();
+
         return view('waiting-room.index', [
             'doctorEncounters' => $doctorEncounters,
+            'pendingAppointments' => $pendingAppointments,
+            'checkedInEncounters' => $checkedInEncounters,
+            'emergencyEncounters' => $emergencyEncounters,
+            'completedEncounters' => $completedEncounters,
         ]);
     }
 

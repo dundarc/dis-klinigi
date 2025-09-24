@@ -95,10 +95,10 @@
                                 <div class="flex flex-wrap items-center justify-between gap-2">
                                     <div>
                                         <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ $encounterDate?->format('d.m.Y H:i') ?? '—' }}
+                                            {{ $encounterDate?->format('d.m.Y H:i') ?? 'â€”' }}
                                         </p>
                                         <p class="text-xs text-gray-600 dark:text-gray-300">
-                                            {{ $typeLabel }} · {{ $encounter->dentist?->name ?? __('patient.unknown_dentist') }}
+                                            {{ $typeLabel }} Â· {{ $encounter->dentist?->name ?? __('patient.unknown_dentist') }}
                                         </p>
                                     </div>
                                     <div class="flex items-center gap-4">
@@ -119,11 +119,11 @@
                                             @forelse($encounter->treatments as $treatment)
                                                 <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
                                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                                        <span>{{ $treatment->performed_at?->format('d.m.Y H:i') ?? '—' }}</span>
+                                                        <span>{{ $treatment->performed_at?->format('d.m.Y H:i') ?? 'â€”' }}</span>
                                                         <span>{{ $treatment->dentist?->name }}</span>
                                                     </div>
                                                     <p class="mt-1 font-medium text-gray-900 dark:text-gray-100">
-                                                        {{ $treatment->treatment?->name ?? __('patient.unknown_treatment') }}
+                                                        {{ $treatment->display_treatment_name }}
                                                         @if($treatment->tooth_number)
                                                             <span class="text-xs text-gray-500 dark:text-gray-400">#{{ $treatment->tooth_number }}</span>
                                                         @endif
@@ -189,11 +189,11 @@
                                             @forelse($encounter->files as $file)
                                                 <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
                                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                                        <a href="{{ Storage::url($file->file_path) }}" target="_blank" class="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                                                        <a href="{{ $file->download_url }}" target="_blank" class="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
                                                             {{ $file->type->value ? __('file.type.' . $file->type->value) : __('file.type.other') }}
                                                         </a>
                                                         <span class="text-xs text-gray-500 dark:text-gray-400">
-                                                            {{ $file->created_at?->format('d.m.Y H:i') }} · {{ $file->uploader?->name }}
+                                                            {{ $file->created_at?->format('d.m.Y H:i') }} Â· {{ $file->uploader?->name }}
                                                         </span>
                                                     </div>
                                                     @if($file->notes)

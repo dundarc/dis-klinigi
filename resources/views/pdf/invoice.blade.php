@@ -21,7 +21,7 @@
         <div class="header">
             {{-- <img src="{{ public_path('logo.png') }}" alt="Logo"> --}}
             <h1>MAKBUZ</h1>
-                <p>Buradaki MAKBUZ resmi bir fatura bilgisi içermez. Resmi fatura için lütfen klinik ile iletişim kurun.</p>
+                <p>Buradaki MAKBUZ resmi bir fatura bilgisi icermez. Resmi fatura icin lutfen klinik ile iletisim kurun.</p>
 
         </div>
 
@@ -45,7 +45,7 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Açıklama</th>
+                        <th>Aciklama</th>
                         <th>Miktar</th>
                         <th>Birim Fiyat</th>
                         <th>KDV (%)</th>
@@ -79,6 +79,29 @@
                     <td class="text-right">{{ number_format($invoice->grand_total, 2, ',', '.') }} TL</td>
                 </tr>
             </table>
+
+            @if(!empty($invoice->payment_details['installments']))
+                <h3 style="margin-top: 40px;">Odeme Plani</h3>
+                <table class="table" style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Vade Tarihi</th>
+                            <th class="text-right">Tutar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($invoice->payment_details['installments'] as $row)
+                            <tr>
+                                <td>{{ $row['sequence'] ?? $loop->iteration }}</td>
+                                <td>{{ \Carbon\Carbon::parse($row['due_date'])->format('d.m.Y') }}</td>
+                                <td class="text-right">{{ number_format($row['amount'], 2, ',', '.') }} TL</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
         </div>
     </div>
 

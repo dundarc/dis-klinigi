@@ -36,6 +36,31 @@ class User extends Authenticatable
     }
 
     // Relationships
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::ADMIN;
+    }
+
+    public function isDentist(): bool
+    {
+        return $this->role === UserRole::DENTIST;
+    }
+
+    public function isReceptionist(): bool
+    {
+        return $this->role === UserRole::RECEPTIONIST;
+    }
+
+    public function isAccountant(): bool
+    {
+        return $this->role === UserRole::ACCOUNTANT;
+    }
+
+    public function isAssistant(): bool
+    {
+        return $this->role === UserRole::ASSISTANT;
+    }
+
     public function workingHours() { return $this->hasMany(WorkingHour::class); }
     public function unavailabilities() { return $this->hasMany(UserUnavailability::class); }
     public function appointments() { return $this->hasMany(Appointment::class, 'dentist_id'); }

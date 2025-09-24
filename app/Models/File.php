@@ -26,6 +26,9 @@ class File extends Model
         'notes',
     ];
 
+    protected $appends = ['download_url', 'display_name'];
+
+
     /**
      * The attributes that should be cast.
      *
@@ -52,4 +55,15 @@ class File extends Model
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
+
+    public function getDownloadUrlAttribute(): string
+    {
+        return route('patient-files.show', $this);
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return basename($this->file_path);
+    }
+
 }

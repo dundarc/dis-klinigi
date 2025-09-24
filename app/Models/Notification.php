@@ -1,11 +1,36 @@
 <?php
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+
 class Notification extends Model
 {
     use HasFactory;
-    protected $fillable = ['user_id', 'title', 'body', 'link_url', 'read_at'];
-    protected $casts = ['read_at' => 'datetime'];
-    public function user() { return $this->belongsTo(User::class); }
+
+    protected $fillable = [
+        'user_id',
+        'sender_id',
+        'title',
+        'body',
+        'link_url',
+        'type',
+        'read_at',
+        'completed_at'
+    ];
+
+    protected $casts = [
+        'read_at' => 'datetime',
+        'completed_at' => 'datetime',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
 }
