@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media print {
+    /* Hide navigation, filter forms, and buttons by default */
+    nav,
+    form,
+    button,
+    [role="button"],
+    a[class*="button"] { /* Catches button-like links */
+        display: none !important;
+    }
+
+    /* Hide elements specifically marked for non-printing */
+    .print-hidden {
+        display: none !important;
+    }
+
+    /* Ensure the main content area takes up the full space */
+    main, .py-12, .space-y-6 {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* General reset for cleaner printing */
+    * {
+        background: transparent !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    /* Style cards for printing */
+    .x-card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        padding: 1rem !important;
+    }
+
+    /* Ensure table headers repeat on each page */
+    thead {
+        display: table-header-group;
+    }
+
+    tr, img {
+        page-break-inside: avoid;
+    }
+}
