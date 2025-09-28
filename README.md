@@ -38,6 +38,20 @@ All rights are reserved by the original author. Unauthorized use for commercial 
 - Node.js 18+ (for Vite & asset compilation)  
 
 ---
+⚠️ Disclaimer
+
+This system is provided as-is without warranty of any kind.
+The author assumes no liability for damages or misuse.
+
+🚫 Do not use this system in production or for real patient data.
+🚫 Do not use commercially.
+🚫 Do not use as a base for further software development.
+
+
+👤 Author
+
+Dündar Can ÖZTEKİN
+All rights reserved.
 
 ## 🛠️ Installation (For Learning Only)
 
