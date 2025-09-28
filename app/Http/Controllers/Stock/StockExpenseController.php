@@ -5,14 +5,21 @@ namespace App\Http\Controllers\Stock;
 use App\Http\Controllers\Controller;
 use App\Models\Stock\StockExpense;
 use App\Models\Stock\StockExpenseCategory;
+use App\Models\Stock\StockItem;
 use App\Models\Stock\StockSupplier;
+use App\Services\OCRService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class StockExpenseController extends Controller
 {
+    public function __construct(private readonly OCRService $ocrService)
+    {
+    }
+
     public function index(Request $request): View
     {
         $this->authorize('accessStockManagement');
@@ -61,11 +68,35 @@ class StockExpenseController extends Controller
     {
         $this->authorize('accessStockManagement');
 
-        $data = $this->validateExpense($request);
+        $mode = $request->input('mode', 'manual');
 
-        $expense = StockExpense::create($data);
+        $rules = [
+            'category_id' => ['nullable', 'exists:stock_expense_categories,id'],
+            'supplier_id' => ['nullable', 'exists:stock_suppliers,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'expense_date' => ['nullable', 'date'],
+            'amount' => ['required', 'numeric', 'gte:0'],
+            'vat_rate' => ['nullable', 'numeric', 'gte:0'],
+            'payment_status' => ['required', Rule::in(['pending', 'partial', 'paid', 'overdue'])],
+            'payment_method' => ['nullable', 'string', 'max:50'],
+            'due_date' => ['nullable', 'date'],
+            'paid_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string'],
+            'mode' => ['required', Rule::in(['manual', 'upload'])],
+            'add_to_stock' => ['nullable', 'boolean'],
+        ];
 
-        return redirect()->route('stock.expenses.index')->with('success', 'Gider kaydi olusturuldu.');
+        if ($mode === 'upload') {
+            $rules['file'] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480'];
+        }
+
+        $validated = $request->validate($rules);
+
+        $expense = $mode === 'upload'
+            ? $this->storeUploadedExpense($request, $validated)
+            : $this->storeManualExpense($request, $validated);
+
+        return redirect()->route('stock.expenses.index')->with('success', __('stock.expense_saved'));
     }
 
     public function edit(StockExpense $expense): View
@@ -97,31 +128,90 @@ class StockExpenseController extends Controller
         return redirect()->route('stock.expenses.index')->with('success', 'Gider kaydi silindi.');
     }
 
-    protected function validateExpense(Request $request): array
+    protected function storeUploadedExpense(Request $request, array $validated): StockExpense
     {
-        $validated = $request->validate([
-            'category_id' => ['nullable', 'exists:stock_expense_categories,id'],
-            'supplier_id' => ['nullable', 'exists:stock_suppliers,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'expense_date' => ['nullable', 'date'],
-            'amount' => ['required', 'numeric', 'gte:0'],
-            'vat_rate' => ['nullable', 'numeric', 'gte:0'],
-            'payment_status' => ['required', Rule::in(['pending', 'partial', 'paid', 'overdue'])],
-            'payment_method' => ['nullable', 'string', 'max:50'],
-            'due_date' => ['nullable', 'date'],
-            'paid_at' => ['nullable', 'date'],
-            'notes' => ['nullable', 'string'],
-        ]);
+        return DB::transaction(function () use ($request, $validated) {
+            $ocrData = $this->ocrService->parseDocument($request->file('file'));
 
-        $vatRate = isset($validated['vat_rate']) ? (float) $validated['vat_rate'] : 0;
-        $amount = (float) $validated['amount'];
-        $vatAmount = $amount * ($vatRate / 100);
-        $totalAmount = $amount + $vatAmount;
+            $expenseData = [
+                'category_id' => $validated['category_id'] ?? null,
+                'supplier_id' => $validated['supplier_id'] ?? null,
+                'title' => $validated['title'],
+                'expense_date' => $validated['expense_date'] ?? now()->toDateString(),
+                'amount' => $validated['amount'],
+                'vat_rate' => $validated['vat_rate'] ?? 0,
+                'vat_amount' => ($validated['amount'] * ($validated['vat_rate'] ?? 0) / 100),
+                'total_amount' => $validated['amount'] + (($validated['amount'] * ($validated['vat_rate'] ?? 0) / 100)),
+                'payment_status' => $validated['payment_status'],
+                'payment_method' => $validated['payment_method'] ?? null,
+                'due_date' => $validated['due_date'] ?? null,
+                'paid_at' => $validated['paid_at'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'parsed_payload' => $ocrData,
+            ];
 
-        return array_merge($validated, [
+            $expense = StockExpense::create($expenseData);
+
+            // If add_to_stock is checked, create stock items
+            if ($request->boolean('add_to_stock') && isset($ocrData['items'])) {
+                $this->createStockItemsFromExpense($expense, $ocrData['items']);
+            }
+
+            return $expense;
+        });
+    }
+
+    protected function storeManualExpense(Request $request, array $validated): StockExpense
+    {
+        $expenseData = [
+            'category_id' => $validated['category_id'] ?? null,
+            'supplier_id' => $validated['supplier_id'] ?? null,
+            'title' => $validated['title'],
             'expense_date' => $validated['expense_date'] ?? now()->toDateString(),
-            'vat_amount' => $vatAmount,
-            'total_amount' => $totalAmount,
+            'amount' => $validated['amount'],
+            'vat_rate' => $validated['vat_rate'] ?? 0,
+            'vat_amount' => ($validated['amount'] * ($validated['vat_rate'] ?? 0) / 100),
+            'total_amount' => $validated['amount'] + (($validated['amount'] * ($validated['vat_rate'] ?? 0) / 100)),
+            'payment_status' => $validated['payment_status'],
+            'payment_method' => $validated['payment_method'] ?? null,
+            'due_date' => $validated['due_date'] ?? null,
+            'paid_at' => $validated['paid_at'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ];
+
+        $expense = StockExpense::create($expenseData);
+
+        // If add_to_stock is checked, create a stock item from the expense
+        if ($request->boolean('add_to_stock')) {
+            $this->createStockItemFromExpense($expense);
+        }
+
+        return $expense;
+    }
+
+    protected function createStockItemsFromExpense(StockExpense $expense, array $items): void
+    {
+        foreach ($items as $itemData) {
+            StockItem::create([
+                'name' => $itemData['description'],
+                'unit' => $itemData['unit'] ?? 'adet',
+                'quantity' => $itemData['quantity'] ?? 0,
+                'minimum_quantity' => 0,
+                'allow_negative' => false,
+                'is_active' => true,
+            ]);
+        }
+    }
+
+    protected function createStockItemFromExpense(StockExpense $expense): void
+    {
+        StockItem::create([
+            'name' => $expense->title,
+            'unit' => 'adet',
+            'quantity' => 1,
+            'minimum_quantity' => 0,
+            'allow_negative' => false,
+            'is_active' => true,
         ]);
     }
 }

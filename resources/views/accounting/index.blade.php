@@ -1,102 +1,166 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                {{ __('Muhasebe') }}
-            </h2>
-            <div class="flex flex-wrap items-center gap-2">
-                <form action="{{ route('accounting.update') }}" method="POST" class="inline-block">
-                    @csrf
-                    <x-secondary-button type="submit">
-                        Veritabanı Güncelle
-                    </x-secondary-button>
-                </form>
-                <a href="{{ route('accounting.trash') }}" class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:underline">
-                    <svg class="w-5 h-5 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    Çöp Kutusu
-                </a>
-                <x-primary-button-link href="{{ route('accounting.new') }}">
-                    Yeni Fatura Oluştur
-                </x-primary-button-link>
-            </div>
-        </div>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div class="bg-green-100 dark:bg-green-900/50 p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold text-green-800 dark:text-green-300">Ödenmiş</h3>
-                    <p class="text-3xl font-bold text-green-900 dark:text-green-200 mt-2">{{ $paidInvoices->count() }} Adet</p>
-                    <p class="text-md text-green-700 dark:text-green-400">{{ number_format($paidInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">Muhasebe</h1>
+                    <p class="text-slate-600 dark:text-slate-400 mt-1">Faturalarınızı yönetin ve takip edin</p>
                 </div>
-                <div class="bg-red-100 dark:bg-red-900/50 p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold text-red-800 dark:text-red-300">Vadesi Geçmiş</h3>
-                    <p class="text-3xl font-bold text-red-900 dark:text-red-200 mt-2">{{ $overdueInvoices->count() }} Adet</p>
-                    <p class="text-md text-red-700 dark:text-red-400">{{ number_format($overdueInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
-                </div>
-                <div class="bg-yellow-100 dark:bg-yellow-900/50 p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-300">Taksitlendirilmiş</h3>
-                    <p class="text-3xl font-bold text-yellow-900 dark:text-yellow-200 mt-2">{{ $installmentInvoices->count() }} Adet</p>
-                    <p class="text-md text-yellow-700 dark:text-yellow-400">{{ number_format($installmentInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
-                </div>
-                <div class="bg-blue-100 dark:bg-blue-900/50 p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-300">Vadeli</h3>
-                    <p class="text-3xl font-bold text-blue-900 dark:text-blue-200 mt-2">{{ $postponedInvoices->count() }} Adet</p>
-                    <p class="text-md text-blue-700 dark:text-blue-400">{{ number_format($postponedInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
+                <div class="flex gap-2">
+                    <a href="{{ route('accounting.trash') }}" class="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Çöp Kutusu
+                    </a>
+                    <a href="{{ route('accounting.new') }}" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Yeni Fatura
+                    </a>
                 </div>
             </div>
 
-            <x-card>
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Tüm Faturalar</h3>
-                    <x-secondary-button-link href="{{ route('accounting.search') }}">Fatura Ara</x-secondary-button-link>
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Ödenmiş Faturalar</p>
+                            <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ $paidInvoices->count() }}</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ number_format($paidInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Vadesi Geçmiş</p>
+                            <p class="text-3xl font-bold text-red-600 dark:text-red-400">{{ $overdueInvoices->count() }}</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ number_format($overdueInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Taksitli Faturalar</p>
+                            <p class="text-3xl font-bold text-amber-600 dark:text-amber-400">{{ $installmentInvoices->count() }}</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ number_format($installmentInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Vadeli Faturalar</p>
+                            <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ $postponedInvoices->count() }}</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ number_format($postponedInvoices->sum('grand_total'), 2, ',', '.') }} TL</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Invoices Table -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Son Eklenen Faturalar</h2>
+                    <a href="{{ route('accounting.search') }}" class="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Fatura Ara
+                    </a>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-800 sticky top-0">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Fatura No / İşlem</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Hasta</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tarih</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tutar</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Durum</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fatura No</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Hasta</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tarih</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tutar</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durum</th>
+                                <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">İşlemler</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <tbody class="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
                             @forelse ($allInvoices as $invoice)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('accounting.invoices.action', $invoice) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                <tr class="{{ $loop->even ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800' }} hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <a href="{{ route('accounting.invoices.action', $invoice) }}" class="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">
                                             {{ $invoice->invoice_no }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $invoice->patient?->first_name }} {{ $invoice->patient?->last_name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $invoice->issue_date->format('d.m.Y') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ number_format($invoice->grand_total, 2, ',', '.') }} TL</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ $invoice->status->value }}</td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $invoice->patient?->first_name }} {{ $invoice->patient?->last_name }}</td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $invoice->issue_date->format('d.m.Y') }}</td>
+                                    <td class="px-6 py-4 text-slate-900 dark:text-slate-100 font-medium">{{ number_format($invoice->grand_total, 2, ',', '.') }} TL</td>
+                                    <td class="px-6 py-4">
+                                        @if($invoice->status->value === 'paid')
+                                            <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">Ödenmiş</span>
+                                        @elseif($invoice->status->value === 'pending')
+                                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">Bekliyor</span>
+                                        @elseif($invoice->status->value === 'overdue')
+                                            <span class="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-800 dark:text-red-200">Vadesi Geçmiş</span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-200">{{ ucfirst(str_replace('_', ' ', $invoice->status->value)) }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                    <a href="{{ route('accounting.invoices.show', $invoice) }}" class="inline-flex items-center px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium rounded transition-colors">
+                                            Görüntüle
+                                        </a>    
+                                    
+                                    <a href="{{ route('accounting.invoices.action', $invoice) }}" class="inline-flex items-center px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium rounded transition-colors">
+                                            Düzenle
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-4 text-gray-500">Sistemde fatura bulunmuyor.</td>
+                                    <td colspan="6" class="px-6 py-12 text-center">
+                                        <svg class="mx-auto h-16 w-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-slate-100">Fatura bulunmuyor</h3>
+                                        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Henüz hiç fatura oluşturulmamış. Yeni bir fatura oluşturarak başlayın.</p>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                @if ($allInvoices->total() > 0)
-                    <p class="mt-4 text-sm text-gray-700 dark:text-gray-300">
-                        Sistemde {{ $allInvoices->total() }} adet fatura var. Kayıtların {{ $allInvoices->firstItem() ?? 0 }} - {{ $allInvoices->lastItem() ?? 0 }} arasını görüyorsunuz.
-                    </p>
-                @else
-                    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Sistemde fatura bulunmuyor.</p>
-                @endif
                 @if ($allInvoices->hasPages())
-                    <div class="mt-2">
+                    <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
                         {{ $allInvoices->links() }}
                     </div>
                 @endif
-            </x-card>
+            </div>
         </div>
     </div>
 </x-app-layout>

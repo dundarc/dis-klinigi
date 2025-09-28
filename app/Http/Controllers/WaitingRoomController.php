@@ -15,6 +15,8 @@ use App\Enums\AppointmentStatus;
 use App\Enums\FileType;
 use App\Http\Requests\StoreEmergencyRequest;
 use App\Http\Requests\StoreAppointmentRequest;
+use App\Services\TreatmentPlanAppointmentService;
+use App\Services\EncounterService;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -22,6 +24,12 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class WaitingRoomController extends Controller
 {
     use AuthorizesRequests;
+
+    public function __construct(
+        private readonly TreatmentPlanAppointmentService $treatmentPlanService,
+        private readonly EncounterService $encounterService
+    ) {
+    }
 
     /**
      * Bekleme OdasÄ± ana sayfasÄ±nÄ± gÃ¶sterir.
@@ -111,12 +119,68 @@ class WaitingRoomController extends Controller
     }
 
     /**
+     * Get treatment plan items for a patient (AJAX endpoint)
+     */
+    public function getPatientTreatmentPlanItems(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+        ]);
+
+        $treatmentPlanItems = $this->treatmentPlanService->getPendingTreatmentPlanItems($request->patient_id);
+
+        return response()->json([
+            'items' => $treatmentPlanItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'treatment_name' => $item->treatment->name,
+                    'tooth_number' => $item->tooth_number,
+                    'estimated_price' => $item->estimated_price,
+                    'status' => $item->status->value,
+                    'status_label' => $item->status->label(),
+                    'status_color' => $item->status->color(),
+                    'treatment_plan_title' => $item->treatmentPlan->title,
+                    'existing_appointment' => $item->appointment ? [
+                        'id' => $item->appointment->id,
+                        'date' => $item->appointment->start_at->format('d.m.Y H:i'),
+                        'dentist' => $item->appointment->dentist->name,
+                    ] : null,
+                ];
+            }),
+        ]);
+    }
+
+    /**
      * Bekleme odasÄ± formundan gelen yeni randevuyu kaydeder.
      */
     public function storeAppointment(StoreAppointmentRequest $request)
     {
-        Appointment::create($request->validated());
-        return redirect()->route('appointments.today')->with('success', 'Randevu baÅŸarÄ±yla oluÅŸturuldu.');
+        $validated = $request->validated();
+
+        DB::transaction(function () use ($validated, &$appointment) {
+            // Create the appointment
+            $appointment = Appointment::create($validated);
+
+            // Handle treatment plan items if any were selected
+            if (!empty($validated['treatment_plan_items'])) {
+                $results = $this->treatmentPlanService->linkItemsToAppointment(
+                    $validated['treatment_plan_items'],
+                    $appointment
+                );
+
+                // Log the results for audit purposes
+                if (!empty($results['cancelled_appointments']) || !empty($results['adjusted_appointments'])) {
+                    $appointment->update([
+                        'notes' => ($appointment->notes ? $appointment->notes . ' | ' : '') .
+                            'Otomatik randevu ayarlamaları yapıldı: ' .
+                            count($results['cancelled_appointments']) . ' iptal, ' .
+                            count($results['adjusted_appointments']) . ' düzenleme'
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->route('appointments.today')->with('success', 'Randevu oluşturuldu.');
     }
 
     /**
@@ -196,6 +260,47 @@ class WaitingRoomController extends Controller
     }
 
     /**
+     * Belirli bir ziyaret (encounter) iÃ§in salt okunur gÃ¶rÃ¼ntÃ¼leme ekranÄ±nÄ± gÃ¶sterir.
+     */
+    public function show(Encounter $encounter)
+    {
+        $this->authorize('view', $encounter);
+
+        $encounter->load([
+            'patient',
+            'dentist',
+            'treatments.treatment',
+            'treatments.dentist',
+            'prescriptions.dentist',
+            'files.uploader',
+        ]);
+
+        // Load treatment plan items specifically assigned to this appointment
+        $appointmentTreatmentPlanItems = \App\Models\TreatmentPlanItem::with(['treatment', 'treatmentPlan', 'appointment'])
+            ->where('appointment_id', $encounter->appointment_id)
+            ->orderBy('created_at')
+            ->get();
+
+        // Load other treatment plan items for this patient (for reference)
+        $otherTreatmentPlanItems = \App\Models\TreatmentPlanItem::with(['treatment', 'treatmentPlan', 'appointment'])
+            ->whereHas('treatmentPlan', function ($query) use ($encounter) {
+                $query->where('patient_id', $encounter->patient_id);
+            })
+            ->where(function ($query) use ($encounter) {
+                $query->where('appointment_id', '!=', $encounter->appointment_id)
+                      ->orWhereNull('appointment_id');
+            })
+            ->orderBy('appointment_id')
+            ->get();
+
+        // Separate scheduled and unscheduled items from other items
+        $unscheduledTreatmentPlanItems = $otherTreatmentPlanItems->where('appointment_id', null);
+        $scheduledTreatmentPlanItems = $otherTreatmentPlanItems->where('appointment_id', '!=', null);
+
+        return view('waiting-room.show', compact('encounter', 'unscheduledTreatmentPlanItems', 'scheduledTreatmentPlanItems', 'appointmentTreatmentPlanItems'));
+    }
+
+    /**
      * Belirli bir ziyaret (encounter) iÃ§in iÅŸlem ekranÄ±nÄ± gÃ¶sterir.
      */
     public function action(Encounter $encounter)
@@ -211,11 +316,36 @@ class WaitingRoomController extends Controller
             'files.uploader',
         ]);
 
+        // Load treatment plan items specifically assigned to this appointment
+        $appointmentTreatmentPlanItems = \App\Models\TreatmentPlanItem::with(['treatment', 'treatmentPlan', 'appointment'])
+            ->where('appointment_id', $encounter->appointment_id)
+            ->where('status', '!=', \App\Enums\TreatmentPlanItemStatus::DONE)
+            ->orderBy('created_at')
+            ->get();
+
+        // Load other treatment plan items for this patient (for reference)
+        // Include cancelled items that were previously assigned to this appointment
+        $otherTreatmentPlanItems = \App\Models\TreatmentPlanItem::with(['treatment', 'treatmentPlan', 'appointment'])
+            ->whereHas('treatmentPlan', function ($query) use ($encounter) {
+                $query->where('patient_id', $encounter->patient_id);
+            })
+            ->where(function ($query) use ($encounter) {
+                $query->where('appointment_id', '!=', $encounter->appointment_id)
+                      ->orWhereNull('appointment_id');
+            })
+            ->where('status', '!=', \App\Enums\TreatmentPlanItemStatus::DONE)
+            ->orderBy('appointment_id')
+            ->get();
+
+        // Separate scheduled and unscheduled items from other items
+        $unscheduledTreatmentPlanItems = $otherTreatmentPlanItems->where('appointment_id', null);
+        $scheduledTreatmentPlanItems = $otherTreatmentPlanItems->where('appointment_id', '!=', null);
+
         $statuses = EncounterStatus::cases();
         $treatments = Treatment::orderBy('name')->get();
         $fileTypes = FileType::cases();
 
-        return view('waiting-room.action', compact('encounter', 'statuses', 'treatments', 'fileTypes'));
+        return view('waiting-room.action', compact('encounter', 'statuses', 'treatments', 'fileTypes', 'unscheduledTreatmentPlanItems', 'scheduledTreatmentPlanItems', 'appointmentTreatmentPlanItems'));
     }
 
     /**
@@ -224,46 +354,55 @@ class WaitingRoomController extends Controller
     public function updateAction(Request $request, Encounter $encounter)
     {
         $this->authorize('update', $encounter);
+
         $validated = $request->validate([
-            'status' => ['required', new Enum(EncounterStatus::class)],
+            'status' => ['nullable', new Enum(EncounterStatus::class)],
             'notes' => ['nullable', 'string'],
-            'treatments' => ['nullable', 'array'],
-            'treatments.*.treatment_id' => ['required_with:treatments', 'exists:treatments,id'],
-            'treatments.*.tooth_number' => ['nullable', 'integer'],
-            'treatments.*.unit_price' => ['required_with:treatments', 'numeric'],
+            'action' => ['required', 'in:save,complete'],
+            'applied_treatments' => ['nullable', 'string'],
             'prescription_text' => ['nullable', 'string'],
         ]);
 
-        DB::transaction(function () use ($encounter, $validated, $request) {
-            $encounter->update([
-                'status' => $validated['status'],
-                'notes' => $validated['notes'] ?? $encounter->notes,
-                'started_at' => $validated['status'] === EncounterStatus::IN_SERVICE->value && !$encounter->started_at ? now() : $encounter->started_at,
-                'ended_at' => $validated['status'] === EncounterStatus::DONE->value && !$encounter->ended_at ? now() : $encounter->ended_at,
-            ]);
+        // Handle action
+        if ($request->action === 'complete') {
+            $validated['status'] = EncounterStatus::DONE->value;
 
-            if (!empty($validated['treatments'])) {
-                foreach ($validated['treatments'] as $treatmentData) {
-                    $encounter->treatments()->create($treatmentData + [
-                        'patient_id' => $encounter->patient_id,
-                        'dentist_id' => $encounter->dentist_id,
-                        'vat' => Treatment::find($treatmentData['treatment_id'])->default_vat ?? 20,
-                        'status' => 'done',
-                        'performed_at' => now(),
-                    ]);
-                }
+            // If this encounter is linked to an appointment, mark the appointment as completed
+            if ($encounter->appointment_id) {
+                $encounter->appointment->update(['status' => AppointmentStatus::COMPLETED]);
             }
+        } elseif (!$request->has('status') || empty($request->status)) {
+            $validated['status'] = $encounter->status->value; // Keep current status
+        }
 
-            if (!empty($validated['prescription_text'])) {
-                $encounter->prescriptions()->create([
-                    'patient_id' => $encounter->patient_id,
-                    'dentist_id' => $encounter->dentist_id,
-                    'text' => $validated['prescription_text'],
-                ]);
-            }
-        });
+        // Decode applied treatments
+        $appliedTreatments = [];
+        if ($request->applied_treatments) {
+            $appliedTreatments = json_decode($request->applied_treatments, true) ?? [];
+        }
 
-        return redirect()->route('waiting-room.index')->with('success', 'Ziyaret kaydÄ± baÅŸarÄ±yla gÃ¼ncellendi.');
+        // Convert applied treatments to the expected format
+        $treatments = [];
+        foreach ($appliedTreatments as $treatment) {
+            $treatments[] = [
+                'treatment_id' => $treatment['treatment_id'] ?? null,
+                'tooth_number' => $treatment['tooth_number'] ?? null,
+                'unit_price' => $treatment['unit_price'] ?? 0,
+                'treatment_plan_item_id' => $treatment['treatment_plan_item_id'] ?? null,
+                'is_scheduled' => $treatment['is_scheduled'] ?? false,
+            ];
+        }
+
+        $validated['treatments'] = $treatments;
+
+        // Use EncounterService to handle the complex update logic
+        $result = $this->encounterService->updateEncounterWithTreatments($encounter, $validated);
+
+        if ($result['success']) {
+            return redirect()->back()->with('success', 'Ziyaret kaydi başarıyla güncellendi.');
+        } else {
+            return redirect()->back()->with('error', $result['message'] ?? 'Güncelleme başarısız oldu.');
+        }
     }
 
     /**

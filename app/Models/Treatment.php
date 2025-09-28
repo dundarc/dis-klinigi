@@ -25,4 +25,9 @@ class Treatment extends Model
         'default_vat' => 'decimal:2',
         'default_duration_min' => 'integer',
     ];
+
+    public function treatmentPlanItems()
+    {
+        return $this->hasMany(TreatmentPlanItem::class);
+    }
 }

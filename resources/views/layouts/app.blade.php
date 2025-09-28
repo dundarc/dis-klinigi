@@ -8,19 +8,106 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display.swap" rel="stylesheet" />
-        
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+
+        @if(app()->environment('local'))
+            <!-- Development: Use CDN for faster development -->
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        @else
+            <!-- Production: Use Vite compiled assets -->
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endif
+
+        <!-- Dark Mode Management -->
         <script>
-            if (localStorage.getItem('dark-mode') === 'true' || 
-                (!('dark-mode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+            // Global dark mode state
+            window.darkModeState = {
+                isDark: false,
+                init() {
+                    const saved = localStorage.getItem('dark-mode');
+                    if (saved !== null) {
+                        this.isDark = saved === 'true';
+                    } else {
+                        this.isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    }
+                    this.applyTheme();
+
+                    // Listen for system changes
+                    if (window.matchMedia && localStorage.getItem('dark-mode') === null) {
+                        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                            this.isDark = e.matches;
+                            this.applyTheme();
+                        });
+                    }
+                },
+                toggle() {
+                    this.isDark = !this.isDark;
+                    localStorage.setItem('dark-mode', this.isDark.toString());
+                    this.applyTheme();
+                },
+                applyTheme() {
+                    if (this.isDark) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                }
+            };
+
+            // Initialize on page load
+            window.darkModeState.init();
         </script>
 
-        {{-- Bu satırın hem app.css hem de app.js'i içerdiğinden emin olun --}}
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <!-- Chart.js CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <!-- Heroicons CDN -->
+
+
+        <!-- Custom Styles -->
+        <style>
+            /* Custom scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #f1f5f9;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+
+            /* Dark mode scrollbar */
+            .dark ::-webkit-scrollbar-track {
+                background: #1e293b;
+            }
+            .dark ::-webkit-scrollbar-thumb {
+                background: #475569;
+            }
+            .dark ::-webkit-scrollbar-thumb:hover {
+                background: #64748b;
+            }
+
+            /* Loading spinner */
+            .spinner {
+                border: 2px solid #f3f3f3;
+                border-top: 2px solid #3498db;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">

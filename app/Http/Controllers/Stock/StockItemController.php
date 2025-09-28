@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Stock;
 
+use App\Exports\StockItemsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Stock\StockCategory;
 use App\Models\Stock\StockItem;
@@ -10,6 +11,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StockItemController extends Controller
 {
@@ -37,16 +40,40 @@ class StockItemController extends Controller
             $status = $request->string('status')->toString();
             $query->when($status === 'active', fn ($q) => $q->where('is_active', true))
                 ->when($status === 'inactive', fn ($q) => $q->where('is_active', false))
-                ->when($status === 'critical', fn ($q) => $q->whereColumn('quantity', '<', 'minimum_quantity'))
+                ->when($status === 'critical', fn ($q) => $q->where('minimum_quantity', '>', 0)->whereColumn('quantity', '<', 'minimum_quantity'))
+                ->when($status === 'low', fn ($q) => $q->where('minimum_quantity', '>', 0)->whereRaw('quantity <= minimum_quantity * 1.5 AND quantity >= minimum_quantity'))
+                ->when($status === 'sufficient', fn ($q) => $q->where(function($subQ) {
+                    $subQ->where('minimum_quantity', '<=', 0)
+                         ->orWhereRaw('quantity > minimum_quantity * 1.5');
+                }))
                 ->when($status === 'negative', fn ($q) => $q->where('quantity', '<', 0));
         }
 
         $items = $query->paginate(20)->withQueryString();
         $categories = StockCategory::orderBy('name')->get();
+        
+        // Calculate statistics for dashboard widgets
+        $statistics = [
+            'total_items' => StockItem::count(),
+            'active_items' => StockItem::where('is_active', true)->count(),
+            'critical_items' => StockItem::where('is_active', true)
+                                        ->where('minimum_quantity', '>', 0)
+                                        ->whereColumn('quantity', '<', 'minimum_quantity')
+                                        ->count(),
+            'low_stock_items' => StockItem::where('is_active', true)
+                                         ->where('minimum_quantity', '>', 0)
+                                         ->whereRaw('quantity <= minimum_quantity * 1.5')
+                                         ->whereRaw('quantity >= minimum_quantity')
+                                         ->count(),
+            'negative_stock_items' => StockItem::where('is_active', true)
+                                              ->where('quantity', '<', 0)
+                                              ->count(),
+        ];
 
         return view('stock.items.index', [
             'items' => $items,
             'categories' => $categories,
+            'statistics' => $statistics,
             'filters' => [
                 'q' => $search,
                 'category' => $request->input('category'),
@@ -103,6 +130,15 @@ class StockItemController extends Controller
         return redirect()->route('stock.items.index')->with('success', 'Stok kalemi olusturuldu.');
     }
 
+    public function show(StockItem $item): View
+    {
+        $this->authorize('accessStockManagement');
+
+        $movements = $item->movements()->with(['createdBy'])->latest()->paginate(20);
+
+        return view('stock.items.show', compact('item', 'movements'));
+    }
+
     public function edit(StockItem $item): View
     {
         $this->authorize('accessStockManagement');
@@ -155,12 +191,135 @@ class StockItemController extends Controller
         if ($item->movements()->exists()) {
             $item->forceFill(['is_active' => false])->save();
 
-            return redirect()->route('stock.items.index')->with('info', 'Stok kalemi kullanimda olduðundan pasif hale getirildi.');
+            return redirect()->route('stock.items.index')->with('info', 'Stok kalemi kullanimda olduï¿½undan pasif hale getirildi.');
         }
 
         $item->delete();
 
         return redirect()->route('stock.items.index')->with('success', 'Stok kalemi silindi.');
+    }
+
+    public function search(Request $request)
+    {
+        $this->authorize('accessStockManagement');
+
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $items = StockItem::where('is_active', true)
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('sku', 'like', "%{$query}%")
+                  ->orWhere('barcode', 'like', "%{$query}%");
+            })
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name', 'unit', 'sku']);
+
+        return response()->json($items);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $this->authorize('accessStockManagement');
+
+        $query = $request->get('q', '');
+        $filename = 'stok_kalemleri_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new StockItemsExport($query), $filename);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $this->authorize('accessStockManagement');
+
+        $query = StockItem::with('category')->orderBy('name');
+
+        if ($search = $request->string('q')->toString()) {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('sku', 'like', "%{$search}%")
+                ->orWhere('barcode', 'like', "%{$search}%");
+        }
+
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->integer('category'));
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->string('status')->toString();
+            $query->when($status === 'active', fn ($q) => $q->where('is_active', true))
+                ->when($status === 'inactive', fn ($q) => $q->where('is_active', false))
+                ->when($status === 'critical', fn ($q) => $q->where('minimum_quantity', '>', 0)->whereColumn('quantity', '<', 'minimum_quantity'))
+                ->when($status === 'low', fn ($q) => $q->where('minimum_quantity', '>', 0)->whereRaw('quantity <= minimum_quantity * 1.5 AND quantity >= minimum_quantity'))
+                ->when($status === 'sufficient', fn ($q) => $q->where(function($subQ) {
+                    $subQ->where('minimum_quantity', '<=', 0)
+                         ->orWhereRaw('quantity > minimum_quantity * 1.5');
+                }))
+                ->when($status === 'negative', fn ($q) => $q->where('quantity', '<', 0));
+        }
+
+        $items = $query->get();
+
+        $pdf = Pdf::loadView('stock.items.pdf', [
+            'items' => $items,
+            'title' => 'Stok Kalemleri Raporu',
+            'generated_at' => now()->format('d.m.Y H:i'),
+            'filters' => [
+                'q' => $request->input('q'),
+                'category' => $request->input('category'),
+                'status' => $request->input('status'),
+            ],
+        ]);
+
+        $filename = 'stok_kalemleri_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    public function print(Request $request)
+    {
+        $this->authorize('accessStockManagement');
+
+        $query = StockItem::with('category')->orderBy('name');
+
+        if ($search = $request->string('q')->toString()) {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('sku', 'like', "%{$search}%")
+                ->orWhere('barcode', 'like', "%{$search}%");
+        }
+
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->integer('category'));
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->string('status')->toString();
+            $query->when($status === 'active', fn ($q) => $q->where('is_active', true))
+                ->when($status === 'inactive', fn ($q) => $q->where('is_active', false))
+                ->when($status === 'critical', fn ($q) => $q->where('minimum_quantity', '>', 0)->whereColumn('quantity', '<', 'minimum_quantity'))
+                ->when($status === 'low', fn ($q) => $q->where('minimum_quantity', '>', 0)->whereRaw('quantity <= minimum_quantity * 1.5 AND quantity >= minimum_quantity'))
+                ->when($status === 'sufficient', fn ($q) => $q->where(function($subQ) {
+                    $subQ->where('minimum_quantity', '<=', 0)
+                         ->orWhereRaw('quantity > minimum_quantity * 1.5');
+                }))
+                ->when($status === 'negative', fn ($q) => $q->where('quantity', '<', 0));
+        }
+
+        $items = $query->get();
+
+        return view('stock.items.print', [
+            'items' => $items,
+            'title' => 'Stok Kalemleri Raporu',
+            'generated_at' => now()->format('d.m.Y H:i'),
+            'filters' => [
+                'q' => $request->input('q'),
+                'category' => $request->input('category'),
+                'status' => $request->input('status'),
+            ],
+        ]);
     }
 }
 

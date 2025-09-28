@@ -14,7 +14,7 @@ class PatientDataEraserService
 
             // 1. Dosyaları diskten sil ve kayıtlarını veritabanından temizle
             foreach ($patient->files as $file) {
-                Storage::delete($file->file_path);
+                Storage::delete($file->path);
                 $file->delete();
             }
 

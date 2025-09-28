@@ -41,7 +41,7 @@
                             <div>
                                 <dt class="font-medium text-gray-500 dark:text-gray-400">{{ __('Durum') }}</dt>
                                 <dd class="mt-1 inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">
-                                    {{ __(ucfirst($appointment->status->value)) }}
+                                    {{ __('appointments.status.' . $appointment->status->value) }}
                                 </dd>
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
@@ -119,7 +119,7 @@
                                 <x-select-input id="status" name="status" class="mt-1 block w-full">
                                     @foreach ($statuses as $status)
                                         <option value="{{ $status->value }}" @selected(old('status', $appointment->status->value) === $status->value)>
-                                            {{ __(ucfirst($status->value)) }}
+                                            {{ __('appointments.status.' . $status->value) }}
                                         </option>
                                     @endforeach
                                 </x-select-input>
@@ -157,6 +157,39 @@
                     </form>
                 </x-card>
             @endcan
+
+            @if($unplannedItems->isNotEmpty())
+            <x-card>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ __('Planlanmamış Tedaviler') }}</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    {{ __('Hastanın tedavi planlarından gelen ve henüz bir randevuya atanmamış tedaviler.') }}
+                </p>
+
+                <form method="POST" action="{{ route('appointments.attachItems', $appointment) }}" class="mt-6 space-y-5">
+                    @csrf
+                    <div class="space-y-4">
+                        @foreach($unplannedItems as $item)
+                        <div class="flex items-center">
+                            <input id="item-{{ $item->id }}" name="items[]" value="{{ $item->id }}" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            <label for="item-{{ $item->id }}" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {{ $item->treatment->name }}
+                                @if($item->tooth_number)
+                                    <span class="text-gray-500">({{ __('Diş') }}: {{ $item->tooth_number }})</span>
+                                @endif
+                                - (Plan #{{ $item->treatment_plan_id }})
+                            </label>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    <div class="flex justify-end mt-6">
+                        <x-primary-button>
+                            {{ __('Seçilenleri Bu Randevuya Ekle') }}
+                        </x-primary-button>
+                    </div>
+                </form>
+            </x-card>
+            @endif
         </div>
     </div>
 </x-app-layout>

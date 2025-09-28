@@ -21,6 +21,7 @@
         "@fullcalendar/interaction": "^6.1.19",
         "@fullcalendar/list": "^6.1.19",
         "@fullcalendar/timegrid": "^6.1.19",
-        "chart.js": "^4.5.0"
+        "chart.js": "^4.5.0",
+        "crush": "^0.2.1"
     }
 }

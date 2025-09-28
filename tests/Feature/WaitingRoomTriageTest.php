@@ -24,9 +24,9 @@ test('bekleme odası acil hastaları triage seviyesine göre doğru sıralar', f
     // 2. Eylem (Act)
     // Bekleme odası sayfasını (veya API endpoint'ini) çağır
     // Şimdilik WaitingRoomController'daki mantığı doğrudan test edelim
-    $controller = new \App\Http\Controllers\WaitingRoomController();
-    $view = $controller->index();
-    $waitingEncounters = $view->getData()['waitingEncounters'];
+    $controller = app()->make(\App\Http\Controllers\WaitingRoomController::class);
+    $view = $controller->emergency();
+    $waitingEncounters = $view->getData()['emergencyEncounters'];
     
     // 3. Doğrulama (Assert)
     // Listenin doğru sıralandığından emin ol: RED, YELLOW, GREEN

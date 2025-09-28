@@ -6,18 +6,32 @@ use App\Http\Controllers\Controller;
 use App\Models\Stock\StockCategory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class StockCategoryController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('accessStockManagement');
 
-        $categories = StockCategory::withCount('items')->orderBy('name')->get();
+        $query = StockCategory::query();
 
-        return view('stock.categories.index', compact('categories'));
+        if ($search = $request->string('search')->toString()) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+        }
+
+        return view('stock.categories.index', [
+            'categories' => $query->orderBy('name')->paginate(15)->withQueryString(),
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
+    public function create(): View
+    {
+        $this->authorize('accessStockManagement');
+
+        return view('stock.categories.create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -25,17 +39,32 @@ class StockCategoryController extends Controller
         $this->authorize('accessStockManagement');
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'name' => ['required', 'string', 'max:255', 'unique:stock_categories,name'],
+            'description' => ['nullable', 'string', 'max:500'],
         ]);
-
-        $validated['slug'] = Str::slug($validated['name']);
 
         StockCategory::create($validated);
 
-        return request()->filled('return_to')
-            ? redirect(request()->input('return_to'))->with('success', 'Kategori eklendi.')
-            : redirect()->route('stock.categories.index')->with('success', 'Kategori eklendi.');
+        return redirect()->route('stock.categories.index')
+                        ->with('success', __('stock.category_created'));
+    }
+
+    public function show(StockCategory $category): View
+    {
+        $this->authorize('accessStockManagement');
+
+        return view('stock.categories.show', [
+            'category' => $category->load('items'),
+        ]);
+    }
+
+    public function edit(StockCategory $category): View
+    {
+        $this->authorize('accessStockManagement');
+
+        return view('stock.categories.edit', [
+            'category' => $category,
+        ]);
     }
 
     public function update(Request $request, StockCategory $category): RedirectResponse
@@ -43,29 +72,33 @@ class StockCategoryController extends Controller
         $this->authorize('accessStockManagement');
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'name' => ['required', 'string', 'max:255', 'unique:stock_categories,name,' . $category->id],
+            'description' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $category->update(array_merge($validated, [
-            'slug' => Str::slug($validated['name']),
-        ]));
+        $category->update($validated);
 
-        return redirect()->route('stock.categories.index')->with('success', 'Kategori guncellendi.');
+        return redirect()->route('stock.categories.show', $category)
+                        ->with('success', __('stock.category_updated'));
     }
 
     public function destroy(StockCategory $category): RedirectResponse
     {
         $this->authorize('accessStockManagement');
 
+        if (!$category->canBeDeleted()) {
+            return redirect()->route('stock.categories.index')
+                            ->with('error', __('stock.cannot_delete_medical_supplies'));
+        }
+
         if ($category->items()->exists()) {
-            return redirect()->route('stock.categories.index')->with('error', 'Kategoriye ba�l� stok kalemleri bulundugu i�in silinemez.');
+            return redirect()->route('stock.categories.index')
+                            ->with('error', 'Bu kategoriye ait malzemeler bulunduğu için silinemez.');
         }
 
         $category->delete();
 
-        return redirect()->route('stock.categories.index')->with('success', 'Kategori silindi.');
+        return redirect()->route('stock.categories.index')
+                        ->with('success', __('stock.category_deleted'));
     }
 }
-
-

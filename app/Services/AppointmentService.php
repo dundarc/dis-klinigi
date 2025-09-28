@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\AppointmentStatus;
+use App\Enums\TreatmentPlanItemStatus;
 use App\Repositories\AppointmentRepository;
 use App\Models\Appointment;
 use Carbon\Carbon;
@@ -41,7 +43,14 @@ class AppointmentService
             $data['end_at'] ?? $appointment->end_at,
             $appointment->id
         );
-        return $this->appointmentRepository->update($appointment, $data);
+        
+        $updated = $this->appointmentRepository->update($appointment, $data);
+
+        if ($updated && isset($data['status']) && $data['status'] === AppointmentStatus::COMPLETED->value) {
+            $appointment->treatmentPlanItems()->update(['status' => TreatmentPlanItemStatus::DONE]);
+        }
+
+        return $updated;
     }
 
     public function deleteAppointment(Appointment $appointment): ?bool

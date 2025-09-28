@@ -14,16 +14,15 @@ class StockCurrentAccountController extends Controller
     {
         $this->authorize('accessStockManagement');
 
-        $suppliers = StockSupplier::with(['accountMovements'])->orderBy('name')->get()
+        $suppliers = StockSupplier::with(['purchaseInvoices', 'accountMovements'])->orderBy('name')->get()
             ->map(function (StockSupplier $supplier) {
-                $debit = $supplier->accountMovements->where('direction', 'debit')->sum('amount');
-                $credit = $supplier->accountMovements->where('direction', 'credit')->sum('amount');
-
                 return [
                     'supplier' => $supplier,
-                    'balance' => $debit - $credit,
-                    'debit' => $debit,
-                    'credit' => $credit,
+                    'total_debt' => $supplier->total_debt,
+                    'total_paid' => $supplier->total_paid,
+                    'remaining_debt' => $supplier->total_debt - $supplier->total_paid,
+                    'overdue_amount' => $supplier->overdue_amount,
+                    'overdue_invoices_count' => $supplier->overdue_invoices->count(),
                 ];
             });
 
@@ -34,24 +33,31 @@ class StockCurrentAccountController extends Controller
     {
         $this->authorize('accessStockManagement');
 
-        $query = $supplier->accountMovements()->latest('movement_date')->latest();
+        $query = $supplier->purchaseInvoices()->with('items')->latest('invoice_date')->latest();
 
-        if ($direction = $request->string('direction')->toString()) {
-            $query->where('direction', $direction);
+        if ($status = $request->string('status')->toString()) {
+            $query->where('payment_status', $status);
         }
 
         if ($from = $request->input('date_from')) {
-            $query->whereDate('movement_date', '>=', $from);
+            $query->whereDate('invoice_date', '>=', $from);
         }
 
         if ($to = $request->input('date_to')) {
-            $query->whereDate('movement_date', '<=', $to);
+            $query->whereDate('invoice_date', '<=', $to);
         }
 
         return view('stock.current.show', [
             'supplier' => $supplier,
-            'movements' => $query->paginate(20)->withQueryString(),
-            'filters' => $request->only(['direction', 'date_from', 'date_to']),
+            'invoices' => $query->paginate(20)->withQueryString(),
+            'filters' => $request->only(['status', 'date_from', 'date_to']),
+            'summary' => [
+                'total_debt' => $supplier->total_debt,
+                'total_paid' => $supplier->total_paid,
+                'remaining_debt' => $supplier->total_debt - $supplier->total_paid,
+                'overdue_amount' => $supplier->overdue_amount,
+                'overdue_invoices_count' => $supplier->overdue_invoices->count(),
+            ],
         ]);
     }
 }

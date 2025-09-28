@@ -17,7 +17,12 @@ class TreatmentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'code' => $this->faker->unique()->word(),
+            'name' => $this->faker->words(2, true),
+            'default_price' => $this->faker->randomFloat(2, 50, 2000),
+            'default_vat' => $this->faker->randomFloat(2, 0, 0.25),
+            'default_duration_min' => $this->faker->numberBetween(15, 120),
+            'description' => $this->faker->optional()->sentence(),
         ];
     }
 }

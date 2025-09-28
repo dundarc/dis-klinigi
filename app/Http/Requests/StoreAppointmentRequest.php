@@ -32,6 +32,8 @@ class StoreAppointmentRequest extends FormRequest
             'end_at' => ['required', 'date', 'after:start_at'],
             'status' => ['sometimes', new Enum(AppointmentStatus::class)],
             'notes' => ['nullable', 'string'],
+            'treatment_plan_items' => ['nullable', 'array'],
+            'treatment_plan_items.*' => ['exists:treatment_plan_items,id'],
         ];
     }
 }

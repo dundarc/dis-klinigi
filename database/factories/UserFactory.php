@@ -16,11 +16,11 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            
             'phone' => fake('tr_TR')->phoneNumber(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => UserRole::DENTIST,
-            'remember_token' => Str::random(10),
+            
         ];
     }
     

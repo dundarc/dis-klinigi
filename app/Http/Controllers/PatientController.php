@@ -56,6 +56,56 @@ class PatientController extends Controller
     }
 
     /**
+     * API: Hastaları arama için JSON döndürür (live search için).
+     */
+    public function search(Request $request)
+    {
+        $this->authorize('viewAny', Patient::class);
+
+        $query = $request->input('q', '');
+        $page = $request->input('page', 1);
+        $perPage = 20;
+        $user = auth()->user();
+
+        $patientsQuery = Patient::query()
+            ->when($user->role === UserRole::DENTIST, function ($q) use ($user) {
+                $q->whereHas('appointments', function ($subQ) use ($user) {
+                    $subQ->where('dentist_id', $user->id);
+                });
+            })
+            ->when($query, function ($q, $query) {
+                $q->where(function ($subQuery) use ($query) {
+                    $subQuery->where(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$query}%")
+                        ->orWhere('phone_primary', 'like', "%{$query}%")
+                        ->orWhere('national_id', 'like', "%{$query}%");
+                });
+            })
+            ->latest();
+
+        $paginated = $patientsQuery->paginate($perPage, ['*'], 'page', $page);
+
+        $data = $paginated->items();
+
+        $patients = collect($data)->map(function ($patient) {
+            return [
+                'id' => $patient->id,
+                'name' => $patient->first_name . ' ' . $patient->last_name,
+                'phone' => $patient->phone_primary,
+                'kvkk_consent' => $patient->consent_kvkk_at ? true : false,
+                'created_at' => $patient->created_at->format('d.m.Y H:i'),
+            ];
+        });
+
+        return response()->json([
+            'data' => $patients,
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+            'per_page' => $paginated->perPage(),
+            'total' => $paginated->total(),
+        ]);
+    }
+
+    /**
      * Yeni hasta oluşturma formunu gösterir.
      */
     public function create()
@@ -82,7 +132,7 @@ class PatientController extends Controller
     /**
      * Hastanın tüm detaylarını ve ilişkili verilerini görüntüler.
      */
-    public function show(Patient $patient)
+    public function show(Request $request, Patient $patient)
     {
         $this->authorize('view', $patient);
 
@@ -90,11 +140,62 @@ class PatientController extends Controller
 
         $age = $patient->birth_date ? $patient->birth_date->age : null;
 
+        // Paginate and filter encounters
+        $encountersQuery = $patient->encounters()
+            ->with([
+                'dentist:id,name',
+                'appointment:id,start_at,dentist_id',
+                'treatments' => function ($query) {
+                    $query->with(['treatment:id,name', 'dentist:id,name'])
+                        ->orderByDesc('performed_at');
+                },
+                'prescriptions' => function ($query) {
+                    $query->with('dentist:id,name')
+                        ->orderByDesc('created_at');
+                },
+                'files' => function ($query) {
+                    $query->with('uploader:id,name')
+                        ->orderByDesc('created_at');
+                },
+            ])
+            ->orderByDesc('arrived_at')
+            ->orderByDesc('created_at');
+
+        // Filter encounters
+        if ($request->filled('encounter_doctor')) {
+            $encountersQuery->whereHas('dentist', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->encounter_doctor . '%');
+            });
+        }
+        if ($request->filled('encounter_date')) {
+            $encountersQuery->whereDate('arrived_at', $request->encounter_date);
+        }
+
+        $encounters = $encountersQuery->paginate(5, ['*'], 'encounter_page')->withQueryString();
+
+        // Paginate and filter treatment plans
+        $treatmentPlansQuery = $patient->treatmentPlans()
+            ->with(['dentist:id,name', 'items.treatment', 'items.appointment'])
+            ->orderByDesc('created_at');
+
+        // Filter treatment plans
+        if ($request->filled('plan_doctor')) {
+            $treatmentPlansQuery->whereHas('dentist', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->plan_doctor . '%');
+            });
+        }
+        if ($request->filled('plan_status')) {
+            $treatmentPlansQuery->where('status', $request->plan_status);
+        }
+        if ($request->filled('plan_date')) {
+            $treatmentPlansQuery->whereDate('created_at', $request->plan_date);
+        }
+
+        $treatmentPlans = $treatmentPlansQuery->paginate(5, ['*'], 'plan_page')->withQueryString();
+
         $appointmentStatusLabels = [];
         foreach (AppointmentStatus::cases() as $status) {
-            $appointmentStatusLabels[$status->value] = method_exists($status, 'label')
-                ? $status->label()
-                : ucfirst(str_replace('_', ' ', $status->value));
+            $appointmentStatusLabels[$status->value] = __('appointments.status.' . $status->value);
         }
 
         $appointmentStatusStyles = [
@@ -124,7 +225,8 @@ class PatientController extends Controller
             'patient' => $patient,
             'age' => $age,
             'upcomingAppointments' => $detail['upcomingAppointments'],
-            'encounters' => $detail['encounters'],
+            'encounters' => $encounters,
+            'treatmentPlans' => $treatmentPlans,
             'appointmentStatusLabels' => $appointmentStatusLabels,
             'appointmentStatusStyles' => $appointmentStatusStyles,
             'encounterTypeLabels' => $encounterTypeLabels,
@@ -191,5 +293,61 @@ class PatientController extends Controller
             ->get();
 
         return response()->json($treatments);
+    }
+
+    /**
+     * API: Hekimleri arama için JSON döndürür (live search için).
+     */
+    public function searchDentists(Request $request)
+    {
+        $this->authorize('viewAny', Patient::class);
+
+        $query = $request->input('q', '');
+
+        $dentists = \App\Models\User::where('role', UserRole::DENTIST)
+            ->when($query, function ($q, $query) {
+                $q->where('name', 'like', "%{$query}%");
+            })
+            ->latest()
+            ->take(20)
+            ->get()
+            ->map(function ($dentist) {
+                return [
+                    'id' => $dentist->id,
+                    'name' => $dentist->name,
+                ];
+            });
+
+        return response()->json($dentists);
+    }
+
+    /**
+     * API: Tedarikçileri arama için JSON döndürür (live search için).
+     */
+    public function searchSuppliers(Request $request)
+    {
+        $this->authorize('accessStockManagement');
+
+        $query = $request->input('q', '');
+
+        $suppliers = \App\Models\Stock\StockSupplier::query()
+            ->when($query, function ($q, $query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('phone', 'like', "%{$query}%")
+                  ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->latest()
+            ->take(20)
+            ->get()
+            ->map(function ($supplier) {
+                return [
+                    'id' => $supplier->id,
+                    'name' => $supplier->name,
+                    'phone' => $supplier->phone,
+                    'email' => $supplier->email,
+                ];
+            });
+
+        return response()->json($suppliers);
     }
 }

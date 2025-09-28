@@ -1,4 +1,5 @@
 ﻿import "./bootstrap";
+import "./quick-actions";
 
 import Alpine from "alpinejs";
 

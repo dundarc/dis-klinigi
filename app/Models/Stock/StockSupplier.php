@@ -48,4 +48,26 @@ class StockSupplier extends Model
     {
         return $query->where('type', 'service');
     }
+
+    public function getTotalDebtAttribute(): float
+    {
+        return $this->purchaseInvoices->sum('remaining_amount');
+    }
+
+    public function getTotalPaidAttribute(): float
+    {
+        return $this->purchaseInvoices->sum('total_paid');
+    }
+
+    public function getOverdueInvoicesAttribute()
+    {
+        return $this->purchaseInvoices->filter(function ($invoice) {
+            return $invoice->payment_status === 'overdue' || ($invoice->due_date && $invoice->due_date->isPast() && $invoice->remaining_amount > 0);
+        });
+    }
+
+    public function getOverdueAmountAttribute(): float
+    {
+        return $this->overdue_invoices->sum('remaining_amount');
+    }
 }

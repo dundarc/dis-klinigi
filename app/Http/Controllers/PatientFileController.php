@@ -10,10 +10,10 @@ class PatientFileController extends Controller
     {
         $this->authorize('view', $file);
 
-        if (!Storage::disk('public')->exists($file->file_path)) {
+        if (!Storage::disk('public')->exists($file->path)) {
             abort(404);
         }
 
-        return Storage::disk('public')->response($file->file_path, basename($file->file_path));
+        return response()->download(Storage::disk('public')->path($file->path), $file->original_filename ?? basename($file->path));
     }
 }

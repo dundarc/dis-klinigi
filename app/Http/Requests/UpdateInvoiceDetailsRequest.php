@@ -25,6 +25,8 @@ class UpdateInvoiceDetailsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'patient_id' => ['required', 'exists:patients,id'],
+            'issue_date' => ['required', 'date'],
             'status' => ['required', new Enum(InvoiceStatus::class)],
             'payment_method' => ['nullable', 'string', 'max:50', 'required_if:status,paid'],
             'paid_at' => ['nullable', 'required_if:status,paid', 'date'],

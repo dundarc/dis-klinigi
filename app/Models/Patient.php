@@ -85,4 +85,27 @@ class Patient extends Model
     {
         return $this->hasMany(Consent::class);
     }
+
+    public function treatmentPlans()
+    {
+        return $this->hasMany(TreatmentPlan::class);
+    }
+
+    public function getFirstNameAttribute($value)
+    {
+        if (is_array($value)) {
+            return $value[0] ?? '';
+        }
+        return (string) $value;
+    }
+
+    public function getLastNameAttribute($value)
+    {
+        if (is_array($value)) {
+            return $value[0] ?? '';
+        }
+        return (string) $value;
+    }
 }
+
+    

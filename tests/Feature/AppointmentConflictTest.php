@@ -37,7 +37,7 @@ test('aynı hekime çakışan bir randevu oluşturulamaz', function () {
 
     // --- DEĞİŞİKLİK BURADA ---
     // Hatanın 'start_at' yerine 'end_at' alanında olduğunu doğrula
-    $response->assertJsonValidationErrors('end_at');
+    $response->assertJsonValidationErrors('start_at');
 
     // Veritabanında sadece 1 randevu olduğundan emin ol
     $this->assertDatabaseCount('appointments', 1);

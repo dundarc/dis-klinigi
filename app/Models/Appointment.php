@@ -10,7 +10,7 @@ class Appointment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'patient_id', 'dentist_id', 'start_at', 'end_at', 'status', 'room',
+        'patient_id', 'dentist_id', 'treatment_plan_id', 'start_at', 'end_at', 'status', 'room',
         'notes', 'queue_number', 'checked_in_at', 'called_at',
     ];
 
@@ -32,4 +32,10 @@ class Appointment extends Model
     // Relationships
     public function patient() { return $this->belongsTo(Patient::class); }
     public function dentist() { return $this->belongsTo(User::class, 'dentist_id'); }
+    public function treatmentPlan() { return $this->belongsTo(TreatmentPlan::class); }
+
+    public function treatmentPlanItems()
+    {
+        return $this->hasMany(TreatmentPlanItem::class);
+    }
 }

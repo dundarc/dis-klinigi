@@ -66,5 +66,7 @@ class User extends Authenticatable
     public function appointments() { return $this->hasMany(Appointment::class, 'dentist_id'); }
     public function patientTreatments() { return $this->hasMany(PatientTreatment::class, 'dentist_id'); }
     public function prescriptions() { return $this->hasMany(Prescription::class, 'dentist_id'); }
+    public function treatmentPlans() { return $this->hasMany(TreatmentPlan::class, 'dentist_id'); }
+    public function stockMovements() { return $this->hasMany(\App\Models\Stock\StockMovement::class, 'created_by'); }
 }
 

@@ -56,4 +56,14 @@ class StockItem extends Model
 
         return (float) $this->quantity < (float) $this->minimum_quantity;
     }
+
+    public function shouldTrackStock(): bool
+    {
+        return $this->category && $this->category->isMedicalSupplies();
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->name . ($this->sku ? ' (' . $this->sku . ')' : '');
+    }
 }

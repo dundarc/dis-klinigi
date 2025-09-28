@@ -1,0 +1,592 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Yeni Satın Alma Faturası</h2>
+            <x-secondary-button-link href="{{ route('stock.purchases.index') }}">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Listeye Dön
+            </x-secondary-button-link>
+        </div>
+    </x-slot>
+
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <x-card x-data="purchaseInvoiceForm()" class="space-y-8">
+                <form method="POST" action="{{ route('stock.purchases.store') }}" enctype="multipart/form-data" class="space-y-8">
+                    @csrf
+
+                    <!-- Üst Bilgiler -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Fatura Bilgileri</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Tedarikçi Live Search -->
+                            <div class="relative" x-data="{ open: false, supplierQuery: '', supplierResults: [], selectedSupplier: null, selectedSupplierId: '', supplierTimeout: null }">
+                                <x-input-label for="supplier_search" value="Tedarikçi *" />
+                                <input type="text"
+                                       x-model="supplierQuery"
+                                       @input="searchSuppliers()"
+                                       @focus="open = true"
+                                       @blur="setTimeout(() => open = false, 200)"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                       placeholder="Tedarikçi adı ile ara..."
+                                       autocomplete="off">
+                                <input type="hidden" name="supplier_id" x-model="selectedSupplierId">
+
+                                <!-- Supplier Search Results -->
+                                <div x-show="open && supplierResults.length > 0"
+                                     x-transition
+                                     class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                    <template x-for="(supplier, index) in supplierResults" :key="'supplier-' + (supplier?.id || index)">
+                                        <div @click="selectSupplier(supplier)"
+                                             class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                            <div class="flex items-center">
+                                                <span class="font-normal block truncate" x-text="supplier?.name || ''"></span>
+                                                <span class="text-gray-500 dark:text-gray-400 ml-2 text-sm" x-text="supplier?.phone || ''"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div @click="createNewSupplier()" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                                        <div class="flex items-center text-blue-600 dark:text-blue-400">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            </svg>
+                                            <span>Yeni Tedarikçi Ekle</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Selected Supplier Display -->
+                                <div x-show="selectedSupplier" class="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-blue-900 dark:text-blue-100" x-text="selectedSupplier?.name || ''"></span>
+                                        <button type="button" @click="clearSupplierSelection()" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-blue-700 dark:text-blue-300 mt-1" x-text="selectedSupplier?.phone || ''"></p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <x-input-label for="invoice_number" value="Fatura No" />
+                                <x-text-input id="invoice_number" name="invoice_number" type="text" value="{{ old('invoice_number') }}" class="mt-1 block w-full" required />
+                            </div>
+
+                            <div>
+                                <x-input-label for="invoice_date" value="Fatura Tarihi *" />
+                                <x-text-input id="invoice_date" name="invoice_date" type="date" value="{{ old('invoice_date', now()->toDateString()) }}" class="mt-1 block w-full" required />
+                            </div>
+
+                            <div>
+                                <x-input-label for="due_date" value="Vade Tarihi" />
+                                <x-text-input id="due_date" name="due_date" type="date" value="{{ old('due_date') }}" class="mt-1 block w-full" />
+                            </div>
+
+                            <div>
+                                <x-input-label for="payment_status" value="Ödeme Durumu *" />
+                                <select id="payment_status" name="payment_status" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" required>
+                                    <option value="pending" @selected(old('payment_status') === 'pending')>Bekleyen</option>
+                                    <option value="partial" @selected(old('payment_status') === 'partial')>Kısmi</option>
+                                    <option value="paid" @selected(old('payment_status') === 'paid')>Ödendi</option>
+                                    <option value="overdue" @selected(old('payment_status') === 'overdue')>Gecikmiş</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <x-input-label for="payment_method" value="Ödeme Yöntemi" />
+                                <x-text-input id="payment_method" name="payment_method" type="text" value="{{ old('payment_method') }}" class="mt-1 block w-full" />
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <x-input-label for="notes" value="Notlar" />
+                                <textarea id="notes" name="notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600">{{ old('notes') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Giriş Modu Seçimi -->
+                    <div class="flex items-center justify-center gap-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="mode" value="manual" x-model="mode" class="mr-3 text-indigo-600 focus:ring-indigo-500" {{ old('mode', 'manual') === 'manual' ? 'checked' : '' }} />
+                            <div class="flex flex-col items-center">
+                                <svg class="w-8 h-8 text-indigo-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                <span class="text-sm font-medium">Manuel Giriş</span>
+                            </div>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="mode" value="upload" x-model="mode" class="mr-3 text-indigo-600 focus:ring-indigo-500" {{ old('mode') === 'upload' ? 'checked' : '' }} />
+                            <div class="flex flex-col items-center">
+                                <svg class="w-8 h-8 text-indigo-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <span class="text-sm font-medium">OCR Yükleme</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- OCR Yükleme -->
+                    <div x-show="mode === 'upload'" x-transition class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">OCR ile Otomatik Okuma</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <x-input-label for="file" value="Fatura Dosyası (PDF/JPG) *" />
+                                <input id="file" name="file" type="file" accept="application/pdf,image/jpeg,image/jpg,image/png"
+                                       @change="handleFileUpload($event)"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600" />
+                                <p class="mt-2 text-sm text-blue-700 dark:text-blue-300">PDF veya JPG formatındaki fatura dosyasını yükleyin. Sistem otomatik olarak verileri okuyacaktır.</p>
+                            </div>
+                            <div x-show="isProcessing" class="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                                <div class="spinner"></div>
+                                <span>OCR işleniyor...</span>
+                            </div>
+                            <div x-show="ocrResults && ocrResults.length > 0" class="mt-4">
+                                <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Tespit Edilen Kalemler:</h5>
+                                <div class="space-y-2">
+                                    <template x-for="(result, index) in ocrResults" :key="index">
+                                        <div class="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                                            <span x-text="result.description"></span>
+                                            <button type="button" @click="addOcrResult(result)" class="text-blue-600 hover:text-blue-800 text-sm">Ekle</button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manuel Kalem Girişi -->
+                    <div x-show="mode === 'manual'" x-transition class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Fatura Kalemleri</h4>
+                            <button type="button" @click="addItem()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Yeni Kalem Ekle
+                            </button>
+                        </div>
+
+                        <!-- Desktop Tablo Görünümü -->
+                        <div class="hidden lg:block overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Malzeme Adı</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Miktar</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Birim</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Birim Fiyat</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">KDV %</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tutar</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    <template x-for="(item, index) in items" :key="'item-' + index">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                            <td class="px-4 py-3">
+                                                <div class="relative" x-data="{ itemQuery: item.description || '', itemOpen: false, itemTimeout: null }">
+                                                    <input type="text"
+                                                           x-model="itemQuery"
+                                                           @input="searchItems(index, itemQuery)"
+                                                           @focus="itemOpen = true"
+                                                           @blur="setTimeout(() => itemOpen = false, 200)"
+                                                           class="w-full border-0 bg-transparent focus:ring-0 text-sm"
+                                                           placeholder="Malzeme adı..."
+                                                           autocomplete="off">
+                                                    <input type="hidden" x-bind:name="'items[' + index + '][stock_item_id]'" x-model="item.stock_item_id">
+                                                    <input type="hidden" x-bind:name="'items[' + index + '][description]'" x-model="item.description">
+
+                                                    <!-- Item Search Results -->
+                                                    <div x-show="itemOpen && getItemResults(index).length > 0"
+                                                         x-transition
+                                                         class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                                        <template x-for="(stockItem, itemIndex) in getItemResults(index)" :key="'item-' + (stockItem?.id || itemIndex)">
+                                                            <div @click="selectItem(index, stockItem); itemQuery = stockItem.name; itemOpen = false"
+                                                                 class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                                <div class="flex items-center">
+                                                                    <span class="font-normal block truncate" x-text="stockItem?.name || ''"></span>
+                                                                    <span class="text-gray-500 dark:text-gray-400 ml-2 text-sm" x-text="stockItem?.unit || ''"></span>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                        <div @click="createNewItem(index); itemOpen = false" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                                                            <div class="flex items-center text-blue-600 dark:text-blue-400">
+                                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                </svg>
+                                                                <span>Yeni Malzeme Ekle</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <input type="number" step="0.01" min="0"
+                                                       x-model="item.quantity"
+                                                       x-bind:name="'items[' + index + '][quantity]'"
+                                                       class="w-full border-0 bg-transparent focus:ring-0 text-sm text-center"
+                                                       @input="updateCalculations()">
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <input type="text"
+                                                       x-model="item.unit"
+                                                       x-bind:name="'items[' + index + '][unit]'"
+                                                       class="w-full border-0 bg-transparent focus:ring-0 text-sm text-center"
+                                                       placeholder="adet">
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <input type="number" step="0.01" min="0"
+                                                       x-model="item.unit_price"
+                                                       x-bind:name="'items[' + index + '][unit_price]'"
+                                                       class="w-full border-0 bg-transparent focus:ring-0 text-sm text-right"
+                                                       @input="updateCalculations()">
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <input type="number" step="0.01" min="0" max="100"
+                                                       x-model="item.vat_rate"
+                                                       x-bind:name="'items[' + index + '][vat_rate]'"
+                                                       class="w-full border-0 bg-transparent focus:ring-0 text-sm text-center"
+                                                       @input="updateCalculations()">
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-right font-medium" x-text="formatCurrency(calculateLineTotal(item))"></td>
+                                            <td class="px-4 py-3">
+                                                <button type="button" @click="removeItem(index)" class="text-red-600 hover:text-red-800" x-show="items.length > 1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mobil Kart Görünümü -->
+                        <div class="lg:hidden space-y-4">
+                            <template x-for="(item, index) in items" :key="'mobile-item-' + index">
+                                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex-1 relative" x-data="{ itemQuery: item.description || '', itemOpen: false, itemTimeout: null }">
+                                            <input type="text"
+                                                   x-model="itemQuery"
+                                                   @input="searchItems(index, itemQuery)"
+                                                   @focus="itemOpen = true"
+                                                   @blur="setTimeout(() => itemOpen = false, 200)"
+                                                   class="w-full text-sm font-medium bg-transparent border-0 focus:ring-0 p-0"
+                                                   placeholder="Malzeme adı..."
+                                                   autocomplete="off">
+                                            <input type="hidden" x-bind:name="'items[' + index + '][stock_item_id]'" x-model="item.stock_item_id">
+                                            <input type="hidden" x-bind:name="'items[' + index + '][description]'" x-model="item.description">
+
+                                            <!-- Item Search Results -->
+                                            <div x-show="itemOpen && getItemResults(index).length > 0"
+                                                 x-transition
+                                                 class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-40 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                                                <template x-for="(stockItem, itemIndex) in getItemResults(index)" :key="'mobile-item-' + (stockItem?.id || itemIndex)">
+                                                    <div @click="selectItem(index, stockItem); itemQuery = stockItem.name; itemOpen = false"
+                                                         class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                        <div class="flex items-center">
+                                                            <span class="font-normal block truncate" x-text="stockItem?.name || ''"></span>
+                                                            <span class="text-gray-500 dark:text-gray-400 ml-2 text-sm" x-text="stockItem?.unit || ''"></span>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                                <div @click="createNewItem(index); itemOpen = false" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                                                    <div class="flex items-center text-blue-600 dark:text-blue-400">
+                                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                </svg>
+                                                        <span>Yeni Malzeme Ekle</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" @click="removeItem(index)" class="text-red-600 hover:text-red-800 ml-2" x-show="items.length > 1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400">Miktar</label>
+                                            <input type="number" step="0.01" min="0"
+                                                   x-model="item.quantity"
+                                                   x-bind:name="'items[' + index + '][quantity]'"
+                                                   class="w-full mt-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded text-sm"
+                                                   @input="updateCalculations()">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400">Birim</label>
+                                            <input type="text"
+                                                   x-model="item.unit"
+                                                   x-bind:name="'items[' + index + '][unit]'"
+                                                   class="w-full mt-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded text-sm"
+                                                   placeholder="adet">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400">Birim Fiyat</label>
+                                            <input type="number" step="0.01" min="0"
+                                                   x-model="item.unit_price"
+                                                   x-bind:name="'items[' + index + '][unit_price]'"
+                                                   class="w-full mt-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded text-sm"
+                                                   @input="updateCalculations()">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400">KDV %</label>
+                                            <input type="number" step="0.01" min="0" max="100"
+                                                   x-model="item.vat_rate"
+                                                   x-bind:name="'items[' + index + '][vat_rate]'"
+                                                   class="w-full mt-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded text-sm"
+                                                   @input="updateCalculations()">
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span class="text-gray-600 dark:text-gray-400">Tutar:</span>
+                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="formatCurrency(calculateLineTotal(item))"></span>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" x-bind:name="'items[' + index + '][stock_item_id]'" x-model="item.stock_item_id">
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Toplamlar -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="text-center">
+                                <div class="text-gray-600 dark:text-gray-400">Net Toplam</div>
+                                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100" x-text="formatCurrency(subtotal)"></div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-gray-600 dark:text-gray-400">KDV Toplamı</div>
+                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400" x-text="formatCurrency(vatTotal)"></div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-gray-600 dark:text-gray-400">Genel Toplam</div>
+                                <div class="text-3xl font-bold text-green-600 dark:text-green-400" x-text="formatCurrency(grandTotal)"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <x-secondary-button-link href="{{ route('stock.purchases.index') }}">İptal</x-secondary-button-link>
+                        <x-primary-button type="submit" x-bind:disabled="items.length === 0 && mode === "manual"">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Faturayı Kaydet
+                        </x-primary-button>
+                    </div>
+                </form>
+            </x-card>
+        </div>
+    </div>
+
+    <script>
+        function purchaseInvoiceForm() {
+            return {
+                mode: '{{ old('mode', 'manual') }}',
+                supplierQuery: '',
+                supplierResults: [],
+                selectedSupplier: null,
+                selectedSupplierId: '',
+                itemSearchTimeout: null,
+                itemSearchResults: {},
+                items: [{
+                    stock_item_id: null,
+                    description: '',
+                    quantity: 1,
+                    unit: 'adet',
+                    unit_price: 0,
+                    vat_rate: 0
+                }],
+                subtotal: 0,
+                vatTotal: 0,
+                grandTotal: 0,
+                isProcessing: false,
+                ocrResults: [],
+
+                init() {
+                    this.updateCalculations();
+                },
+
+                searchSuppliers() {
+                    clearTimeout(this.supplierTimeout);
+                    this.supplierTimeout = setTimeout(() => {
+                        if (this.supplierQuery.length > 2) {
+                            fetch(`/suppliers/search?q=${encodeURIComponent(this.supplierQuery)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    this.supplierResults = Array.isArray(data) ? data : [];
+                                })
+                                .catch(error => {
+                                    console.error('Supplier search error:', error);
+                                    this.supplierResults = [];
+                                });
+                        } else {
+                            this.supplierResults = [];
+                        }
+                    }, 300);
+                },
+
+                selectSupplier(supplier) {
+                    if (supplier) {
+                        this.selectedSupplier = supplier;
+                        this.selectedSupplierId = supplier.id;
+                        this.supplierQuery = supplier.name;
+                        this.supplierResults = [];
+                    }
+                },
+
+                clearSupplierSelection() {
+                    this.selectedSupplier = null;
+                    this.selectedSupplierId = '';
+                    this.supplierQuery = '';
+                    this.supplierResults = [];
+                },
+
+                createNewSupplier() {
+                    // TODO: Modal açıp yeni tedarikçi oluştur
+                    alert('Yeni tedarikçi oluşturma özelliği yakında eklenecek.');
+                },
+
+                searchItems(itemIndex, query) {
+                    clearTimeout(this.itemSearchTimeout);
+                    this.itemSearchTimeout = setTimeout(() => {
+                        if (query.length > 1) {
+                            fetch(`/stock/items/search?q=${encodeURIComponent(query)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Store results in a way that can be accessed by the specific item
+                                    this.itemSearchResults = this.itemSearchResults || {};
+                                    this.itemSearchResults[itemIndex] = Array.isArray(data) ? data : [];
+                                })
+                                .catch(error => {
+                                    console.error('Item search error:', error);
+                                    if (this.itemSearchResults) {
+                                        this.itemSearchResults[itemIndex] = [];
+                                    }
+                                });
+                        } else {
+                            if (this.itemSearchResults) {
+                                this.itemSearchResults[itemIndex] = [];
+                            }
+                        }
+                    }, 300);
+                },
+
+                selectItem(itemIndex, stockItem) {
+                    if (stockItem) {
+                        this.items[itemIndex].stock_item_id = stockItem.id;
+                        this.items[itemIndex].description = stockItem.name;
+                        this.items[itemIndex].unit = stockItem.unit || 'adet';
+                        // Clear search results
+                        if (this.itemSearchResults) {
+                            this.itemSearchResults[itemIndex] = [];
+                        }
+                        this.updateCalculations();
+                    }
+                },
+
+                createNewItem(itemIndex) {
+                    // TODO: Modal açıp yeni malzeme oluştur
+                    alert('Yeni malzeme oluşturma özelliği yakında eklenecek.');
+                },
+
+                getItemResults(itemIndex) {
+                    return this.itemSearchResults ? this.itemSearchResults[itemIndex] || [] : [];
+                },
+
+                addItem() {
+                    this.items.push({
+                        stock_item_id: null,
+                        description: '',
+                        quantity: 1,
+                        unit: 'adet',
+                        unit_price: 0,
+                        vat_rate: 0
+                    });
+                    this.updateCalculations();
+                },
+
+                removeItem(index) {
+                    if (this.items.length > 1) {
+                        this.items.splice(index, 1);
+                        this.updateCalculations();
+                    }
+                },
+
+                calculateLineTotal(item) {
+                    const quantity = parseFloat(item.quantity) || 0;
+                    const unitPrice = parseFloat(item.unit_price) || 0;
+                    const vatRate = parseFloat(item.vat_rate) || 0;
+                    const subtotal = quantity * unitPrice;
+                    return subtotal * (1 + vatRate / 100);
+                },
+
+                updateCalculations() {
+                    this.subtotal = this.items.reduce((sum, item) => {
+                        const quantity = parseFloat(item.quantity) || 0;
+                        const unitPrice = parseFloat(item.unit_price) || 0;
+                        return sum + (quantity * unitPrice);
+                    }, 0);
+
+                    this.vatTotal = this.items.reduce((sum, item) => {
+                        const quantity = parseFloat(item.quantity) || 0;
+                        const unitPrice = parseFloat(item.unit_price) || 0;
+                        const vatRate = parseFloat(item.vat_rate) || 0;
+                        const subtotal = quantity * unitPrice;
+                        return sum + (subtotal * vatRate / 100);
+                    }, 0);
+
+                    this.grandTotal = this.subtotal + this.vatTotal;
+                },
+
+                formatCurrency(amount) {
+                    return new Intl.NumberFormat('tr-TR', {
+                        style: 'currency',
+                        currency: 'TRY'
+                    }).format(amount);
+                },
+
+                handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.isProcessing = true;
+                        // TODO: OCR processing
+                        setTimeout(() => {
+                            this.isProcessing = false;
+                            this.ocrResults = [
+                                { description: 'Örnek Ürün 1', quantity: 10, unit: 'adet', unit_price: 50, vat_rate: 18 },
+                                { description: 'Örnek Ürün 2', quantity: 5, unit: 'kg', unit_price: 25, vat_rate: 8 }
+                            ];
+                        }, 2000);
+                    }
+                },
+
+                addOcrResult(result) {
+                    this.items.push({
+                        stock_item_id: null,
+                        description: result.description,
+                        quantity: result.quantity,
+                        unit: result.unit,
+                        unit_price: result.unit_price,
+                        vat_rate: result.vat_rate
+                    });
+                    this.updateCalculations();
+                }
+            }
+        }
+    </script>
+</x-app-layout>
+

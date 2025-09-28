@@ -55,6 +55,25 @@ class PrescriptionService
         $this->prescriptionRepository->delete($prescription);
     }
 
+    public function createOrUpdateForEncounter(Encounter $encounter, array $data, Authenticatable $dentist): Prescription
+    {
+        $prescription = $encounter->prescriptions()->first();
+
+        if ($prescription) {
+            // Update existing prescription
+            return $this->update($prescription, [
+                'text' => $data['content'],
+            ]);
+        } else {
+            // Create new prescription
+            return $this->create([
+                'patient_id' => $encounter->patient_id,
+                'encounter_id' => $encounter->id,
+                'text' => $data['content'],
+            ], $dentist);
+        }
+    }
+
     private function validateEncounterOwnership(?int $encounterId, int $patientId): ?int
     {
         if (! $encounterId) {

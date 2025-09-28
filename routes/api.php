@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Accounting\InvoiceManagementController;
 use App\Http\Controllers\Api\V1\Accounting\FinancialReportController;
 use App\Http\Controllers\Api\V1\Admin\PatientErasureController;
+use App\Http\Controllers\Api\V1\TreatmentPlanController as ApiTreatmentPlanController; // API Controller iÃ§in alias
 use App\Http\Controllers\PatientController; // EKLENDÄ°
 use App\Http\Controllers\PatientController as ApiPatientController; // API Controller iÃ§in alias
 
@@ -60,7 +61,19 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('invoices', InvoiceController::class);
     Route::post('patient-treatments', [PatientTreatmentController::class, 'store']);
     Route::post('patients/{patient}/files', [PatientFileController::class, 'store']);
+    Route::patch('files/{file}', [PatientFileController::class, 'update']);
     Route::delete('files/{file}', [PatientFileController::class, 'destroy']);
+
+    // Treatment Plan Item Status Updates
+    Route::post('treatment-plan-items/{item}/complete', [\App\Http\Controllers\Api\V1\TreatmentPlanItemController::class, 'complete']);
+    Route::post('treatment-plan-items/{item}/cancel', [\App\Http\Controllers\Api\V1\TreatmentPlanItemController::class, 'cancel']);
+    Route::post('treatment-plan-items/{item}/start', [\App\Http\Controllers\Api\V1\TreatmentPlanItemController::class, 'start']);
+
+    // Encounter Treatment Plan Items
+    Route::get('encounters/{encounter}/treatment-plan-items', [\App\Http\Controllers\Api\V1\EncounterController::class, 'getTreatmentPlanItems']);
+    Route::post('encounters/{encounter}/auto-save-treatments', [\App\Http\Controllers\Api\V1\EncounterController::class, 'autoSaveTreatments']);
+    Route::post('encounters/{encounter}/auto-save-prescription', [PrescriptionController::class, 'autoSavePrescription']);
+
     
     // Admin'e Ã¶zel rotalar
     Route::prefix('admin')->middleware('can:accessAdminFeatures')->group(function () {
@@ -70,6 +83,10 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     
     // TÃ¼m kullanÄ±cÄ±lar iÃ§in bildirim rotalarÄ±
     Route::get('notifications', [NotificationController::class, 'index']);
+
+    // Treatment Plan API routes
+    Route::get('treatment-plans/{treatmentPlan}', [ApiTreatmentPlanController::class, 'show']);
+    Route::get('treatment-plans/{treatmentPlan}/items', [\App\Http\Controllers\Api\V1\TreatmentPlanItemController::class, 'index']); // Existing items API
     
 
         Route::get('/patients/{patient}/uninvoiced-treatments', [PatientController::class, 'getUninvoicedTreatments']);

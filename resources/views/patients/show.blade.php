@@ -1,368 +1,340 @@
 <x-app-layout>
-    <div class="py-10" x-data x-init="$store.prescriptions.init({ patientId: {{ $patient->id }} })">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-            <x-card>
-                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <!-- Patient Information Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                            {{ $patient->first_name }} {{ $patient->last_name }}
-                        </h1>
-                        <dl class="mt-4 grid gap-4 text-sm text-gray-600 dark:text-gray-300 md:grid-cols-2">
-                            <div>
-                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.age') }}</dt>
-                                <dd>{{ $age ? $age . ' ' . __('patient.age_unit') : __('patient.not_available') }}</dd>
-                            </div>
-                            <div>
-                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.primary_phone') }}</dt>
-                                <dd>{{ $patient->phone_primary ?? __('patient.not_available') }}</dd>
-                            </div>
-                            <div>
-                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.secondary_phone') }}</dt>
-                                <dd>{{ $patient->phone_secondary ?? __('patient.not_available') }}</dd>
-                            </div>
-                            <div>
-                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.email') }}</dt>
-                                <dd>{{ $patient->email ?? __('patient.not_available') }}</dd>
-                            </div>
-                            <div class="md:col-span-2">
-                                <dt class="font-semibold text-gray-500 dark:text-gray-400">{{ __('patient.address') }}</dt>
-                                <dd>{{ $patient->address_text ?? __('patient.not_available') }}</dd>
-                            </div>
-                        </dl>
+                        <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">{{ $patient->first_name }} {{ $patient->last_name }}</h1>
+                        <p class="text-slate-600 dark:text-slate-400 mt-1">{{ $age ? $age . ' yaşında' : 'Yaş bilgisi yok' }}</p>
                     </div>
-                    <div class="flex flex-col items-start gap-4 md:items-end">
-                        @can('update', $patient)
-                            <x-primary-button-link href="{{ route('patients.edit', $patient) }}">
-                                {{ __('patient.edit_button') }}
-                            </x-primary-button-link>
-                        @endcan
-                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                            <p>{{ __('patient.private_insurance') }}:
-                                <span class="font-semibold text-gray-900 dark:text-gray-100">
-                                    {{ $patient->has_private_insurance ? __('patient.yes') : __('patient.no') }}
-                                </span>
-                            </p>
-                            @if($patient->consent_kvkk_at)
-                                <p>{{ __('patient.consent_date') }}: {{ $patient->consent_kvkk_at->format('d.m.Y H:i') }}</p>
-                            @endif
-                        </div>
+                    <div class="flex gap-2">
+                        <a href="{{ route('patients.edit', $patient) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Bilgileri Düzenle
+                        </a>
                     </div>
                 </div>
-            </x-card>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <p class="text-slate-500 dark:text-slate-400">Ana Telefon</p>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->phone_primary ?? 'Belirtilmemiş' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 dark:text-slate-400">İkincil Telefon</p>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->phone_secondary ?? 'Belirtilmemiş' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 dark:text-slate-400">E-posta</p>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->email ?? 'Belirtilmemiş' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 dark:text-slate-400">Adres</p>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->address_text ?? 'Belirtilmemiş' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 dark:text-slate-400">Özel Sağlık Sigortası</p>
+                        @if($patient->has_private_insurance)
+                            <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">Var</span>
+                        @else
+                            <span class="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-800 dark:text-red-200">Yok</span>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="text-slate-500 dark:text-slate-400">KVKK Onayı</p>
+                        @if($patient->consent_kvkk_at)
+                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">Onaylandı</span>
+                        @else
+                            <span class="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-200">Onaylanmamış</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
 
-            <x-card>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ __('patient.upcoming_appointments') }}</h2>
-                </div>
+            <!-- Upcoming Appointments -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Gelecek Randevular</h2>
                 <div class="space-y-4">
                     @forelse($upcomingAppointments as $appointment)
-                        @php
-                            $statusValue = $appointment->status->value;
-                            $badgeClass = $appointmentStatusStyles[$statusValue] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200';
-                        @endphp
-                        <div class="rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-700">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {{ $appointment->start_at->format('d.m.Y H:i') }}
-                                    </p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300">
-                                        {{ $appointment->dentist?->name }}
-                                    </p>
-                                </div>
-                                <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide {{ $badgeClass }}">
-                                    {{ $appointmentStatusLabels[$statusValue] ?? ucfirst($statusValue) }}
-                                </span>
+                        <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                            <div>
+                                <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $appointment->start_at->format('d.m.Y H:i') }}</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ $appointment->dentist?->name }}</p>
                             </div>
+                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">Planlandı</span>
                         </div>
                     @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('patient.no_upcoming') }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Gelecek randevu bulunmuyor.</p>
                     @endforelse
                 </div>
-            </x-card>
+            </div>
 
-            <x-card>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">{{ __('patient.clinical_history') }}</h2>
-                <div class="space-y-4">
-                    @forelse($encounters as $encounter)
-                        @php
-                            $encounterDate = $encounter->arrived_at ?? $encounter->created_at;
-                            $typeLabel = $encounterTypeLabels[$encounter->type->value] ?? ucfirst($encounter->type->value);
-                            $statusLabel = $encounterStatusLabels[$encounter->status->value] ?? ucfirst($encounter->status->value);
-                        @endphp
-                        <details class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-                            <summary class="cursor-pointer list-none px-4 py-3">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                            {{ $encounterDate?->format('d.m.Y H:i') ?? 'â€”' }}
-                                        </p>
-                                        <p class="text-xs text-gray-600 dark:text-gray-300">
-                                            {{ $typeLabel }} Â· {{ $encounter->dentist?->name ?? __('patient.unknown_dentist') }}
-                                        </p>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                                            {{ $statusLabel }}
-                                        </span>
-                                        @can('update', $encounter)
-                                            <x-secondary-button-link href="{{ route('waiting-room.action', $encounter) }}">{{ __('patient.edit') }}</x-secondary-button-link>
-                                        @endcan
-                                    </div>
-                                </div>
-                            </summary>
-                            <div class="border-t border-gray-200 px-4 py-4 dark:border-gray-700">
-                                <div class="space-y-6">
-                                    <div>
-                                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.treatments') }}</h3>
-                                        <ul class="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                            @forelse($encounter->treatments as $treatment)
-                                                <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
-                                                    <div class="flex flex-wrap items-center justify-between gap-2">
-                                                        <span>{{ $treatment->performed_at?->format('d.m.Y H:i') ?? 'â€”' }}</span>
-                                                        <span>{{ $treatment->dentist?->name }}</span>
-                                                    </div>
-                                                    <p class="mt-1 font-medium text-gray-900 dark:text-gray-100">
-                                                        {{ $treatment->display_treatment_name }}
-                                                        @if($treatment->tooth_number)
-                                                            <span class="text-xs text-gray-500 dark:text-gray-400">#{{ $treatment->tooth_number }}</span>
-                                                        @endif
-                                                    </p>
-                                                    @if($treatment->notes)
-                                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $treatment->notes }}</p>
-                                                    @endif
-                                                </li>
-                                            @empty
-                                                <li class="text-xs text-gray-500 dark:text-gray-400">{{ __('patient.no_treatments') }}</li>
-                                            @endforelse
-                                        </ul>
-                                    </div>
+            <!-- Treatment Plans -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6" x-data="treatmentPlanSearch()">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Tedavi Planları</h2>
+                    <a href="{{ route('patients.treatment-plans.create', $patient) }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Yeni Plan Oluştur
+                    </a>
+                </div>
 
-                                    <div class="space-y-3">
-                                        <div class="flex items-center justify-between">
-                                            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.prescriptions') }}</h3>
-                                            @can('create', \App\Models\Prescription::class)
-                                                <x-primary-button type="button" @click="$store.prescriptions.openCreate({ encounterId: {{ $encounter->id }} }); $dispatch('open-modal', { name: 'prescription-modal' })">
-                                                    {{ __('patient.add_prescription') }}
-                                                </x-primary-button>
-                                            @endcan
-                                        </div>
-                                        <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                                            @forelse($encounter->prescriptions as $prescription)
-                                                <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
-                                                    <div class="flex flex-wrap items-center justify-between gap-2">
-                                                        <div>
-                                                            <p class="font-medium text-gray-900 dark:text-gray-100">{{ $prescription->dentist?->name }}</p>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $prescription->created_at?->format('d.m.Y H:i') }}</p>
-                                                        </div>
-                                                        <div class="flex gap-2">
-                                                            @can('update', $prescription)
-                                                                <x-secondary-button type="button" @click="$store.prescriptions.openEdit({ id: {{ $prescription->id }} }); $dispatch('open-modal', { name: 'prescription-modal' })">
-                                                                    {{ __('patient.edit') }}
-                                                                </x-secondary-button>
-                                                            @endcan
-                                                            @can('delete', $prescription)
-                                                                <x-danger-button type="button" @click="$store.prescriptions.remove({ id: {{ $prescription->id }} })">
-                                                                    {{ __('patient.delete') }}
-                                                                </x-danger-button>
-                                                            @endcan
-                                                        </div>
-                                                    </div>
-                                                    <p class="mt-3 whitespace-pre-line text-gray-700 dark:text-gray-200">{{ $prescription->text }}</p>
-                                                </li>
-                                            @empty
-                                                <li class="text-xs text-gray-500 dark:text-gray-400">{{ __('patient.no_prescriptions') }}</li>
-                                            @endforelse
-                                        </ul>
-                                    </div>
+                <!-- Live Search -->
+                <div class="mb-6">
+                    <label for="plan_search" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canlı Arama</label>
+                    <input type="text" x-model="searchQuery" @input="filterPlans()" placeholder="Tedavi adı, diş no veya doktor ara..." class="block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
 
-                                    @if($encounter->notes)
-                                        <div>
-                                            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.encounter_notes') }}</h3>
-                                            <p class="mt-2 whitespace-pre-line text-sm text-gray-600 dark:text-gray-300">{{ $encounter->notes }}</p>
-                                        </div>
-                                    @endif
-
-                                    <div>
-                                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ __('patient.encounter_files') }}</h3>
-                                        <ul class="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                            @forelse($encounter->files as $file)
-                                                <li class="rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
-                                                    <div class="flex flex-wrap items-center justify-between gap-2">
-                                                        <a href="{{ $file->download_url }}" target="_blank" class="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
-                                                            {{ $file->type->value ? __('file.type.' . $file->type->value) : __('file.type.other') }}
-                                                        </a>
-                                                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                                                            {{ $file->created_at?->format('d.m.Y H:i') }} Â· {{ $file->uploader?->name }}
-                                                        </span>
-                                                    </div>
-                                                    @if($file->notes)
-                                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $file->notes }}</p>
-                                                    @endif
-                                                </li>
-                                            @empty
-                                                <li class="text-xs text-gray-500 dark:text-gray-400">{{ __('patient.no_files_for_encounter') }}</li>
-                                            @endforelse
-                                        </ul>
-                                    </div>
-                                </div>
+                <div x-show="filteredPlans.length > 0" class="space-y-4">
+                    <template x-for="plan in paginatedPlans" :key="plan.id">
+                        <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                            <div>
+                                <h3 class="font-semibold text-slate-900 dark:text-slate-100">Tedavi Planı #<span x-text="plan.id"></span></h3>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">Dr. <span x-text="plan.dentist ? plan.dentist.name : 'Bilinmeyen Doktor'"></span> • <span x-text="formatDate(plan.created_at)"></span></p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400"><span x-text="plan.items.length"></span> tedavi kalemi • <span x-text="formatCurrency(plan.total_estimated_cost)"></span></p>
                             </div>
-                        </details>
-                    @empty
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('patient.no_encounters') }}</p>
-                    @endforelse
+                            <div class="flex items-center gap-3">
+                                <span :class="getStatusClass(plan.status)" x-text="getStatusLabel(plan.status)" class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium"></span>
+                                <a :href="`/treatment-plans/${plan.id}`" class="inline-flex items-center px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium rounded transition-colors">
+                                    Görüntüle
+                                </a>
+                            </div>
+                        </div>
+                    </template>
                 </div>
-            </x-card>
 
-            <x-card>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ __('patient.general_notes') }}</h2>
-                <form method="POST" action="{{ route('patients.updateNotes', $patient) }}" class="space-y-4">
-                    @csrf
-                    @method('PUT')
+                <div x-show="filteredPlans.length === 0" class="text-center py-12">
+                    <svg class="mx-auto h-16 w-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-slate-100">Tedavi planı bulunmuyor</h3>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Bu hasta için henüz tedavi planı oluşturulmamış.</p>
+                </div>
+
+                <!-- Pagination -->
+                <div x-show="totalPages > 1" class="mt-6 flex justify-center">
+                    <div class="flex space-x-2">
+                        <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400 text-white text-sm font-medium rounded transition-colors">
+                            Önceki
+                        </button>
+                        <template x-for="page in totalPages" :key="page">
+                            <button @click="currentPage = page" :class="page === currentPage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-600 hover:bg-slate-700'" class="px-3 py-1 text-white text-sm font-medium rounded transition-colors" x-text="page"></button>
+                        </template>
+                        <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400 text-white text-sm font-medium rounded transition-colors">
+                            Sonraki
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Past Visits -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6" x-data="visitSearch()">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Geçmiş Ziyaretler</h2>
+                    <a href="{{ route('waiting-room.appointments.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Yeni Randevu
+                    </a>
+                </div>
+
+                <!-- Live Search -->
+                <div class="mb-6">
+                    <label for="visit_search" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canlı Arama</label>
+                    <input type="text" x-model="searchQuery" @input="filterVisits()" placeholder="Doktor adı veya tarih ara..." class="block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div x-show="filteredVisits.length > 0" class="space-y-4">
+                    <template x-for="visit in paginatedVisits" :key="visit.id">
+                        <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                            <div>
+                                <p class="text-sm font-medium text-slate-900 dark:text-slate-100" x-text="formatDateTime(visit.arrived_at || visit.created_at)"></p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400" x-text="visit.dentist ? visit.dentist.name : 'Doktor bilgisi yok'"></p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400" x-text="visit.notes || ''"></p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span :class="getVisitStatusClass(visit.status)" x-text="getVisitStatusLabel(visit.status)" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"></span>
+                                <a :href="`/waiting-room/${visit.id}/show`" class="inline-flex items-center px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium rounded transition-colors">
+                                    Görüntüle
+                                </a>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div x-show="filteredVisits.length === 0" class="text-center py-12">
+                    <svg class="mx-auto h-16 w-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4v10a2 2 0 002 2h4a2 2 0 002-2V11M9 11h6"></path>
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-slate-100">Ziyaret bulunmuyor</h3>
+                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Bu hasta için kayıtlı ziyaret bulunmuyor.</p>
+                </div>
+
+                <!-- Pagination -->
+                <div x-show="totalPages > 1" class="mt-6 flex justify-center">
+                    <div class="flex space-x-2">
+                        <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400 text-white text-sm font-medium rounded transition-colors">
+                            Önceki
+                        </button>
+                        <template x-for="page in totalPages" :key="page">
+                            <button @click="currentPage = page" :class="page === currentPage ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-600 hover:bg-slate-700'" class="px-3 py-1 text-white text-sm font-medium rounded transition-colors" x-text="page"></button>
+                        </template>
+                        <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400 text-white text-sm font-medium rounded transition-colors">
+                            Sonraki
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- General Medical Notes -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Genel Tıbbi Notlar</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <x-input-label for="notes" value="{{ __('patient.notes_label') }}" />
-                        <textarea id="notes" name="notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $patient->notes) }}</textarea>
-                        <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notlar</label>
+                        <p class="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">{{ $patient->notes ?? '-' }}</p>
                     </div>
                     <div>
-                        <x-input-label for="medications_used" value="{{ __('patient.medications_label') }}" />
-                        <textarea id="medications_used" name="medications_used" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500">{{ old('medications_used', $patient->medications_used) }}</textarea>
-                        <x-input-error :messages="$errors->get('medications_used')" class="mt-2" />
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Kullandığı İlaçlar</label>
+                        <p class="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">{{ $patient->medications_used ?? '-' }}</p>
                     </div>
-                    <div class="flex justify-end">
-                        <x-primary-button>{{ __('patient.save_changes') }}</x-primary-button>
-                    </div>
-                </form>
-            </x-card>
+                </div>
+            </div>
         </div>
     </div>
 
-    <x-modal name="prescription-modal" maxWidth="3xl">
-        <div class="p-6 space-y-4" x-data>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100" x-text="$store.prescriptions.heading"></h2>
-            <form class="space-y-4" @submit.prevent="$store.prescriptions.submit()">
-                <input type="hidden" x-model="$store.prescriptions.form.encounter_id">
-                <div>
-                    <x-input-label for="prescription-text" value="{{ __('patient.prescription_text_label') }}" />
-                    <textarea id="prescription-text" rows="6" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500" x-model="$store.prescriptions.form.text" required></textarea>
-                </div>
-                <div class="flex justify-end gap-2">
-                    <x-secondary-button type="button" @click="$dispatch('close')">{{ __('patient.cancel') }}</x-secondary-button>
-                    <x-primary-button type="submit" x-bind:disabled="$store.prescriptions.isSubmitting">
-                        <span x-show="!$store.prescriptions.isSubmitting">{{ __('patient.save_prescription') }}</span>
-                        <span x-show="$store.prescriptions.isSubmitting">{{ __('patient.saving') }}</span>
-                    </x-primary-button>
-                </div>
-            </form>
-        </div>
-    </x-modal>
+    <script>
+        function treatmentPlanSearch() {
+            return {
+                plans: @json($treatmentPlans->items()),
+                searchQuery: '',
+                currentPage: 1,
+                itemsPerPage: 5,
 
-    @push('scripts')
-        <script>
-            document.addEventListener('alpine:init', () => {
-                Alpine.store('prescriptions', {
-                    patientId: null,
-                    form: { id: null, encounter_id: null, text: '' },
-                    heading: '',
-                    isSubmitting: false,
-                    init(config) {
-                        this.patientId = config.patientId;
-                    },
-                    resetForm() {
-                        this.form = { id: null, encounter_id: null, text: '' };
-                    },
-                    openCreate({ encounterId }) {
-                        this.resetForm();
-                        this.form.encounter_id = encounterId || null;
-                        this.heading = '{{ __('patient.add_prescription_heading') }}';
-                    },
-                    openEdit({ id }) {
-                        this.isSubmitting = true;
-                        fetch(`/api/v1/prescriptions/${id}`, {
-                            headers: { 'Accept': 'application/json' },
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                this.form = { id: data.id, encounter_id: data.encounter_id, text: data.text };
-                                this.heading = '{{ __('patient.edit_prescription_heading') }}';
-                            })
-                            .catch(() => alert('{{ __('patient.prescription_load_error') }}'))
-                            .finally(() => { this.isSubmitting = false; });
-                    },
-                    submit() {
-                        if (!this.form.text) {
-                            alert('{{ __('patient.prescription_text_required') }}');
-                            return;
-                        }
+                get filteredPlans() {
+                    if (!this.searchQuery) return this.plans;
+                    const query = this.searchQuery.toLowerCase();
+                    return this.plans.filter(plan => {
+                        const dentistName = plan.dentist ? plan.dentist.name : '';
+                        return (dentistName && dentistName.toLowerCase().includes(query)) ||
+                               (plan.items && plan.items.some(item =>
+                                   (item.treatment && item.treatment.name && item.treatment.name.toLowerCase().includes(query)) ||
+                                   (item.tooth_number && item.tooth_number.toString().includes(query))
+                               ));
+                    });
+                },
 
-                        const isEdit = !!this.form.id;
-                        const url = isEdit
-                            ? `/api/v1/prescriptions/${this.form.id}`
-                            : '/api/v1/prescriptions';
-                        const method = isEdit ? 'PUT' : 'POST';
-                        const payload = {
-                            text: this.form.text,
-                        };
+                get totalPages() {
+                    return Math.ceil(this.filteredPlans.length / this.itemsPerPage);
+                },
 
-                        if (!isEdit) {
-                            payload.patient_id = this.patientId;
-                            payload.encounter_id = this.form.encounter_id;
-                        } else if (this.form.encounter_id !== undefined) {
-                            payload.encounter_id = this.form.encounter_id;
-                        }
+                get paginatedPlans() {
+                    const start = (this.currentPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.filteredPlans.slice(start, end);
+                },
 
-                        this.isSubmitting = true;
+                filterPlans() {
+                    this.currentPage = 1; // Reset to first page when filtering
+                },
 
-                        fetch(url, {
-                            method,
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            },
-                            body: JSON.stringify(payload),
-                        })
-                            .then(response => {
-                                if (!response.ok) {
-                                    return response.json().then(data => Promise.reject(data));
-                                }
+                formatDate(dateString) {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('tr-TR');
+                },
 
-                                return response.json();
-                            })
-                            .then(() => {
-                                window.location.reload();
-                            })
-                            .catch(error => {
-                                const message = error?.message || '{{ __('patient.prescription_save_error') }}';
-                                alert(message);
-                            })
-                            .finally(() => {
-                                this.isSubmitting = false;
-                            });
-                    },
-                    remove({ id }) {
-                        if (!confirm('{{ __('patient.confirm_delete_prescription') }}')) {
-                            return;
-                        }
+                formatCurrency(amount) {
+                    return new Intl.NumberFormat('tr-TR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(amount || 0) + ' ₺';
+                },
 
-                        fetch(`/api/v1/prescriptions/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            },
-                        })
-                            .then(response => {
-                                if (!response.ok) {
-                                    return Promise.reject();
-                                }
+                getStatusLabel(status) {
+                    const labels = {
+                        'draft': 'Taslak',
+                        'active': 'Aktif',
+                        'completed': 'Tamamlandı',
+                        'cancelled': 'İptal Edildi'
+                    };
+                    return labels[status] || status;
+                },
 
-                                window.location.reload();
-                            })
-                            .catch(() => alert('{{ __('patient.prescription_delete_error') }}'));
-                    },
-                });
-            });
-        </script>
-    @endpush
+                getStatusClass(status) {
+                    const classes = {
+                        'draft': 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200',
+                        'active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
+                        'completed': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
+                        'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+                    };
+                    return classes[status] || 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
+                }
+            }
+        }
+
+        function visitSearch() {
+            return {
+                visits: @json($encounters->items()),
+                searchQuery: '',
+                currentPage: 1,
+                itemsPerPage: 5,
+
+                get filteredVisits() {
+                    if (!this.searchQuery) return this.visits;
+                    const query = this.searchQuery.toLowerCase();
+                    return this.visits.filter(visit => {
+                        const dentistName = visit.dentist ? visit.dentist.name : '';
+                        return (dentistName && dentistName.toLowerCase().includes(query)) ||
+                               (visit.arrived_at && this.formatDateTime(visit.arrived_at).toLowerCase().includes(query)) ||
+                               (visit.created_at && this.formatDateTime(visit.created_at).toLowerCase().includes(query));
+                    });
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredVisits.length / this.itemsPerPage);
+                },
+
+                get paginatedVisits() {
+                    const start = (this.currentPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.filteredVisits.slice(start, end);
+                },
+
+                filterVisits() {
+                    this.currentPage = 1; // Reset to first page when filtering
+                },
+
+                formatDateTime(dateString) {
+                    if (!dateString) return '';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('tr-TR') + ' ' + date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                },
+
+                getVisitStatusLabel(status) {
+                    const labels = {
+                        'waiting': 'Bekliyor',
+                        'in_service': 'Devam Ediyor',
+                        'done': 'Tamamlandı',
+                        'cancelled': 'İptal Edildi'
+                    };
+                    return labels[status] || status;
+                },
+
+                getVisitStatusClass(status) {
+                    const classes = {
+                        'waiting': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200',
+                        'in_service': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
+                        'done': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
+                        'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+                    };
+                    return classes[status] || 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
+                }
+            }
+        }
+    </script>
 </x-app-layout>

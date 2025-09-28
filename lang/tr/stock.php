@@ -1,0 +1,181 @@
+<?php
+
+return [
+    // Genel
+    'module_title' => 'Stok Yönetimi',
+    'dashboard' => 'Stok Paneli',
+    'items' => 'Stok Kalemleri',
+    'manage_items_description' => 'Stok kartlarını yönetin, kategorilere ayırın ve durumlarını takip edin.',
+    'categories' => 'Stok Kategorileri',
+    'purchases' => 'Satın Almalar',
+    'expenses' => 'Giderler',
+    'suppliers' => 'Tedarikçiler',
+    'usage' => 'Stok Kullanımı',
+    'reports' => 'Raporlar',
+
+    // Kategoriler
+    'category' => 'Kategori',
+    'category_name' => 'Kategori Adı',
+    'select_category' => 'Kategori Seçin',
+    'supplier_category' => 'Tedarikçi',
+    'service_category' => 'Hizmet',
+    'medical_supplies_category' => 'Sağlık Malzemeleri',
+    'add_category' => 'Kategori Ekle',
+    'edit_category' => 'Kategoriyi Düzenle',
+    'delete_category' => 'Kategoriyi Sil',
+    'save_category' => 'Kategori Kaydet',
+    'category_created' => 'Kategori başarıyla oluşturuldu.',
+    'category_updated' => 'Kategori başarıyla güncellendi.',
+    'category_deleted' => 'Kategori başarıyla silindi.',
+    'cannot_delete_medical_supplies' => 'Sağlık Malzemeleri kategorisi silinemez.',
+    
+    // Giderler
+    'expense_title' => 'Başlık',
+    'expense_category' => 'Kategori',
+    'expense_supplier' => 'Cari',
+    'expense_date' => 'Tarih',
+    'expense_amount' => 'Tutar',
+    'expense_vat_rate' => 'KDV %',
+    'expense_payment_status' => 'Durum',
+    'expense_payment_method' => 'Ödeme Yöntemi',
+    'expense_due_date' => 'Vade',
+    'expense_paid_at' => 'Ödeme Tarihi',
+    'expense_notes' => 'Notlar',
+    'new_expense' => 'Yeni Gider',
+    'expense_created' => 'Gider başarıyla oluşturuldu.',
+    'expense_updated' => 'Gider başarıyla güncellendi.',
+    'expense_deleted' => 'Gider başarıyla silindi.',
+    'manual_entry' => 'Manuel Giriş',
+    'ocr_upload' => 'OCR Yükleme',
+    'ocr_processing' => 'OCR ile Otomatik Okuma',
+    'expense_file' => 'Gider Dosyası (PDF/JPG)',
+    'file_upload_description' => 'PDF veya JPG formatındaki gider dosyasını yükleyin. Sistem otomatik olarak verileri okuyacaktır.',
+    'add_to_stock' => 'Stoka Malzeme Ekle',
+    'add_to_stock_description' => 'Bu gider için otomatik olarak stok malzemesi oluştur.',
+    'expense_saved' => 'Gider başarıyla kaydedildi.',
+
+    // Stok Kalemleri
+    'item_name' => 'Malzeme Adı',
+    'item_sku' => 'Stok Kodu',
+    'item_barcode' => 'Barkod',
+    'quantity' => 'Miktar',
+    'unit' => 'Birim',
+    'unit_price' => 'Birim Fiyat',
+    'minimum_quantity' => 'Minimum Miktar',
+    'current_stock' => 'Mevcut Stok',
+    'low_stock_warning' => 'Düşük Stok Uyarısı',
+    'out_of_stock' => 'Stokta Yok',
+    'add_item' => 'Malzeme Ekle',
+    'edit_item' => 'Malzemeyi Düzenle',
+    'delete_item' => 'Malzemeyi Sil',
+    'item_created' => 'Malzeme başarıyla oluşturuldu.',
+    'item_updated' => 'Malzeme başarıyla güncellendi.',
+    'item_deleted' => 'Malzeme başarıyla silindi.',
+    'search_items' => 'Malzeme ara...',
+    'new_item' => 'Yeni Malzeme Ekle',
+    'item_filter' => 'Kalem Filtresi',
+    'filter_description' => 'Kategoriye, duruma veya arama terimine göre listeyi daraltın.',
+    'search' => 'Arama',
+    'all_categories' => 'Tüm Kategoriler',
+    'status' => 'Durum',
+    'all_statuses' => 'Tüm Durumlar',
+    'active' => 'Aktif',
+    'inactive' => 'Pasif',
+    'critical' => 'Kritik',
+    'negative' => 'Negatif',
+    'reset' => 'Sıfırla',
+    'filter' => 'Filtrele',
+    'item' => 'Kalem',
+    'minimum' => 'Minimum',
+    'status_label' => 'Durum',
+    'actions' => 'İşlemler',
+    'edit' => 'Düzenle',
+    'delete' => 'Sil',
+    'no_records' => 'Kayıt bulunmuyor.',
+
+    // Satın Almalar
+    'purchase_invoice' => 'Satın Alma Faturası',
+    'new_purchase_invoice' => 'Yeni Satın Alma Faturası',
+    'invoice_number' => 'Fatura No',
+    'invoice_date' => 'Fatura Tarihi',
+    'due_date' => 'Vade Tarihi',
+    'payment_status' => 'Ödeme Durumu',
+    'payment_method' => 'Ödeme Yöntemi',
+    'supplier' => 'Tedarikçi',
+    'select_supplier' => 'Tedarikçi Seçin',
+    'search_suppliers' => 'Tedarikçi ara...',
+    'new_supplier' => 'Yeni Tedarikçi Ekle',
+    'invoice_items' => 'Fatura Kalemleri',
+    'add_invoice_item' => 'Fatura Kalemi Ekle',
+    'subtotal' => 'Ara Toplam',
+    'vat_total' => 'KDV Toplamı',
+    'grand_total' => 'Genel Toplam',
+    'save_invoice' => 'Faturayı Kaydet',
+    'invoice_saved' => 'Fatura başarıyla kaydedildi.',
+    'invoice_updated' => 'Fatura başarıyla güncellendi.',
+    'invoice_deleted' => 'Fatura başarıyla silindi.',
+
+    // Giderler
+    'expense' => 'Gider',
+    'expense_description' => 'Gider Açıklaması',
+     'add_expense_item' => 'Gider Kalemi Ekle',
+    'save_expense' => 'Gideri Kaydet',
+     
+    // Satın Almalar
+     
+    // Kategori yönetimi
+    'item_count' => 'Kalem Sayısı',
+    'confirm_delete_category' => 'Bu kategoriyi silmek istediğinizden emin misiniz?',
+    'protected' => 'Korumalı',
+    'no_categories' => 'Kategori bulunmuyor.',
+ 
+    // OCR
+     'upload_invoice' => 'Fatura Yükle',
+    'invoice_file' => 'Fatura Dosyası (PDF/JPG)',
+    'detected_items' => 'Tespit Edilen Kalemler',
+     'upload_instruction' => 'PDF veya JPG formatındaki fatura dosyasını yükleyin. Sistem otomatik olarak verileri okuyacaktır.',
+
+    // Ödeme Durumları
+    'pending' => 'Bekleyen',
+    'partial' => 'Kısmi',
+    'paid' => 'Ödendi',
+    'overdue' => 'Gecikmiş',
+
+    // Birimler
+    'piece' => 'Adet',
+    'kg' => 'Kilogram',
+    'liter' => 'Litre',
+    'meter' => 'Metre',
+    'box' => 'Kutu',
+    'package' => 'Paket',
+
+    // Form Validasyon
+    'required_field' => 'Bu alan zorunludur.',
+    'invalid_format' => 'Geçersiz format.',
+    'min_value' => 'Minimum değer: :min',
+    'max_value' => 'Maksimum değer: :max',
+
+    // Tablo Başlıkları
+    'created_at' => 'Oluşturulma Tarihi',
+    'updated_at' => 'Güncellenme Tarihi',
+
+    // Onay Mesajları
+    'confirm_delete' => 'Bu öğeyi silmek istediğinizden emin misiniz?',
+    'confirm_delete_invoice' => 'Bu faturayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+    'confirm_delete_item' => 'Bu malzemeyi silmek istediğinizden emin misiniz?',
+
+    // Hata Mesajları
+    'item_not_found' => 'Malzeme bulunamadı.',
+    'supplier_not_found' => 'Tedarikçi bulunamadı.',
+    'category_not_found' => 'Kategori bulunamadı.',
+    'insufficient_stock' => 'Yetersiz stok miktarı.',
+    'invalid_quantity' => 'Geçersiz miktar.',
+    'file_upload_error' => 'Dosya yükleme hatası.',
+    'ocr_processing_error' => 'OCR işleme hatası.',
+
+    // Başarı Mesajları
+    'operation_successful' => 'İşlem başarıyla tamamlandı.',
+    'data_saved' => 'Veriler başarıyla kaydedildi.',
+    'data_updated' => 'Veriler başarıyla güncellendi.',
+    'data_deleted' => 'Veriler başarıyla silindi.',
+];

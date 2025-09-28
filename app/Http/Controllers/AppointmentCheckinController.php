@@ -55,5 +55,25 @@ class AppointmentCheckinController extends Controller
 
         return back()->with('success', "{$appointment->patient->first_name} için check-in yapıldı ve bekleme odasına eklendi.");
     }
+
+    /**
+     * Bir randevu için gelmedi işlemi yapar.
+     */
+    public function markNoShow(Request $request, Appointment $appointment)
+    {
+        $this->authorize('accessReceptionistFeatures', $appointment);
+
+        // Eğer hasta zaten giriş yapmışsa veya işlem bittiyse tekrar işlem yapmayı engelle.
+        if ($appointment->status === AppointmentStatus::CHECKED_IN ||
+            $appointment->status === AppointmentStatus::COMPLETED ||
+            $appointment->status === AppointmentStatus::NO_SHOW) {
+            return back()->with('error', 'Bu randevu için zaten işlem yapılmış.');
+        }
+
+        // Randevu durumunu 'no_show' olarak güncelle.
+        $appointment->update(['status' => AppointmentStatus::NO_SHOW]);
+
+        return back()->with('success', "{$appointment->patient->first_name} için 'Gelmedi' olarak işaretlendi.");
+    }
 }
 

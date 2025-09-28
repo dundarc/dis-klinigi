@@ -5,10 +5,11 @@ namespace App\Models;
 use App\Enums\FileType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class File extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -18,10 +19,12 @@ class File extends Model
     protected $fillable = [
         'patient_id',
         'encounter_id',
-        'uploaded_by',
+        'uploader_id',
         'type',
-        'file_path',
-        'mime',
+        'filename',
+        'original_filename',
+        'path',
+        'mime_type',
         'size',
         'notes',
     ];
@@ -53,7 +56,7 @@ class File extends Model
 
     public function uploader()
     {
-        return $this->belongsTo(User::class, 'uploaded_by');
+        return $this->belongsTo(User::class, 'uploader_id');
     }
 
     public function getDownloadUrlAttribute(): string
@@ -63,7 +66,7 @@ class File extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return basename($this->file_path);
+        return $this->original_filename ?? basename($this->path);
     }
 
 }

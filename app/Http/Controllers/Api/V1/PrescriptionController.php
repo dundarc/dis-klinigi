@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\PrescriptionResource;
 use App\Models\Prescription;
 use App\Services\PrescriptionService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 
 class PrescriptionController extends Controller
 {
@@ -46,5 +47,26 @@ class PrescriptionController extends Controller
         $this->prescriptionService->delete($prescription);
 
         return response()->noContent();
+    }
+
+    public function autoSavePrescription(Request $request, $encounterId)
+    {
+        $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $encounter = \App\Models\Encounter::findOrFail($encounterId);
+
+        // Check if user can access this encounter
+        $this->authorize('view', $encounter);
+
+        $prescription = $this->prescriptionService->createOrUpdateForEncounter($encounter, [
+            'content' => $request->input('content'),
+        ], $request->user());
+
+        return response()->json([
+            'success' => true,
+            'prescription_id' => $prescription->id,
+        ]);
     }
 }

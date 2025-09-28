@@ -17,6 +17,7 @@ class PatientTreatment extends Model
         'encounter_id',
         'dentist_id',
         'treatment_id',
+        'treatment_plan_item_id',
         'tooth_number',
         'status',
         'unit_price',
@@ -24,6 +25,7 @@ class PatientTreatment extends Model
         'discount',
         'performed_at',
         'notes',
+        'display_treatment_name',
     ];
 
     protected function casts(): array
@@ -63,10 +65,24 @@ class PatientTreatment extends Model
     }
 
     /**
-     * Friendly label for soft-deleted treatments.
+     * Treatment plan item that this treatment was created from (if applicable).
+     */
+    public function treatmentPlanItem()
+    {
+        return $this->belongsTo(TreatmentPlanItem::class);
+    }
+
+    /**
+     * Friendly label for treatments - prioritizes stored display name over relationship lookup.
      */
     public function getDisplayTreatmentNameAttribute(): string
     {
+        // First, check if we have a stored display_treatment_name in the database
+        if (!empty($this->attributes['display_treatment_name'])) {
+            return $this->attributes['display_treatment_name'];
+        }
+        
+        // Fallback to treatment relationship lookup
         $treatment = $this->treatment;
 
         if (!$treatment || (method_exists($treatment, 'trashed') && $treatment->trashed())) {

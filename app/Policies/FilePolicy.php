@@ -17,7 +17,7 @@ class FilePolicy
             return true;
         }
 
-        return $user->id === $file->uploaded_by;
+        return $user->id === $file->uploader_id;
     }
 
     public function create(User $user): bool
@@ -28,6 +28,6 @@ class FilePolicy
     public function delete(User $user, File $file): bool
     {
         // Dosyayı sadece yükleyen kişi (hekim) silebilir
-        return $user->id === $file->uploaded_by;
+        return $user->id === $file->uploader_id;
     }
 }

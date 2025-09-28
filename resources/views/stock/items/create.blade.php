@@ -1,85 +1,70 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Yeni Stok Kalemi</h2>
-            <x-secondary-button-link href="{{ route('stock.items.index') }}">Listeye Don</x-secondary-button-link>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100">Yeni Stok Kalemi Ekle</h2>
+                <p class="text-slate-600 dark:text-slate-400 mt-1">Yeni bir stok kalemi oluşturun.</p>
+            </div>
+            <a href="{{ route('stock.items.index') }}" class="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Geri Dön
+            </a>
         </div>
     </x-slot>
 
     <div class="py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <x-card class="space-y-6">
-                <form method="POST" action="{{ route('stock.items.store') }}" class="space-y-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Kalem Bilgileri</h3>
+                </div>
+                <form method="POST" action="{{ route('stock.items.store') }}" class="p-6 space-y-6">
                     @csrf
-
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <x-input-label for="name" value="Kalem Adi" />
-                            <x-text-input id="name" name="name" type="text" value="{{ old('name') }}" class="mt-1 block w-full" required />
+                            <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Ad <span class="text-red-500">*</span></label>
+                            <input id="name" name="name" type="text" value="{{ old('name') }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" required />
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
                         </div>
-
                         <div>
-                            <x-input-label for="category_id" value="Kategori" />
-                            <select id="category_id" name="category_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-800">
-                                <option value="">Kategori Secin</option>
+                            <label for="category_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Kategori</label>
+                            <select id="category_id" name="category_id" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Kategori Seçin</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('category_id')" class="mt-2" />
                         </div>
-
                         <div>
-                            <x-input-label for="sku" value="SKU" />
-                            <x-text-input id="sku" name="sku" type="text" value="{{ old('sku') }}" class="mt-1 block w-full" />
-                            <x-input-error :messages="$errors->get('sku')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="barcode" value="Barkod" />
-                            <x-text-input id="barcode" name="barcode" type="text" value="{{ old('barcode') }}" class="mt-1 block w-full" />
-                            <x-input-error :messages="$errors->get('barcode')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="unit" value="Birim" />
-                            <x-text-input id="unit" name="unit" type="text" value="{{ old('unit', 'adet') }}" class="mt-1 block w-full" />
+                            <label for="unit" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Birim <span class="text-red-500">*</span></label>
+                            <input id="unit" name="unit" type="text" value="{{ old('unit', 'adet') }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" required />
                             <x-input-error :messages="$errors->get('unit')" class="mt-2" />
                         </div>
-
                         <div>
-                            <x-input-label for="minimum_quantity" value="Minimum Miktar" />
-                            <x-text-input id="minimum_quantity" name="minimum_quantity" type="number" step="0.01" value="{{ old('minimum_quantity') }}" class="mt-1 block w-full" />
+                            <label for="minimum_quantity" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Kritik Seviye</label>
+                            <input id="minimum_quantity" name="minimum_quantity" type="number" step="0.01" value="{{ old('minimum_quantity') }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                             <x-input-error :messages="$errors->get('minimum_quantity')" class="mt-2" />
                         </div>
-
-                        <div>
-                            <x-input-label for="quantity" value="Baslangic Miktari" />
-                            <x-text-input id="quantity" name="quantity" type="number" step="0.01" value="{{ old('quantity') }}" class="mt-1 block w-full" />
-                            <x-input-error :messages="$errors->get('quantity')" class="mt-2" />
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <label class="flex items-center space-x-2">
-                                <input type="checkbox" name="allow_negative" value="1" class="rounded border-gray-300 dark:border-gray-700" @checked(old('allow_negative')) />
-                                <span>Negatif stok izni</span>
-                            </label>
-                            <label class="flex items-center space-x-2">
-                                <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 dark:border-gray-700" @checked(old('is_active', true)) />
-                                <span>Aktif</span>
-                            </label>
+                        <div class="md:col-span-2">
+                            <label for="description" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Açıklama</label>
+                            <textarea id="description" name="description" rows="4" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('description') }}</textarea>
+                            <x-input-error :messages="$errors->get('description')" class="mt-2" />
                         </div>
                     </div>
 
-                    <div class="flex justify-end gap-2">
-                        <x-secondary-button type="reset">Temizle</x-secondary-button>
-                        <x-primary-button type="submit">Kaydet</x-primary-button>
+                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
+                        <a href="{{ route('stock.items.index') }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
+                            İptal
+                        </a>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            Kaydet
+                        </button>
                     </div>
                 </form>
-            </x-card>
+            </div>
         </div>
     </div>
 </x-app-layout>
-
-

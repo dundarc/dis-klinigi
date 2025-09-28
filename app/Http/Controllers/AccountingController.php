@@ -168,9 +168,25 @@ class AccountingController extends Controller
             return $invoice;
         });
 
-        return redirect()->route('accounting.invoices.action', $invoice)->with('success', "Fatura baÅŸarÄ±yla oluÅŸturuldu.");
+        return redirect()->route('accounting.invoices.show', $invoice)->with('success', "Fatura baÅŸarÄ±yla oluÅŸturuldu.");
     }
-    
+
+    /**
+     * Tek bir faturayÄ± salt okunur ÅŸekilde gÃ¶sterir.
+     */
+    public function show(Invoice $invoice)
+    {
+        $this->authorize('accessAccountingFeatures');
+
+        $invoice->load([
+            'patient',
+            'items.patientTreatment.treatment',
+            'payments' => fn ($query) => $query->orderBy('paid_at'),
+        ]);
+
+        return view('accounting.invoices.show', compact('invoice'));
+    }
+
     /**
      * Tek bir fatura iÃ§in iÅŸlem sayfasÄ±nÄ± gÃ¶sterir.
      */
@@ -197,6 +213,7 @@ class AccountingController extends Controller
         $vatOptions = [0, 1, 8, 10, 18, 20];
         $totalPaid = $invoice->payments->sum('amount');
         $outstandingBalance = max($invoice->patient_payable_amount - $totalPaid, 0);
+        $patients = Patient::orderBy('first_name')->orderBy('last_name')->get(['id', 'first_name', 'last_name']);
 
         return view('accounting.invoices.action', [
             'invoice' => $invoice,
@@ -206,6 +223,7 @@ class AccountingController extends Controller
             'installmentPlan' => $installmentPlan,
             'totalPaid' => $totalPaid,
             'outstandingBalance' => $outstandingBalance,
+            'patients' => $patients,
         ]);
     }
 
@@ -297,6 +315,8 @@ class AccountingController extends Controller
         }
 
         $updateData = [
+            'patient_id' => $validated['patient_id'],
+            'issue_date' => $validated['issue_date'],
             'status' => $status,
             'notes' => $validated['notes'] ?? null,
             'insurance_coverage_amount' => $insuranceCoverage,
@@ -375,7 +395,7 @@ class AccountingController extends Controller
 
         $invoice->update($updateData);
 
-        return redirect()->route('accounting.invoices.action', $invoice)->with('success', 'Fatura bilgileri basariyla guncellendi.');
+        return redirect()->route('accounting.invoices.show', $invoice)->with('success', 'Fatura bilgileri basariyla guncellendi.');
     }
 
 
@@ -407,6 +427,54 @@ class AccountingController extends Controller
         $this->authorize('accessAccountingFeatures');
         $invoice->restore();
         return redirect()->route('accounting.trash')->with('success', 'Fatura baÅŸarÄ±yla geri yÃ¼klendi.');
+    }
+
+    /**
+     * Ã‡Ã¶p kutusundaki birden fazla faturayÄ± toplu geri yÃ¼kler.
+     */
+    public function bulkRestore(Request $request)
+    {
+        $this->authorize('accessAccountingFeatures');
+
+        $validated = $request->validate([
+            'invoice_ids' => 'required|array',
+            'invoice_ids.*' => 'exists:invoices,id',
+        ]);
+
+        $count = Invoice::withTrashed()
+            ->whereIn('id', $validated['invoice_ids'])
+            ->restore();
+
+        return redirect()->route('accounting.trash')->with('success', $count . ' fatura baÅŸarÄ±yla geri yÃ¼klendi.');
+    }
+
+    /**
+     * Ã‡Ã¶p kutusundaki birden fazla faturayÄ± toplu kalÄ±cÄ± olarak siler.
+     */
+    public function bulkForceDelete(Request $request)
+    {
+        $this->authorize('accessAccountingFeatures');
+
+        $validated = $request->validate([
+            'invoice_ids' => 'required|array',
+            'invoice_ids.*' => 'exists:invoices,id',
+        ]);
+
+        $invoices = Invoice::withTrashed()
+            ->whereIn('id', $validated['invoice_ids'])
+            ->get();
+
+        $count = 0;
+        foreach ($invoices as $invoice) {
+            DB::transaction(function() use ($invoice) {
+                $invoice->items()->delete();
+                $invoice->payments()->delete();
+                $invoice->forceDelete();
+            });
+            $count++;
+        }
+
+        return redirect()->route('accounting.trash')->with('success', $count . ' fatura kalÄ±cÄ± olarak silindi.');
     }
 
     /**

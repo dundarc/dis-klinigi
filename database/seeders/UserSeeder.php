@@ -3,64 +3,120 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\WorkingHour;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Faker\Factory as Faker;
 
 class UserSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        // Resepsiyonist
-        User::factory()->receptionist()->create([
-            'name' => 'Ayşe Yılmaz',
-            'email' => 'reception@example.com',
+        $faker = Faker::create('tr_TR');
+
+        // Admin user
+        DB::table('users')->insert([
+            'name' => 'Sistem Yöneticisi',
+            'email' => 'admin@dishekimi.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('password'),
+            'phone' => '+90 555 123 45 67',
+            'role' => 'admin',
+            'locale' => 'tr',
+            'dark_mode' => false,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
-        // Asistan
-        User::factory()->assistant()->create([
-            'name' => 'Fatma Öztürk',
-            'email' => 'assistant@example.com',
+        // Dentists
+        $dentistNames = [
+            'Dr. Ahmet Yılmaz',
+            'Dr. Mehmet Demir',
+            'Dr. Ayşe Kaya',
+            'Dr. Zeynep Çelik',
+            'Dr. Mustafa Şahin',
+            'Dr. Fatma Özkan',
+            'Dr. Ali Koç',
+            'Dr. Emine Yıldız',
+        ];
+
+        foreach ($dentistNames as $index => $name) {
+            DB::table('users')->insert([
+                'name' => $name,
+                'email' => 'dentist' . ($index + 1) . '@dishekimi.com',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'phone' => $faker->phoneNumber,
+                'role' => 'dentist',
+                'locale' => 'tr',
+                'dark_mode' => $faker->boolean(30),
+                'is_active' => true,
+                'created_at' => $faker->dateTimeBetween('-2 years', 'now'),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // Receptionists
+        $receptionistNames = [
+            'Elif Kara',
+            'Burak Aydın',
+            'Selin Güneş',
+        ];
+
+        foreach ($receptionistNames as $index => $name) {
+            DB::table('users')->insert([
+                'name' => $name,
+                'email' => 'receptionist' . ($index + 1) . '@dishekimi.com',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'phone' => $faker->phoneNumber,
+                'role' => 'receptionist',
+                'locale' => 'tr',
+                'dark_mode' => $faker->boolean(30),
+                'is_active' => true,
+                'created_at' => $faker->dateTimeBetween('-1 year', 'now'),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // Accountant
+        DB::table('users')->insert([
+            'name' => 'Hasan Bilgi',
+            'email' => 'accountant@dishekimi.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('password'),
+            'phone' => $faker->phoneNumber,
+            'role' => 'accountant',
+            'locale' => 'tr',
+            'dark_mode' => $faker->boolean(30),
+            'is_active' => true,
+            'created_at' => $faker->dateTimeBetween('-1 year', 'now'),
+            'updated_at' => now(),
         ]);
 
-        // Hekim 1
-        $dentist1 = User::factory()->dentist()->create([
-            'name' => 'Dr. Ahmet Çelik',
-            'email' => 'ahmet.celik@example.com',
-        ]);
-        // Hekim 1 Çalışma Saatleri (Hafta içi 09:00-17:00)
-        for ($i = 1; $i <= 5; $i++) { // Pzt-Cuma
-            WorkingHour::factory()->create([
-                'user_id' => $dentist1->id,
-                'weekday' => $i,
-                'start_time' => '09:00',
-                'end_time' => '17:00',
+        // Assistants
+        $assistantNames = [
+            'Deniz Arslan',
+            'Gülşen Tekin',
+        ];
+
+        foreach ($assistantNames as $index => $name) {
+            DB::table('users')->insert([
+                'name' => $name,
+                'email' => 'assistant' . ($index + 1) . '@dishekimi.com',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'phone' => $faker->phoneNumber,
+                'role' => 'assistant',
+                'locale' => 'tr',
+                'dark_mode' => $faker->boolean(30),
+                'is_active' => true,
+                'created_at' => $faker->dateTimeBetween('-1 year', 'now'),
+                'updated_at' => now(),
             ]);
         }
-        
-        // Hekim 2
-        $dentist2 = User::factory()->dentist()->create([
-            'name' => 'Dr. Zeynep Kaya',
-            'email' => 'zeynep.kaya@example.com',
-        ]);
-         // Hekim 2 Çalışma Saatleri (Pzt, Çrş, Cuma 10:00-18:30)
-        foreach ([1, 3, 5] as $day) {
-            WorkingHour::factory()->create([
-                'user_id' => $dentist2->id,
-                'weekday' => $day,
-                'start_time' => '10:00',
-                'end_time' => '18:30',
-            ]);
-        }
-        
-        // Hekim 3
-        $dentist3 = User::factory()->dentist()->create([
-            'name' => 'Dr. Mustafa Demir',
-            'email' => 'mustafa.demir@example.com',
-        ]);
-        // Hekim 3 Çalışma Saatleri (Sal, Per 08:00-16:00, Cmt 09:00-13:00)
-        foreach ([2, 4] as $day) {
-            WorkingHour::factory()->create([ 'user_id' => $dentist3->id, 'weekday' => $day, 'start_time' => '08:00', 'end_time' => '16:00']);
-        }
-        WorkingHour::factory()->create([ 'user_id' => $dentist3->id, 'weekday' => 6, 'start_time' => '09:00', 'end_time' => '13:00']);
     }
 }

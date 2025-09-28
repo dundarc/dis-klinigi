@@ -18,13 +18,14 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('phone')->nullable();
-            $table->string('role')->default(UserRole::DENTIST->value);
+            $table->enum('role', ['admin', 'dentist', 'assistant', 'receptionist', 'accountant'])->default('dentist');
             $table->string('password');
             $table->text('two_factor_secret')->nullable();
             $table->text('two_factor_recovery_codes')->nullable();
             $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->string('locale', 5)->default('tr-TR');
             $table->boolean('dark_mode')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
         });
