@@ -24,6 +24,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['invoice_id', 'patient_treatment_id']);
+            $table->index(['created_at']);
         });
     }
 

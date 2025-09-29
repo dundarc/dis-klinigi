@@ -1,4 +1,12 @@
 <x-app-layout>
+    <x-slot name="header">
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                Günlük Takvim
+            </h2>
+        </div>
+    </x-slot>
+
     <div class="py-10">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
@@ -122,11 +130,10 @@
                     @endif
 
                     {{-- Her zaman görünen butonlar --}}
-                    <x-secondary-button-link :href="$todayUrl">{{ __('calendar.today') }}</x-secondary-button-link>
-
+ 
                     {{-- Belirli tarihe git --}}
                     @if($currentView === 'day')
-                        <form method="GET" action="{{ route('calendar') }}" class="inline-flex items-center gap-2">
+                        <form method="GET" action="{{ route('calendar.day') }}" class="inline-flex items-center gap-2">
                             <input type="hidden" name="view" value="{{ $currentView }}">
                             @foreach($selectedDentists as $dentistId)
                                 <input type="hidden" name="dentists[]" value="{{ $dentistId }}">

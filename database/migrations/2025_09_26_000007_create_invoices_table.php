@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('vat_total', 10, 2);
             $table->decimal('discount_total', 10, 2)->default(0.00);
             $table->decimal('grand_total', 10, 2);
-            $table->enum('status', ['draft', 'issued', 'paid', 'overdue', 'cancelled']);
+            $table->enum('status', ['draft', 'issued', 'unpaid', 'partial', 'paid', 'cancelled', 'vadeli', 'taksitlendirildi', 'vadesi_gecmis']);
             $table->text('notes')->nullable();
             $table->decimal('insurance_coverage_amount', 10, 2)->default(0.00);
             $table->string('payment_method')->nullable();

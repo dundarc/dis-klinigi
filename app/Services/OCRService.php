@@ -5,90 +5,354 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use App\Models\Stock\StockSupplier;
+use thiagoalessio\TesseractOCR\TesseractOCR;
 
 class OCRService
 {
     protected array $config;
+    protected string $tempDir;
 
     public function __construct()
     {
         $this->config = config('services.ocr', []);
-    }
+        $this->tempDir = $this->config['temp_dir'] ?? sys_get_temp_dir() . '/ocr';
 
-    /**
-     * Parse invoice PDF/Image and extract data
-     */
-    public function parseDocument(UploadedFile $file): array
-    {
-        try {
-            // Read the actual file content for processing
-            $extractedText = file_get_contents($file->getPathname());
-            
-            // Debug: Show first part of extracted text
-            \Illuminate\Support\Facades\Log::debug('OCR Extracted Text Length: ' . strlen($extractedText));
-            \Illuminate\Support\Facades\Log::debug('OCR First 200 chars: ' . substr($extractedText, 0, 200));
-            
-            $parsedData = $this->parseInvoiceText($extractedText);
-            $parsedData['extracted_text'] = $extractedText;
-            $parsedData['file_type'] = $file->getClientMimeType();
-            $parsedData['confidence_score'] = $this->calculateConfidenceScore($parsedData);
-            
-            return $parsedData;
-        } catch (\Exception $e) {
-            Log::error('OCR parsing failed', [
-                'file' => $file->getClientOriginalName(),
-                'error' => $e->getMessage()
-            ]);
-            
-            return $this->getEmptyResult();
+        // Ensure temp directory exists
+        if (!is_dir($this->tempDir)) {
+            mkdir($this->tempDir, 0755, true);
         }
     }
 
     /**
-     * Extract text from image using OCR
+     * Parse invoice PDF/Image and extract data with timing
      */
-    protected function extractTextFromImage(UploadedFile $file): string
+    public function parseDocument(UploadedFile $file): array
     {
-        // In a real implementation, you would integrate with:
-        // - Tesseract OCR for local processing
-        // - Google Cloud Vision API
-        // - AWS Textract
-        // - Azure Cognitive Services
-        
-        // For demonstration, we'll simulate OCR results based on common Turkish invoice patterns
-        $filename = $file->getClientOriginalName();
-        
-        // Simulate different types of invoices based on filename or content
-        $simulatedTexts = [
-            "HUKUK DİŞ HEKİMLİĞİ TİCARET LTD. ŞTİ.\nVergi No: 1234567890\nAdres: Atatürk Cad. No:123 İstanbul\nTel: 0212 123 45 67\n\nFATURA\nFatura No: 2024-DH-001\nTarih: 15/01/2024\nVade Tarihi: 30/01/2024\n\n--- ÜRÜN LİSTESİ ---\nDental Eldiven Latex M Beden    10 Kutu    25.50 TL    255.00 TL\nAnestezi İğnesi 27G Kısa        5 Paket    45.00 TL    225.00 TL\nKompozit Dolgu A2 Renk          2 Adet     180.00 TL   360.00 TL\nDental Ayna No:5                3 Adet     35.00 TL    105.00 TL\n\nAra Toplam: 945.00 TL\nKDV %18: 170.10 TL\nGenel Toplam: 1,115.10 TL\n\nÖdeme Şekli: 30 Gün Vadeli\nTeşekkürler.",
-            
-            "MEDICAL DENTAL SUPPLY CO.\nTax ID: 9876543210\nİstanbul Medipol Üniversitesi Karşısı\nPhone: +90 532 123 4567\nE-mail: info@medicaldental.com\n\nSATIŞ FATURASI\nBelge No: MDS-2024-456\nDüzenleme Tarihi: 22/01/2024\nVade: 45 Gün\n\nMÜŞTERİ: Örnek Diş Kliniği\n\n═══════════════════════════════════════\nÜRÜN ADI                    MİKTAR  BİRİM FİYAT  TOPLAM\n═══════════════════════════════════════\nDental Ünit Başlığı Kılıfı    50     2.75 TL     137.50\nOrtodontik Braket Set          1     850.00 TL   850.00\nDişçi Eldiveni Nitrile L       5     28.00 TL    140.00\nKök Kanal Eğesi H-File        10     15.50 TL    155.00\nDental Siman Geçici           3     65.00 TL    195.00\n═══════════════════════════════════════\nNet Tutar:                                      1,477.50 TL\nKDV Tutarı (%18):                                265.95 TL\nFATURA TUTARI:                                 1,743.45 TL\n═══════════════════════════════════════",
-            
-            "ANKARA DENTAL MALZEME SANAYİ\nVKN: 5555666677\nOstim Organize Sanayi Bölgesi\nAnkara / TÜRKİYE\nTelefon: 0312 555 66 77\n\nFATURA BELGESI\nSeri: ADM  No: 2024/789\nTarih: 28/01/2024\n\nSayın: Güzellik Diş Kliniği\nAdres: Kızılay Mah. Ankara\n\n┌─────────────────────────────────────────┐\n│  ÜRÜN DETAYLARI                         │\n├─────────────────────────────────────────┤\n│ Dental Composite Light Cure   2 Şırınga │\n│ Birim Fiyat: 95.00 TL                   │\n│ Toplam: 190.00 TL                       │\n├─────────────────────────────────────────┤\n│ İmplant Vida Titanyum 4.2mm   4 Adet    │\n│ Birim Fiyat: 450.00 TL                  │\n│ Toplam: 1,800.00 TL                     │\n├─────────────────────────────────────────┤\n│ Cerrahi Penset Anatomik       1 Adet    │\n│ Birim Fiyat: 125.00 TL                  │\n│ Toplam: 125.00 TL                       │\n└─────────────────────────────────────────┘\n\nAra Toplam: 2,115.00 TL\nKDV (%18): 380.70 TL\nFATURA TOPLAMI: 2,495.70 TL\n\nÖdeme Koşulu: 60 Gün Vade"
-        ];
-        
-        // Return a random realistic invoice
-        return $simulatedTexts[array_rand($simulatedTexts)];
+        $startTime = microtime(true);
+
+        try {
+            // Validate file
+            $this->validateFile($file);
+
+            // Extract text based on file type
+            $mimeType = $file->getMimeType();
+            if (str_starts_with($mimeType, 'image/')) {
+                $extractedText = $this->extractTextFromImage($file);
+            } elseif ($mimeType === 'application/pdf') {
+                $extractedText = $this->extractTextFromPdf($file);
+            } else {
+                throw new \InvalidArgumentException("Unsupported file type: {$mimeType}");
+            }
+
+            // Normalize text
+            $normalizedText = $this->normalizeText($extractedText);
+
+            // Debug: Log extracted text for troubleshooting
+            Log::debug('OCR extracted text', [
+                'file' => $file->getClientOriginalName(),
+                'raw_text_length' => strlen($extractedText),
+                'normalized_text_length' => strlen($normalizedText),
+                'first_500_chars' => substr($normalizedText, 0, 500),
+                'mime_type' => $mimeType
+            ]);
+
+            // Parse invoice data
+            $parsedData = $this->parseInvoiceText($normalizedText);
+            $parsedData['extracted_text'] = $normalizedText;
+            $parsedData['file_type'] = $mimeType;
+            $parsedData['confidence_score'] = $this->calculateConfidenceScore($parsedData);
+            $parsedData['processing_time_ms'] = (int) ((microtime(true) - $startTime) * 1000);
+            $parsedData['needs_review'] = $this->config['strict_mode'] && $parsedData['confidence_score'] < 70;
+
+            // Debug logging (without PII)
+            Log::debug('OCR processing completed', [
+                'file' => $file->getClientOriginalName(),
+                'text_length' => strlen($normalizedText),
+                'confidence' => $parsedData['confidence_score'],
+                'processing_time_ms' => $parsedData['processing_time_ms'],
+                'has_invoice_number' => !empty($parsedData['invoice_number']),
+                'has_date' => !empty($parsedData['invoice_date']),
+                'has_total' => !empty($parsedData['grand_total']),
+                'line_items_count' => count($parsedData['line_items'] ?? [])
+            ]);
+
+            return $parsedData;
+        } catch (\Exception $e) {
+            $processingTime = (int) ((microtime(true) - $startTime) * 1000);
+
+            Log::error('OCR parsing failed', [
+                'file' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'error' => $e->getMessage(),
+                'processing_time_ms' => $processingTime
+            ]);
+
+            $result = $this->getEmptyResult();
+            $result['processing_time_ms'] = $processingTime;
+            $result['error'] = $e->getMessage();
+
+            return $result;
+        }
     }
 
     /**
-     * Extract text from PDF using available OCR service
+     * Validate uploaded file for security and type
+     */
+    protected function validateFile(UploadedFile $file): void
+    {
+        $allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
+        $maxSize = 20 * 1024 * 1024; // 20MB
+
+        if (!in_array($file->getMimeType(), $allowedMimes)) {
+            throw new \InvalidArgumentException('Unsupported file type. Only PDF, JPG, and PNG files are allowed.');
+        }
+
+        if ($file->getSize() > $maxSize) {
+            throw new \InvalidArgumentException('File size exceeds maximum limit of 20MB.');
+        }
+
+        // Additional security check: ensure file extension matches mime type
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mimeToExt = [
+            'image/jpeg' => ['jpg', 'jpeg'],
+            'image/png' => ['png'],
+            'application/pdf' => ['pdf']
+        ];
+
+        if (!isset($mimeToExt[$file->getMimeType()]) || !in_array($extension, $mimeToExt[$file->getMimeType()])) {
+            throw new \InvalidArgumentException('File extension does not match file type.');
+        }
+    }
+
+    /**
+     * Extract text from image using Tesseract OCR with advanced configuration
+     */
+    protected function extractTextFromImage(UploadedFile $file): string
+    {
+        $timeout = $this->config['timeout'];
+
+        try {
+            $tesseract = new TesseractOCR($file->getPathname());
+            $tesseract->lang($this->config['lang'])
+                     ->psm($this->config['psm'])
+                     ->oem($this->config['oem']);
+
+            // Set timeout if supported
+            if (method_exists($tesseract, 'timeout')) {
+                $tesseract->timeout($timeout);
+            }
+
+            $text = $tesseract->run();
+
+            return $text;
+        } catch (\Exception $e) {
+            Log::error('Tesseract OCR failed for image', [
+                'file' => $file->getClientOriginalName(),
+                'error' => $e->getMessage(),
+                'lang' => $this->config['lang'],
+                'psm' => $this->config['psm'],
+                'oem' => $this->config['oem']
+            ]);
+
+            return '';
+        }
+    }
+
+    /**
+     * Extract text from PDF with advanced processing: text layer extraction + OCR fallback
      */
     protected function extractTextFromPdf(UploadedFile $file): string
     {
-        // In a real implementation, this would integrate with actual OCR services
-        // For now, we'll generate more realistic sample invoice data
-        
-        $sampleInvoices = [
-            "HUKUK DİŞ HEKİMLİĞİ TİCARET LTD. ŞTİ.\nVergi No: 1234567890\nAdres: Atatürk Cad. No:123 İstanbul\nTel: 0212 123 45 67\n\nFATURA\nFatura No: 2024-DH-001\nTarih: 15/01/2024\nVade Tarihi: 30/01/2024\n\n--- ÜRÜN LİSTESİ ---\nDental Eldiven Latex M Beden    10 Kutu    25.50 TL    255.00 TL\nAnestezi İğnesi 27G Kısa        5 Paket    45.00 TL    225.00 TL\nKompozit Dolgu A2 Renk          2 Adet     180.00 TL   360.00 TL\nDental Ayna No:5                3 Adet     35.00 TL    105.00 TL\n\nAra Toplam: 945.00 TL\nKDV %18: 170.10 TL\nGenel Toplam: 1,115.10 TL\n\nÖdeme Şekli: 30 Gün Vadeli\nTeşekkürler.",
-            
-            "MEDICAL DENTAL SUPPLY CO.\nTax ID: 9876543210\nİstanbul Medipol Üniversitesi Karşısı\nPhone: +90 532 123 4567\nE-mail: info@medicaldental.com\n\nSATIŞ FATURASI\nBelge No: MDS-2024-456\nDüzenleme Tarihi: 22/01/2024\nVade: 45 Gün\n\nMÜŞTERİ: Örnek Diş Kliniği\n\n═══════════════════════════════════════\nÜRÜN ADI                    MİKTAR  BİRİM FİYAT  TOPLAM\n═══════════════════════════════════════\nDental Ünit Başlığı Kılıfı    50     2.75 TL     137.50\nOrtodontik Braket Set          1     850.00 TL   850.00\nDişçi Eldiveni Nitrile L       5     28.00 TL    140.00\nKök Kanal Eğesi H-File        10     15.50 TL    155.00\nDental Siman Geçici           3     65.00 TL    195.00\n═══════════════════════════════════════\nNet Tutar:                                      1,477.50 TL\nKDV Tutarı (%18):                                265.95 TL\nFATURA TUTARI:                                 1,743.45 TL\n═══════════════════════════════════════",
-            
-            "ANKARA DENTAL MALZEME SANAYİ\nVKN: 5555666677\nOstim Organize Sanayi Bölgesi\nAnkara / TÜRKİYE\nTelefon: 0312 555 66 77\n\nFATURA BELGESI\nSeri: ADM  No: 2024/789\nTarih: 28/01/2024\n\nSayın: Güzellik Diş Kliniği\nAdres: Kızılay Mah. Ankara\n\n┌─────────────────────────────────────────┐\n│  ÜRÜN DETAYLARI                         │\n├─────────────────────────────────────────┤\n│ Dental Composite Light Cure   2 Şırınga │\n│ Birim Fiyat: 95.00 TL                   │\n│ Toplam: 190.00 TL                       │\n├─────────────────────────────────────────┤\n│ İmplant Vida Titanyum 4.2mm   4 Adet    │\n│ Birim Fiyat: 450.00 TL                  │\n│ Toplam: 1,800.00 TL                     │\n├─────────────────────────────────────────┤\n│ Cerrahi Penset Anatomik       1 Adet    │\n│ Birim Fiyat: 125.00 TL                  │\n│ Toplam: 125.00 TL                       │\n└─────────────────────────────────────────┘\n\nAra Toplam: 2,115.00 TL\nKDV (%18): 380.70 TL\nFATURA TOPLAMI: 2,495.70 TL\n\nÖdeme Koşulu: 60 Gün Vade"
-        ];
-        
-        // Return a random realistic invoice
-        return $sampleInvoices[array_rand($sampleInvoices)];
+        $engine = $this->config['pdf_engine'];
+        $maxPages = $this->config['max_pages'];
+        $dpi = $this->config['dpi'];
+
+        try {
+            // First, try to extract text directly from PDF (if it has text layer)
+            $directText = $this->extractTextFromPdfTextLayer($file, $engine);
+            if (!empty(trim($directText))) {
+                return $directText;
+            }
+
+            // Fallback: Convert to images and OCR
+            return $this->extractTextFromPdfImages($file, $maxPages, $dpi, $engine);
+
+        } catch (\Exception $e) {
+            Log::error('PDF text extraction failed', [
+                'file' => $file->getClientOriginalName(),
+                'engine' => $engine,
+                'error' => $e->getMessage()
+            ]);
+
+            return '';
+        }
+    }
+
+    /**
+     * Extract text directly from PDF text layer
+     */
+    protected function extractTextFromPdfTextLayer(UploadedFile $file, string $engine): string
+    {
+        try {
+            if ($engine === 'imagick' && extension_loaded('imagick')) {
+                $imagick = new \Imagick();
+                $imagick->readImage($file->getPathname());
+                $text = '';
+
+                foreach ($imagick as $page) {
+                    $pageText = $page->getImageProperty('text') ?: '';
+                    if (!empty($pageText)) {
+                        $text .= $pageText . "\n";
+                    }
+                }
+
+                $imagick->clear();
+                $imagick->destroy();
+
+                return $text;
+            }
+
+            // Try poppler/pdftotext if available
+            if ($engine === 'poppler' && $this->isCommandAvailable('pdftotext')) {
+                $tempTextFile = tempnam($this->tempDir, 'pdf_text_') . '.txt';
+                $command = "pdftotext -layout \"{$file->getPathname()}\" \"$tempTextFile\" 2>/dev/null";
+
+                exec($command, $output, $returnCode);
+
+                if ($returnCode === 0 && file_exists($tempTextFile)) {
+                    $text = file_get_contents($tempTextFile);
+                    unlink($tempTextFile);
+                    return $text;
+                }
+
+                if (file_exists($tempTextFile)) {
+                    unlink($tempTextFile);
+                }
+            }
+
+        } catch (\Exception $e) {
+            Log::debug('PDF text layer extraction failed, falling back to OCR', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return '';
+    }
+
+    /**
+     * Extract text from PDF by converting to images and OCRing each page
+     */
+    protected function extractTextFromPdfImages(UploadedFile $file, int $maxPages, int $dpi, string $engine): string
+    {
+        $tempFiles = [];
+        $extractedText = '';
+
+        try {
+            if ($engine === 'imagick' && extension_loaded('imagick')) {
+                $imagick = new \Imagick();
+                $imagick->setResolution($dpi, $dpi);
+                $imagick->readImage($file->getPathname());
+                $imagick->setImageFormat('png');
+                $imagick->setImageAlphaChannel(\Imagick::ALPHACHANNEL_REMOVE);
+                $imagick->setImageDepth(8);
+
+                // Limit pages
+                $pageCount = $imagick->getNumberImages();
+                $pagesToProcess = min($pageCount, $maxPages);
+
+                for ($i = 0; $i < $pagesToProcess; $i++) {
+                    $imagick->setIteratorIndex($i);
+
+                    // Optimize image for OCR
+                    $imagick->despeckleImage();
+                    $imagick->normalizeImage();
+                    $imagick->contrastStretchImage(0, 0.7);
+
+                    $tempFile = tempnam($this->tempDir, 'ocr_page_') . '.png';
+                    $tempFiles[] = $tempFile;
+
+                    $imagick->writeImage($tempFile);
+
+                    $pageText = $this->ocrImageFile($tempFile);
+                    $extractedText .= $pageText . "\n";
+                }
+
+                $imagick->clear();
+                $imagick->destroy();
+
+            } elseif ($engine === 'poppler' && $this->isCommandAvailable('pdftoppm')) {
+                // Use poppler for page extraction
+                $baseTempFile = tempnam($this->tempDir, 'pdf_page_');
+
+                for ($i = 1; $i <= $maxPages; $i++) {
+                    $tempFile = "{$baseTempFile}-{$i}.png";
+                    $tempFiles[] = $tempFile;
+
+                    $command = "pdftoppm -png -r {$dpi} -f {$i} -l {$i} \"{$file->getPathname()}\" \"{$baseTempFile}\" 2>/dev/null";
+                    exec($command, $output, $returnCode);
+
+                    if ($returnCode === 0 && file_exists($tempFile)) {
+                        $pageText = $this->ocrImageFile($tempFile);
+                        $extractedText .= $pageText . "\n";
+                    } else {
+                        break; // No more pages
+                    }
+                }
+            }
+
+            return $extractedText;
+
+        } catch (\Exception $e) {
+            Log::error('PDF image OCR failed', [
+                'file' => $file->getClientOriginalName(),
+                'error' => $e->getMessage()
+            ]);
+
+            return '';
+        } finally {
+            // Clean up temporary files
+            foreach ($tempFiles as $tempFile) {
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
+                }
+            }
+        }
+    }
+
+    /**
+     * OCR a single image file
+     */
+    protected function ocrImageFile(string $imagePath): string
+    {
+        try {
+            $tesseract = new TesseractOCR($imagePath);
+            $tesseract->lang($this->config['lang'])
+                     ->psm($this->config['psm'])
+                     ->oem($this->config['oem']);
+
+            if (method_exists($tesseract, 'timeout')) {
+                $tesseract->timeout($this->config['timeout']);
+            }
+
+            return $tesseract->run();
+        } catch (\Exception $e) {
+            Log::warning('Failed to OCR image file', [
+                'path' => basename($imagePath),
+                'error' => $e->getMessage()
+            ]);
+
+            return '';
+        }
+    }
+
+    /**
+     * Check if a command is available on the system
+     */
+    protected function isCommandAvailable(string $command): bool
+    {
+        $which = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' ? 'where' : 'which';
+        exec("$which $command 2>/dev/null", $output, $returnCode);
+        return $returnCode === 0;
     }
 
     /**
@@ -101,13 +365,15 @@ class OCRService
         
         $data = $this->getEmptyResult();
         
-        // Enhanced invoice number patterns (Turkish)
+        // Enhanced invoice number patterns (Turkish) - More flexible
         $invoicePatterns = [
-            '/(?:fatura\s*no|e-ar\u015fiv\s*fatura)[:\s]*([A-Z0-9\-\/]+)/ui',
-            '/(?:fatura|invoice)\s*(?:no|number|numarası)?[:\s]*([A-Z0-9\-\/]+)/ui',
-            '/(?:belge|seri)\s*(?:no)?[:\s]*([A-Z0-9\-\/]+)/ui',
-            '/(?:INV|FB|SF|ADM|MDS|DH|GIB)[\-\s\/]*([0-9\-\/]+)/i',
-            '/no[:\s]*([0-9]{4}[\-\/][0-9]+)/ui'
+            '/(?:fatura\s*no|fatura\s*numarası|e-arşiv\s*fatura|e-fatura)[:\s]*([A-Z0-9\-\/\.]+)/ui',
+            '/(?:fatura|invoice|belge)\s*(?:no|number|numarası|seri)?[:\s]*([A-Z0-9\-\/\.]+)/ui',
+            '/(?:belge|seri)\s*(?:no|numarası)?[:\s]*([A-Z0-9\-\/\.]+)/ui',
+            '/(?:INV|FB|SF|ADM|MDS|DH|GIB|FAT|FTR)[\-\s\/\.]*([0-9\-\/\.]+)/i',
+            '/no[:\s]*([0-9]{4}[\-\/\.][0-9\-\/\.]+)/ui',
+            '/([A-Z]{2,}[\-\s]*[0-9]{4}[\-\s]*[0-9\-\/\.]+)/ui', // FTR-2024-001 format
+            '/([0-9]{4}[\-\/\.][A-Z]{2,}[\-\s]*[0-9\-\/\.]+)/ui', // 2024-DH-001 format
         ];
         
         foreach ($invoicePatterns as $pattern) {
@@ -121,11 +387,13 @@ class OCRService
             }
         }
         
-        // Enhanced date patterns (Turkish format)
+        // Enhanced date patterns (Turkish format) - More flexible
         $datePatterns = [
-            '/(?:fatura\s*tarihi|tarih|date|düzenlenme\s*tarihi)[:\s]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/ui',
+            '/(?:fatura\s*tarihi|tarih|date|düzenlenme\s*tarihi|düzenleme\s*tarihi|tarihçe)[:\s]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/ui',
             '/(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{4})/',
             '/(?:^|\n)(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{4})(?:\n|$)/m',
+            '/(\d{4}[\.\/\-]\d{1,2}[\.\/\-]\d{1,2})/', // YYYY-MM-DD format
+            '/(?:tarih|date)[:\s]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/ui',
         ];
         
         foreach ($datePatterns as $pattern) {
@@ -149,29 +417,24 @@ class OCRService
             }
         }
         
-        // Enhanced amount patterns (Turkish lira) - Look for the final total
+        // Enhanced amount patterns (Turkish lira) - Look for the final total - More flexible
         $amountPatterns = [
-            '/(?:vergiler\s*dahil\s*toplam\s*tutar|ödenecek\s*tutar)[:\s]*([\d,\.]+)\s*(?:tl|₺)/ui',
-            '/(?:fatura\s*tutarı|genel\s*toplam|toplam)[:\s]*([\d,\.]+)\s*(?:tl|₺)/ui',
-            '/(?:total|toplam)[:\s]*([\d,\.]+)\s*(?:tl|₺)/ui',
-            '/([\d,\.]+)\s*(?:₺|tl)\s*$/ui',
-            '/(?:₺|tl)\s*([\d,\.]+)/ui'
+            '/(?:vergiler\s*dahil\s*toplam\s*tutar|ödenecek\s*tutar|genel\s*toplam\s*tutar)[:\s]*([^\s]+)\s*(?:tl|₺|TRY)/ui',
+            '/(?:fatura\s*tutarı|genel\s*toplam|toplam\s*tutar|net\s*tutar)[:\s]*([^\s]+)\s*(?:tl|₺|TRY)/ui',
+            '/(?:total|toplam|ara\s*toplam)[:\s]*([^\s]+)\s*(?:tl|₺|TRY)/ui',
+            '/([^\s]+)\s*(?:₺|tl|TRY)\s*$/ui',
+            '/(?:₺|tl|TRY)\s*([^\s]+)/ui',
+            '/tutar[:\s]*([^\s]+)\s*(?:tl|₺|TRY)/ui',
+            '/toplam[:\s]*([^\s]+)\s*(?:tl|₺|TRY)/ui',
         ];
-        
+
         foreach ($amountPatterns as $pattern) {
             if (preg_match($pattern, $text, $matches)) {
-                $amount = $matches[1];
-                // Handle both Turkish (comma) and international (dot) decimal formats
-                // First, replace all dots with temporary marker
-                $amount = str_replace('.', '#TEMP#', $amount);
-                // Replace commas with dots (decimal separator)
-                $amount = str_replace(',', '.', $amount);
-                // Replace temporary markers with empty (thousands separator)
-                $amount = str_replace('#TEMP#', '', $amount);
-                
-                $numericAmount = (float) $amount;
-                if ($numericAmount > 0) {
-                    $data['grand_total'] = $numericAmount;
+                $amountString = $matches[1];
+                $parsedAmount = $this->formatMoneyToFloat($amountString);
+
+                if ($parsedAmount !== null && $parsedAmount > 0) {
+                    $data['grand_total'] = $parsedAmount;
                     break;
                 }
             }
@@ -202,29 +465,182 @@ class OCRService
     }
 
     /**
+     * Normalize extracted text with advanced Unicode processing
+     */
+    protected function normalizeText(string $text): string
+    {
+        // Convert to UTF-8 if not already
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = mb_convert_encoding($text, 'UTF-8', 'auto');
+        }
+
+        // Unicode NFKC normalization (canonical decomposition followed by canonical composition)
+        // This helps with ligatures and composed characters
+        if (function_exists('normalizer_normalize')) {
+            $text = normalizer_normalize($text, \Normalizer::FORM_KC);
+        }
+
+        // Fix common ligatures that OCR might misinterpret
+        $ligatureReplacements = [
+            'ﬁ' => 'fi',
+            'ﬂ' => 'fl',
+            'ﬃ' => 'ffi',
+            'ﬄ' => 'ffl',
+            'ﬅ' => 'ft',
+            'ﬆ' => 'st',
+            'Æ' => 'AE',
+            'æ' => 'ae',
+            'Œ' => 'OE',
+            'œ' => 'oe',
+            'ß' => 'ss',
+        ];
+        $text = strtr($text, $ligatureReplacements);
+
+        // Normalize line endings
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+
+        // Clean up excessive whitespace but preserve structure
+        $text = preg_replace('/\h+/', ' ', $text); // Horizontal whitespace to single space
+        $text = preg_replace('/\v+/', "\n", $text); // Vertical whitespace to single newline
+
+        // Fix common OCR character misrecognitions for Turkish
+        $ocrFixes = [
+            // Common OCR errors for Turkish characters
+            'I' => 'I', // Keep as is (dotless I)
+            'i' => 'i', // Keep as is (dotted i)
+            'İ' => 'İ', // Keep as is
+            'ı' => 'ı', // Keep as is
+            'Ğ' => 'Ğ', // Keep as is
+            'ğ' => 'ğ', // Keep as is
+            'Ü' => 'Ü', // Keep as is
+            'ü' => 'ü', // Keep as is
+            'Ş' => 'Ş', // Keep as is
+            'ş' => 'ş', // Keep as is
+            'Ç' => 'Ç', // Keep as is
+            'ç' => 'ç', // Keep as is
+            'Ö' => 'Ö', // Keep as is
+            'ö' => 'ö', // Keep as is
+
+            // Common OCR errors that might affect invoice parsing
+            'l' => 'l', // Lowercase L
+            '1' => '1', // Number one
+            '0' => '0', // Zero
+            'O' => 'O', // Letter O
+            'o' => 'o', // Letter o
+
+            // Currency symbols
+            'TL' => 'TL',
+            '₺' => '₺',
+            'TRY' => 'TRY',
+        ];
+
+        // Apply character fixes (only where context makes sense)
+        $text = $this->applySmartReplacements($text, $ocrFixes);
+
+        // Remove control characters but keep newlines and tabs
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
+
+        // Clean up multiple spaces around punctuation
+        $text = preg_replace('/\s*([.,;:!?])\s*/u', '$1 ', $text);
+        $text = preg_replace('/\s+([.,;:!?])/u', '$1', $text);
+
+        // Remove trailing/leading whitespace from each line
+        $lines = explode("\n", $text);
+        $lines = array_map('trim', $lines);
+        $lines = array_filter($lines, function($line) {
+            return strlen($line) > 0;
+        });
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Apply smart character replacements based on context
+     */
+    protected function applySmartReplacements(string $text, array $replacements): string
+    {
+        // For now, apply all replacements
+        // In the future, this could be enhanced with context-aware replacement
+        return strtr($text, $replacements);
+    }
+
+    /**
+     * Parse money string to float with Turkish locale support
+     */
+    protected function formatMoneyToFloat(string $moneyString): ?float
+    {
+        if (empty($moneyString)) {
+            return null;
+        }
+
+        // Remove currency symbols and extra whitespace
+        $cleaned = preg_replace('/[^\d.,\s-]/u', '', $moneyString);
+        $cleaned = trim($cleaned);
+
+        if (empty($cleaned)) {
+            return null;
+        }
+
+        // Handle different decimal/thousands separator patterns
+        $patterns = [
+            // 1.743,45 (Turkish: comma as decimal, dot as thousands)
+            '/^(\d{1,3}(?:\.\d{3})*),\d{1,2}$/',
+            // 1,743.45 (US: dot as decimal, comma as thousands)
+            '/^(\d{1,3}(?:,\d{3})*)\.\d{1,2}$/',
+            // 1743,45 (just comma as decimal)
+            '/^\d+,\d{1,2}$/',
+            // 1743.45 (just dot as decimal)
+            '/^\d+\.\d{1,2}$/',
+            // Whole numbers
+            '/^\d+$/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $cleaned)) {
+                // Turkish format: replace dots (thousands) and convert comma to dot (decimal)
+                $normalized = str_replace('.', '', $cleaned);
+                $normalized = str_replace(',', '.', $normalized);
+
+                $float = (float) $normalized;
+
+                // Sanity check: reasonable money amounts
+                if ($float >= 0 && $float <= 10000000) {
+                    return round($float, 2);
+                }
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Extract line items from invoice text
      */
     protected function extractLineItems(string $text): array
     {
         $items = [];
         
-        // Enhanced pattern to match line items with quantities and prices
+        // Enhanced pattern to match line items with quantities and prices - More flexible
         // Handle table-like formats for Turkish invoices
         $patterns = [
             // Pattern 1: Complex Turkish invoice table format
-            '/(\d+)\s+([^\n]+?)\s+(\d+(?:[\.,]\d+)?)\s+(Adet|Kutu|Paket|Şırınga|CM|Lü)\s+(\d+(?:[\.,]\d+)?)\s+TL\s+%?\d*[\.,]?\d*%?\s*\d*[\.,]?\d*\s*TL\s+(\d+(?:[\.,]\d+)?)\s*TL/ui',
-            
+            '/(\d+)\s+([^\n]+?)\s+(\d+(?:[\.,]\d+)?)\s+(Adet|Kutu|Paket|Şırınga|CM|Lü|Kg|Lt|Metre)\s+(\d+(?:[\.,]\d+)?)\s+(?:TL|₺|TRY)\s+%?\d*[\.,]?\d*%?\s*\d*[\.,]?\d*\s*(?:TL|₺|TRY)\s+(\d+(?:[\.,]\d+)?)\s*(?:TL|₺|TRY)/ui',
+
             // Pattern 2: Simpler format with description, quantity, unit, price, total
-            '/([^\n]+?)\s+(\d+(?:[\.,]\d+)?)\s+(Adet|Kutu|Paket|Şırınga|CM|Lü)\s+(\d+(?:[\.,]\d+)?)\s+TL.*?(\d+(?:[\.,]\d+)?)\s*TL/ui',
-            
+            '/([^\n]+?)\s+(\d+(?:[\.,]\d+)?)\s+(Adet|Kutu|Paket|Şırınga|CM|Lü|Kg|Lt|Metre)\s+(\d+(?:[\.,]\d+)?)\s*(?:TL|₺|TRY).*?(\d+(?:[\.,]\d+)?)\s*(?:TL|₺|TRY)/ui',
+
             // Pattern 3: Item with detailed pricing information
-            '/([\w\s\-\(\)\d]+?)\s+(\d+(?:[\.,]\d+)?)\s+(?:adet|kutu|paket|şırınga|penset)\s+(\d+(?:[\.,]\d+)?)\s*(?:tl|₺)\s+(\d+(?:[\.,]\d+)?)\s*(?:tl|₺)/ui',
-            
+            '/([\w\s\-\(\)\d]+?)\s+(\d+(?:[\.,]\d+)?)\s+(?:adet|kutu|paket|şırınga|penset|adet|kg|lt|metre)\s+(\d+(?:[\.,]\d+)?)\s*(?:tl|₺|TRY)\s+(\d+(?:[\.,]\d+)?)\s*(?:tl|₺|TRY)/ui',
+
             // Pattern 4: Table format with columns
-            '/([\w\s\-\(\)\d]+?)\s{2,}(\d+(?:[\.,]\d+)?)\s+(\w+)\s+(\d+(?:[\.,]\d+)?)\s+(?:tl|₺)\s+(\d+(?:[\.,]\d+)?)\s+(?:tl|₺)/ui',
-            
+            '/([\w\s\-\(\)\d]+?)\s{2,}(\d+(?:[\.,]\d+)?)\s+(\w+)\s+(\d+(?:[\.,]\d+)?)\s*(?:tl|₺|TRY)\s+(\d+(?:[\.,]\d+)?)\s*(?:tl|₺|TRY)/ui',
+
             // Pattern 5: Simple format
-            '/([\w\s\-\(\)\d]+?)\s+(\d+(?:[\.,]\d+)?)\s+(?:adet|kutu|paket).*?(\d+(?:[\.,]\d+)?)\s*(?:tl|₺)/ui'
+            '/([\w\s\-\(\)\d]+?)\s+(\d+(?:[\.,]\d+)?)\s+(?:adet|kutu|paket|şırınga|penset|kg|lt|metre).*?(\d+(?:[\.,]\d+)?)\s*(?:tl|₺|TRY)/ui',
+
+            // Pattern 6: Quantity and price only
+            '/([^\n]+?)\s+(\d+(?:[\.,]\d+)?)\s*[x\*]\s*(\d+(?:[\.,]\d+)?)\s*(?:tl|₺|TRY)/ui',
         ];
         
         foreach ($patterns as $pattern) {
@@ -365,12 +781,13 @@ class OCRService
     {
         $supplier = [];
         
-        // Extract supplier name - look for company names before "VKN" or "Vergi No"
+        // Extract supplier name - look for company names before "VKN" or "Vergi No" - More flexible
         $namePatterns = [
-            '/^(.*?)\s*V(KN|ergi\s*No)[:\s]*[\d\-\/]+/mi',
-            '/(?:tedarikçi|firma|satıcı|company)[:\s]*([^\n]+)/ui',
+            '/^(.*?)\s*V(KN|ergi\s*No|ergi\s*numarası|TCKN)[:\s]*[\d\-\/]+/mi',
+            '/(?:tedarikçi|firma|satıcı|company|şirket|kurum)[:\s]*([^\n]+)/ui',
             '/^(.*?)(?:\n|$)/m', // First line
-            '/(?:ltd|şti|co|inc|AŞ|A\.Ş\.|LTD\.ŞTİ\.)[^\n]*/i'
+            '/(?:ltd|şti|co|inc|AŞ|A\.Ş\.|LTD\.ŞTİ\.|TİC\.|SAN\.|LİMİTED|ANONİM)[\s\S]*?(?:\n|$)/i',
+            '/([A-ZÇĞİÖŞÜ\s\-\.]+(?:LTD|ŞTİ|AŞ|CO|INC|TİC|SAN|LİMİTED|ANONİM)[\.\s]*)/ui'
         ];
         
         foreach ($namePatterns as $pattern) {
@@ -387,37 +804,37 @@ class OCRService
             }
         }
         
-        // Extract tax number/VKN
-        if (preg_match('/(?:vergi\s*no|vkn|tax\s*id)[:\s]*([\d\-\/]+)/i', $text, $matches)) {
+        // Extract tax number/VKN - More flexible
+        if (preg_match('/(?:vergi\s*no|vergi\s*numarası|vkn|tax\s*id|tax\s*number)[:\s]*([\d\-\/]+)/i', $text, $matches)) {
             $supplier['tax_number'] = trim($matches[1]);
         } elseif (preg_match('/VKN[:]\s*([\d\-\/]+)/i', $text, $matches)) {
             $supplier['tax_number'] = trim($matches[1]);
         }
-        
+
         // Extract TCKN (personal tax number) if VKN not found
-        if (empty($supplier['tax_number']) && preg_match('/TCKN[:]\s*([\d]+)/i', $text, $matches)) {
+        if (empty($supplier['tax_number']) && preg_match('/(?:TCKN|TC\s*kimlik\s*no)[:\s]*([\d]+)/i', $text, $matches)) {
             $supplier['tax_number'] = trim($matches[1]);
         }
         
-        // Extract phone
-        if (preg_match('/(?:tel|telefon|phone)[:\s]*([\+\d\s\-\(\)]+)/', $text, $matches)) {
+        // Extract phone - More flexible
+        if (preg_match('/(?:tel|telefon|phone|cep|mobile|fax)[:\s]*([\+\d\s\-\(\)\.]+)/', $text, $matches)) {
             $supplier['phone'] = trim($matches[1]);
         }
-        
-        // Extract email
+
+        // Extract email - More flexible
         if (preg_match('/[\w\.\-]+@[\w\.\-]+\.[a-z]{2,}/i', $text, $matches)) {
             $supplier['email'] = trim($matches[0]);
         }
         
-        // Extract address - look for address after supplier name or "Adres"
-        if (preg_match('/(?:adres|address)[:\s]*([^\n]+)/i', $text, $matches)) {
+        // Extract address - look for address after supplier name or "Adres" - More flexible
+        if (preg_match('/(?:adres|address|adresi)[:\s]*([^\n]+)/i', $text, $matches)) {
             $supplier['address'] = trim($matches[1]);
         } elseif (!empty($supplier['name'])) {
             // Try to find address near the supplier name
             $namePos = strpos($text, $supplier['name']);
             if ($namePos !== false) {
-                $addressText = substr($text, $namePos + strlen($supplier['name']), 200);
-                if (preg_match('/([\w\s\-\/,\.]+(?:mah\.|sok\.|cad\.|no:|No:)[\w\s\-\/,\.]+)/i', $addressText, $matches)) {
+                $addressText = substr($text, $namePos + strlen($supplier['name']), 300);
+                if (preg_match('/([\w\s\-\/,\.]+(?:mah\.|sok\.|cad\.|bulvar|bulv\.|caddesi|sokağı|no:|No:|numara)[\w\s\-\/,\.]+)/i', $addressText, $matches)) {
                     $supplier['address'] = trim($matches[1]);
                 }
             }
@@ -475,47 +892,112 @@ class OCRService
     }
 
     /**
-     * Batch process multiple invoices
+     * Batch process multiple invoices with sequential execution
      */
     public function batchProcess(array $files): array
     {
         $results = [];
-        
+        $totalStartTime = microtime(true);
+
+        Log::info('Starting batch OCR processing', [
+            'file_count' => count($files),
+            'max_pages' => $this->config['max_pages'],
+            'timeout' => $this->config['timeout']
+        ]);
+
         foreach ($files as $index => $file) {
+            $fileStartTime = microtime(true);
+
             try {
+                // Validate file before processing
+                $this->validateFile($file);
+
                 $parsedData = $this->parseDocument($file);
-                
+                $processingTime = (int) ((microtime(true) - $fileStartTime) * 1000);
+
                 $results[] = [
                     'file_index' => $index,
                     'original_name' => $file->getClientOriginalName(),
                     'parsed_data' => $parsedData,
-                    'processing_time' => microtime(true),
+                    'processing_time_ms' => $processingTime,
                     'success' => true,
-                    'confidence' => $parsedData['confidence_score'] ?? 0
+                    'confidence' => $parsedData['confidence_score'] ?? 0,
+                    'needs_review' => $parsedData['needs_review'] ?? false
                 ];
-            } catch (\Exception $e) {
-                Log::error('Batch OCR processing failed', [
+
+                Log::debug('Batch file processed successfully', [
+                    'index' => $index,
                     'file' => $file->getClientOriginalName(),
-                    'error' => $e->getMessage()
+                    'confidence' => $parsedData['confidence_score'] ?? 0,
+                    'processing_time_ms' => $processingTime
                 ]);
-                
+
+            } catch (\Exception $e) {
+                $processingTime = (int) ((microtime(true) - $fileStartTime) * 1000);
+
+                Log::error('Batch OCR processing failed for file', [
+                    'index' => $index,
+                    'file' => $file->getClientOriginalName(),
+                    'error' => $e->getMessage(),
+                    'processing_time_ms' => $processingTime
+                ]);
+
                 $results[] = [
                     'file_index' => $index,
                     'original_name' => $file->getClientOriginalName(),
                     'parsed_data' => $this->getEmptyResult(),
-                    'processing_time' => microtime(true),
+                    'processing_time_ms' => $processingTime,
                     'success' => false,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'error_code' => $this->getErrorCode($e)
                 ];
             }
         }
-        
-        // Sort by confidence score (highest first)
+
+        $totalProcessingTime = (int) ((microtime(true) - $totalStartTime) * 1000);
+
+        // Sort by confidence score (highest first), then by success status
         usort($results, function($a, $b) {
+            // Successful results first
+            if ($a['success'] && !$b['success']) return -1;
+            if (!$a['success'] && $b['success']) return 1;
+
+            // Then by confidence score
             return ($b['confidence'] ?? 0) <=> ($a['confidence'] ?? 0);
         });
-        
+
+        Log::info('Batch OCR processing completed', [
+            'total_files' => count($files),
+            'successful_files' => count(array_filter($results, fn($r) => $r['success'])),
+            'total_processing_time_ms' => $totalProcessingTime
+        ]);
+
         return $results;
+    }
+
+    /**
+     * Get error code from exception
+     */
+    protected function getErrorCode(\Exception $e): string
+    {
+        if ($e instanceof \InvalidArgumentException) {
+            return 'INVALID_FILE';
+        }
+
+        $message = strtolower($e->getMessage());
+        if (strpos($message, 'timeout') !== false) {
+            return 'OCR_TIMEOUT';
+        }
+
+        if (strpos($message, 'tesseract') !== false) {
+            return 'OCR_ENGINE_ERROR';
+        }
+
+        if (strpos($message, 'memory') !== false || strpos($message, 'allocation') !== false) {
+            return 'MEMORY_ERROR';
+        }
+
+        return 'UNKNOWN_ERROR';
     }
 
     /**
@@ -592,6 +1074,9 @@ class OCRService
             'line_items' => [],
             'extracted_text' => '',
             'confidence_score' => 0,
+            'processing_time_ms' => 0,
+            'needs_review' => false,
+            'error' => null,
         ];
     }
 }

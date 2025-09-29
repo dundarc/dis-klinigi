@@ -12,8 +12,6 @@ enum InvoiceStatus: string
     case CANCELLED = 'cancelled';
     case POSTPONED = 'vadeli';
     case INSTALLMENT = 'taksitlendirildi';
-    // DÜZELTME: Eksik olan 'vadesi_gecmis' durumu eklendi.
     case OVERDUE = 'vadesi_gecmis';
-    case OVERDUE_EN = 'overdue';
 }
 

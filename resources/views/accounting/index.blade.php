@@ -1,4 +1,12 @@
 <x-app-layout>
+    <x-slot name="header">
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                Muhasebe
+            </h2>
+        </div>
+    </x-slot>
+
     <div class="py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             <!-- Header -->
@@ -121,15 +129,7 @@
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $invoice->issue_date->format('d.m.Y') }}</td>
                                     <td class="px-6 py-4 text-slate-900 dark:text-slate-100 font-medium">{{ number_format($invoice->grand_total, 2, ',', '.') }} TL</td>
                                     <td class="px-6 py-4">
-                                        @if($invoice->status->value === 'paid')
-                                            <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">Ödenmiş</span>
-                                        @elseif($invoice->status->value === 'pending')
-                                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">Bekliyor</span>
-                                        @elseif($invoice->status->value === 'overdue')
-                                            <span class="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-800 dark:text-red-200">Vadesi Geçmiş</span>
-                                        @else
-                                            <span class="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-200">{{ ucfirst(str_replace('_', ' ', $invoice->status->value)) }}</span>
-                                        @endif
+                                        <x-status-badge :status="$invoice->status" />
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                     <a href="{{ route('accounting.invoices.show', $invoice) }}" class="inline-flex items-center px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium rounded transition-colors">

@@ -15,32 +15,32 @@
         </div>
     </x-slot>
 
-    <!-- Ana sayfa içeriği - Alpine.js ile yönetiliyor -->
-    <div class="py-8"
+    <!-- Ana sayfa içeriği - Alpine.js ile yönetiliyor - Optimized for Desktop -->
+    <div class="py-6"
           x-data="visitActionManager({
-                 treatments: {{ json_encode($treatments) }},
-                 patientId: {{ $encounter->patient_id }},
-                 encounterId: {{ $encounter->id }},
-                 fileTypes: {{ json_encode(array_map(fn($case) => ['value' => $case->value, 'label' => $case->label()], $fileTypes)) }},
-                 unscheduledTreatmentPlanItems: {{ json_encode($unscheduledTreatmentPlanItems->toArray()) }},
-                 scheduledTreatmentPlanItems: {{ json_encode($scheduledTreatmentPlanItems->toArray()) }},
-                 appointmentTreatmentPlanItems: {{ json_encode($appointmentTreatmentPlanItems->toArray()) }}
-             })">
+                  treatments: @js($treatments),
+                  patientId: {{ $encounter->patient_id }},
+                  encounterId: {{ $encounter->id }},
+                  fileTypes: @js(array_map(fn($case) => ['value' => $case->value, 'label' => $case->label()], $fileTypes)),
+                  unscheduledTreatmentPlanItems: @js($unscheduledTreatmentPlanItems->toArray()),
+                  scheduledTreatmentPlanItems: @js($scheduledTreatmentPlanItems->toArray()),
+                  appointmentTreatmentPlanItems: @js($appointmentTreatmentPlanItems->toArray())
+               })">
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-6xl mx-auto px-3 sm:px-3 lg:px-4 space-y-3">
 
-            <!-- Hasta ve Randevu Bilgileri Kartları -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Hasta ve Randevu Bilgileri Kartları - Compact -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <!-- Hasta Bilgileri Kartı -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}
                             </h3>
                             <p class="text-sm text-slate-600 dark:text-slate-400">
@@ -51,15 +51,15 @@
                 </div>
 
                 <!-- Randevu Bilgileri Kartı -->
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">
                                 @if($encounter->appointment)
                                     {{ $encounter->appointment->start_at->format('d.m.Y H:i') }}
                                 @else
@@ -68,7 +68,7 @@
                             </h3>
                             <p class="text-sm text-slate-600 dark:text-slate-400">
                                 Doktor: {{ $encounter->dentist?->name ?? 'Atanmamış' }} •
-                                Durum: <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                     @if($encounter->status->value === 'waiting') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200
                                     @elseif($encounter->status->value === 'in_service') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200
                                     @elseif($encounter->status->value === 'done') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200
@@ -82,79 +82,76 @@
                 </div>
             </div>
 
-            <!-- Önemli Uyarı -->
-            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <div class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Önemli Uyarı - Compact -->
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                <div class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4a2 2 0 00-3.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
-                    <div>
-                        <h4 class="text-sm font-medium text-amber-800 dark:text-amber-200">Önemli Uyarı</h4>
-                        <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                            Muayene tamamlandığında ziyaret durumunu <strong>"Tamamlandı"</strong> olarak güncellemeyi unutmayın.
-                            Ziyaret tamamlanmadıkça hasta bekleme listesinde görünmeye devam eder.
-                        </p>
-                    </div>
+                    <p class="text-sm text-amber-700 dark:text-amber-300">
+                        <strong>Önemli:</strong> Muayene tamamlandığında ziyaret durumunu "Tamamlandı" olarak güncelleyin.
+                        Ziyaret tamamlanmadıkça hasta bekleme listesinde görünür.
+                    </p>
                 </div>
             </div>
 
-            <!-- Bu Randevuya Ait Tedavi Planı Öğeleri -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+            <!-- Bu Randevuya Ait Tedavi Planı Öğeleri - Compact -->
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
                             <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Bu Randevuya Ait Tedavi Planı Öğeleri</h3>
+                        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Bu Randevuya Ait Tedavi Planı Öğeleri</h3>
                         <span class="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-full">
-                            {{ $appointmentTreatmentPlanItems->count() }} öğe
+                            {{ $appointmentTreatmentPlanItems->count() }}
                         </span>
                     </div>
                 </div>
-                <div class="p-6">
+                <div class="p-4">
                     @if($appointmentTreatmentPlanItems->isNotEmpty())
-                        <!-- Tedavi öğeleri tablosu -->
-                        <div class="overflow-x-auto">
+                        <!-- Tedavi öğeleri tablosu - Compact -->
+                        <div class="overflow-x-auto max-h-64 overflow-y-auto">
                             <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                <thead class="bg-slate-50 dark:bg-slate-800">
+                                <thead class="bg-slate-50 dark:bg-slate-800 sticky top-0">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tedavi</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Diş No</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tahmini Ücret</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durum</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">İşlemler</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tedavi</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Diş</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ücret</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durum</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
                                     @foreach($appointmentTreatmentPlanItems as $item)
                                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                            <td class="px-3 py-2 whitespace-nowrap">
                                                 <div class="text-sm font-medium text-slate-900 dark:text-slate-100">
                                                     {{ $item->treatment->name ?? 'Tedavi Bulunamadı' }}
                                                 </div>
-                                                <div class="text-sm text-slate-500 dark:text-slate-400">
-                                                    Tedavi Planı #{{ $item->treatmentPlan->id ?? 'N/A' }}
+                                                <div class="text-xs text-slate-500 dark:text-slate-400">
+                                                    Plan #{{ $item->treatmentPlan->id ?? 'N/A' }}
                                                 </div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                            <td class="px-3 py-2 whitespace-nowrap">
                                                 @if($item->tooth_number)
-                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
                                                         #{{ $item->tooth_number }}
                                                     </span>
                                                 @else
                                                     <span class="text-slate-400 dark:text-slate-600">-</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
+                                            <td class="px-3 py-2 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                                                 @if($item->estimated_price)
-                                                    {{ number_format($item->estimated_price, 2, ',', '.') }} ₺
+                                                    {{ number_format($item->estimated_price, 0, ',', '.') }}₺
                                                 @else
                                                     <span class="text-slate-400 dark:text-slate-600">-</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                            <td class="px-3 py-2 whitespace-nowrap">
                                                 @php
                                                     $statusColor = match($item->status->value) {
                                                         'planned' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200',
@@ -164,13 +161,13 @@
                                                         default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                                                     };
                                                 @endphp
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
                                                     {{ $item->status->label() }}
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <td class="px-3 py-2 whitespace-nowrap text-sm font-medium">
                                                 @if($item->status->value !== 'done' && $item->status->value !== 'cancelled')
-                                                    <div class="flex space-x-2">
+                                                    <div class="flex flex-col space-y-1">
                                                         <!-- Başlat butonu - Mavi -->
                                                         <button type="button"
                                                                 @click="startTreatmentPlanItem({{ $item->id }}, '{{ addslashes($item->treatment->name ?? '') }}')"
@@ -188,15 +185,6 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                             </svg>
                                                             Tamamla
-                                                        </button>
-                                                        <!-- İptal Et butonu - Kırmızı -->
-                                                        <button type="button"
-                                                                @click="cancelTreatmentPlanItem({{ $item->id }}, '{{ addslashes($item->treatment->name ?? '') }}')"
-                                                                class="inline-flex items-center px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors">
-                                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                            </svg>
-                                                            İptal Et
                                                         </button>
                                                     </div>
                                                 @else
@@ -227,23 +215,23 @@
                 </div>
             </div>
 
-            <!-- Diğer Tedavi Planı Öğeleri -->
+            <!-- Diğer Tedavi Planı Öğeleri - Compact -->
             @if(count($scheduledTreatmentPlanItems) > 0 || count($unscheduledTreatmentPlanItems) > 0)
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                                 <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Diğer Tedavi Planı Öğeleri</h3>
+                            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Diğer Tedavi Planı Öğeleri</h3>
                             <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full">
-                                {{ count($scheduledTreatmentPlanItems) }} randevulu, {{ count($unscheduledTreatmentPlanItems) }} randevusuz
+                                {{ count($scheduledTreatmentPlanItems) + count($unscheduledTreatmentPlanItems) }}
                             </span>
                         </div>
                     </div>
-                    <div class="p-6">
+                    <div class="p-4">
                         <div class="space-y-6">
                             <!-- Randevulu Öğeler -->
                             @if(count($scheduledTreatmentPlanItems) > 0)
@@ -360,21 +348,22 @@
                 </div>
             @endif
 
-            <!-- Visit Form -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Ziyaret Bilgileri</h3>
+            <!-- Visit Form - Compact -->
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Ziyaret Bilgileri</h3>
                 </div>
 
-                <form method="POST" action="{{ route('waiting-room.action.update', $encounter) }}" class="p-6 space-y-6">
+                <form method="POST" action="{{ route('waiting-room.action.update', $encounter) }}" class="p-4 space-y-4" id="visit-action-form" @submit="prepareFormData">
                     @csrf
-                    <input type="hidden" name="applied_treatments" x-bind:value="JSON.stringify(appliedTreatments)">
+                    @method('PUT')
+                    <input type="hidden" name="applied_treatments" id="applied-treatments-input">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 gap-4">
                         <!-- Visit Status -->
                         <div>
                             <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Ziyaret Durumu</label>
-                            <select id="status" name="status" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                            <select id="status" name="status" @change="hasChanges = true" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
                                 @foreach($statuses as $status)
                                     <option value="{{ $status->value }}" @selected($encounter->status === $status)>
                                         {{ __("patient.encounter_status." . $status->value) }}
@@ -386,7 +375,7 @@
                         <!-- Visit Notes -->
                         <div>
                             <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Ziyaret Notu</label>
-                            <textarea id="notes" name="notes" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Muayene notlarını girin...">{{ old('notes', $encounter->notes) }}</textarea>
+                            <textarea id="notes" name="notes" rows="2" @input="hasChanges = true" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Muayene notlarını girin...">{{ old('notes', $encounter->notes) }}</textarea>
                         </div>
                     </div>
 
@@ -513,38 +502,38 @@
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <a href="{{ route('waiting-room.appointments') }}" class="px-6 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
+                    <!-- Action Buttons - Compact -->
+                    <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <a href="{{ route('waiting-room.appointments') }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors text-sm">
                             İptal
                         </a>
-                        <button type="submit" name="action" value="save" class="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
-                            Ziyareti Kaydet
+                        <button type="submit" name="action" value="save" :disabled="!hasChanges" class="save-visit-btn px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm">
+                            Kaydet
                         </button>
-                        <button type="submit" name="action" value="complete" class="px-8 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
-                            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button type="submit" name="action" value="complete" class="complete-treatment-btn px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors text-sm">
+                            <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            Tedaviyi Tamamla
+                            Tamamla
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Prescription Section -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+            <!-- Prescription Section - Compact -->
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
                             <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Reçete</h3>
+                        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Reçete</h3>
                     </div>
                 </div>
 
-                <div class="p-6">
+                <div class="p-4">
                     <div class="space-y-4">
                         <!-- Prescription Text Area -->
                         <div>
@@ -556,7 +545,7 @@
                                 name="prescription_text"
                                 x-model="prescriptionText"
                                 @input="hasChanges = true"
-                                rows="6"
+                                rows="4"
                                 class="block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 resize-vertical"
                                 placeholder="Reçete içeriğini buraya yazın...">{{ old('prescription_text', $encounter->prescriptions->first()?->content ?? '') }}</textarea>
                             <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -591,23 +580,23 @@
                 </div>
             </div>
 
-            <!-- Files Section -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+            <!-- Files Section - Compact -->
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                             <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Dosyalar / Röntgenler</h3>
+                        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Dosyalar</h3>
                         <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full">
-                            PDF, JPG, PNG veya DICOM dosyaları
+                            PDF, JPG, PNG, DICOM
                         </span>
                     </div>
                 </div>
 
-                <div class="p-6">
+                <div class="p-4">
                     <!-- File Upload Form -->
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -776,6 +765,31 @@
                     fileUploading: false,
                     fileUploaded: false,
                     hasChanges: false, // Değişiklik takibi
+
+                    // Form submit öncesi veri hazırlama
+                    prepareFormData() {
+                        // Applied treatments verisini gizli input'a koy
+                        const input = document.getElementById('applied-treatments-input');
+                        if (input) {
+                            input.value = JSON.stringify(this.appliedTreatments);
+                        }
+
+                        // Tedaviyi tamamla butonu için özel işlem
+                        const submitter = event.submitter;
+                        if (submitter && submitter.value === 'complete') {
+                            if (!confirm('Tedaviyi tamamlamak istediğinizden emin misiniz?')) {
+                                event.preventDefault();
+                                return false;
+                            }
+                            // Durumu 'done' olarak ayarla
+                            const statusSelect = document.getElementById('status');
+                            if (statusSelect) {
+                                statusSelect.value = 'done';
+                            }
+                        }
+
+                        return true;
+                    },
 
                     // Bileşen başlatma
                     init() {
@@ -1124,113 +1138,7 @@
                         this.hasChanges = false;
                     },
 
-                    // Ziyareti kaydet
-                    saveVisit() {
-                        // Butonu devre dışı bırak
-                        const button = document.querySelector('.save-visit-btn');
-                        if (button) {
-                            button.disabled = true;
-                            button.textContent = 'Kaydediliyor...';
-                        }
 
-                        const form = document.querySelector('form[method="POST"]');
-                        if (!form) {
-                            alert('Form bulunamadı!');
-                            if (button) {
-                                button.disabled = false;
-                                button.textContent = 'Ziyareti Kaydet';
-                            }
-                            return;
-                        }
-
-                        // Uygulanan tedaviler için gizli input alanları ekle
-                        this.appliedTreatments.forEach((treatment, index) => {
-                            if (treatment.treatment_id) {
-                                this.addHiddenInput(form, `treatments[${index}][treatment_id]`, treatment.treatment_id);
-                            }
-                            if (treatment.tooth_number) {
-                                this.addHiddenInput(form, `treatments[${index}][tooth_number]`, treatment.tooth_number);
-                            }
-                            if (treatment.unit_price) {
-                                this.addHiddenInput(form, `treatments[${index}][unit_price]`, treatment.unit_price);
-                            }
-                            if (treatment.treatment_plan_item_id) {
-                                this.addHiddenInput(form, `treatments[${index}][treatment_plan_item_id]`, treatment.treatment_plan_item_id);
-                            }
-                            if (treatment.is_scheduled !== undefined) {
-                                this.addHiddenInput(form, `treatments[${index}][is_scheduled]`, treatment.is_scheduled ? '1' : '0');
-                            }
-                        });
-
-                        // Formu normal şekilde gönder
-                        form.submit();
-                    },
-
-                    // Tedaviyi tamamla
-                    completeTreatment() {
-                        if (!confirm('Tedaviyi tamamlamak istediğinizden emin misiniz?')) return;
-
-                        // Butonu devre dışı bırak
-                        const button = document.querySelector('.complete-treatment-btn');
-                        if (button) {
-                            button.disabled = true;
-                            button.textContent = 'Tamamlanıyor...';
-                        }
-
-                        const form = document.querySelector('form[method="POST"]');
-                        if (!form) {
-                            alert('Form bulunamadı!');
-                            if (button) {
-                                button.disabled = false;
-                                button.textContent = 'Tedaviyi Tamamla';
-                            }
-                            return;
-                        }
-
-                        // Durumu 'done' olarak ayarla
-                        const statusSelect = form.querySelector('#status');
-                        if (statusSelect) {
-                            statusSelect.value = 'done';
-                        }
-
-                        // Uygulanan tedaviler için gizli input alanları ekle
-                        this.appliedTreatments.forEach((treatment, index) => {
-                            if (treatment.treatment_id) {
-                                this.addHiddenInput(form, `treatments[${index}][treatment_id]`, treatment.treatment_id);
-                            }
-                            if (treatment.tooth_number) {
-                                this.addHiddenInput(form, `treatments[${index}][tooth_number]`, treatment.tooth_number);
-                            }
-                            if (treatment.unit_price) {
-                                this.addHiddenInput(form, `treatments[${index}][unit_price]`, treatment.unit_price);
-                            }
-                            if (treatment.treatment_plan_item_id) {
-                                this.addHiddenInput(form, `treatments[${index}][treatment_plan_item_id]`, treatment.treatment_plan_item_id);
-                            }
-                            if (treatment.is_scheduled !== undefined) {
-                                this.addHiddenInput(form, `treatments[${index}][is_scheduled]`, treatment.is_scheduled ? '1' : '0');
-                            }
-                        });
-
-                        // Formu normal şekilde gönder
-                        form.submit();
-                    },
-
-                    // Gizli input alanı ekle
-                    addHiddenInput(form, name, value) {
-                        // Aynı isimde mevcut input'u kaldır
-                        const existingInput = form.querySelector(`input[name="${name}"]`);
-                        if (existingInput) {
-                            existingInput.remove();
-                        }
-
-                        // Yeni gizli input oluştur
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = name;
-                        input.value = value;
-                        form.appendChild(input);
-                    }
                 }
             }
         </script>

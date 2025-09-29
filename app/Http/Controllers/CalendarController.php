@@ -222,6 +222,7 @@ class CalendarController extends Controller
         ];
 
         $viewData = [
+            'title' => 'Randevular',
             'days' => $days,
             'weekDays' => $weekDays,
             'monthLabel' => $monthLabel,
@@ -325,6 +326,7 @@ class CalendarController extends Controller
         $todayLabel = mb_convert_case($todayLabel, MB_CASE_TITLE, 'UTF-8');
 
         return view('calendar.today', [
+            'title' => 'Randevular',
             'todayLabel' => $todayLabel,
             'hourlySlots' => $hourlySlots,
             'appointments' => $appointments,
@@ -360,6 +362,7 @@ class CalendarController extends Controller
         $statuses = AppointmentStatus::cases();
 
         return view('calendar.show', [
+            'title' => 'Randevu Detayı',
             'appointment' => $appointment,
             'dentists' => $dentists,
             'patients' => $patients,

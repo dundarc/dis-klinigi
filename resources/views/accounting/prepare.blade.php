@@ -37,13 +37,13 @@
                                     <x-input-label x-bind:for="`price_${index}`" value="Birim Fiyat"/>
                                     <x-text-input x-bind:id="`price_${index}`" type="number" step="0.01" x-bind:name="`items[${index}][unit_price]`" class="w-full mt-1" x-model.number="item.unit_price" />
                                 </div>
-                                <input type="hidden" x-bind:name="`items[${index}][vat]`" x-bind:value="item.vat">
+                                <input type="hidden" x-bind:name="`items[${index}][vat]`" x-bind:value="item.vat ?? {{ config('accounting.vat_rate') * 100 }}">
                                 <x-danger-button type="button" @click="items.splice(index, 1)">X</x-danger-button>
                             </div>
                         </template>
                     </div>
 
-                    <x-secondary-button type="button" @click="items.push({ description: '', qty: 1, unit_price: 0, vat: 20, patient_treatment_id: null })" class="mt-2">
+                    <x-secondary-button type="button" @click="items.push({ description: '', qty: 1, unit_price: 0, vat: {{ config('accounting.vat_rate') * 100 }}, patient_treatment_id: null })" class="mt-2">
                         Yeni Kalem Ekle
                     </x-secondary-button>
 
@@ -70,7 +70,7 @@
                     return this.items.reduce((total, item) => total + (item.qty * item.unit_price), 0);
                 },
                 get vatTotal() {
-                    return this.items.reduce((total, item) => total + (item.qty * item.unit_price * ((item.vat || 20) / 100)), 0);
+                    return this.items.reduce((total, item) => total + (item.qty * item.unit_price * ((item.vat || {{ config('accounting.vat_rate') * 100 }}) / 100)), 0);
                 },
                 get grandTotal() {
                     return this.subtotal + this.vatTotal;

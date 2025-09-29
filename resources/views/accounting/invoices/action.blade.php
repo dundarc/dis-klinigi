@@ -35,6 +35,51 @@
 
     <div class="py-8" x-data="invoiceEditor()" @change="hasChanges = true">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <!-- Payment Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Toplam Tutar</p>
+                            <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ number_format($invoice->grand_total, 2, ',', '.') }} TL</p>
+                        </div>
+                        <div class="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Ödenen Tutar</p>
+                            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($totalPaid, 2, ',', '.') }} TL</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Kalan Tutar</p>
+                            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ number_format($outstandingBalance, 2, ',', '.') }} TL</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Invoice Header -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
@@ -52,15 +97,7 @@
                     </div>
                     <div>
                         <p class="text-slate-500 dark:text-slate-400">Durum</p>
-                        @if($invoice->status->value === 'paid')
-                            <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">Ödenmiş</span>
-                        @elseif($invoice->status->value === 'pending')
-                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">Bekliyor</span>
-                        @elseif($invoice->status->value === 'overdue')
-                            <span class="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-800 dark:text-red-200">Vadesi Geçmiş</span>
-                        @else
-                            <span class="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-200">{{ ucfirst(str_replace('_', ' ', $invoice->status->value)) }}</span>
-                        @endif
+                        <x-status-badge :status="$invoice->status" />
                     </div>
                 </div>
             </div>
@@ -122,7 +159,7 @@
                             <p class="text-lg font-semibold text-slate-900 dark:text-slate-100" x-text="formatCurrency(subtotal)"></p>
                         </div>
                         <div>
-                            <p class="text-slate-600 dark:text-slate-400">KDV (%18)</p>
+                            <p class="text-slate-600 dark:text-slate-400">KDV (%{{ config('accounting.vat_rate') * 100 }})</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-slate-100" x-text="formatCurrency(vat)"></p>
                         </div>
                         <div>
@@ -235,7 +272,7 @@
                         return sum + (qty * price);
                     }, 0);
 
-                    this.vat = this.subtotal * 0.18; // 18% KDV
+                    this.vat = this.subtotal * {{ config('accounting.vat_rate') }}; // {{ config('accounting.vat_rate') * 100 }}% KDV
                     this.total = this.subtotal + this.vat;
                 },
 

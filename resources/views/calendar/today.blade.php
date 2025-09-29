@@ -2,12 +2,12 @@
     <x-slot name="header">
         <div class="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between">
             <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Takvim: Bugün</h2>
+                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Takvim: Bugï¿½n</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ $todayLabel }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <x-secondary-button-link href="{{ route('calendar') }}">
-                    Aylýk Görünüm
+                    Aylï¿½k Gï¿½rï¿½nï¿½m
                 </x-secondary-button-link>
                 <x-secondary-button-link href="{{ route('waiting-room.emergency') }}">
                     Acil Listesi
@@ -37,13 +37,13 @@
                                             <span>{{ $dentist->name }}</span>
                                         </label>
                                     @empty
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Tanýmlý hekim bulunmuyor.</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Tanï¿½mlï¿½ hekim bulunmuyor.</p>
                                     @endforelse
                                 </div>
                             </div>
                             <div class="flex flex-wrap items-center justify-end gap-3">
                                 @if($filtersApplied)
-                                    <x-secondary-button-link href="{{ route('calendar.today') }}">
+                                    <x-secondary-button-link href="{{ route('calendar.day') }}">
                                         Filtreyi Temizle
                                     </x-secondary-button-link>
                                 @endif
@@ -54,11 +54,11 @@
 
                     <x-card>
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Bugünün Randevularý</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Bugï¿½nï¿½n Randevularï¿½</h3>
                             <span class="text-xs text-gray-500 dark:text-gray-400">{{ $appointments->count() }} randevu</span>
                         </div>
                         @if($hourlySlots->isEmpty())
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Bugün için randevu bulunmuyor.</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Bugï¿½n iï¿½in randevu bulunmuyor.</p>
                         @else
                             <div class="space-y-5">
                                 @foreach($hourlySlots as $slot)
@@ -97,22 +97,22 @@
                 <div class="space-y-6">
                     <x-card>
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Acil Sýra Bekleyenler</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Acil Sï¿½ra Bekleyenler</h3>
                             <x-secondary-button-link href="{{ route('waiting-room.emergency') }}">
-                                Tümünü Gör
+                                Tï¿½mï¿½nï¿½ Gï¿½r
                             </x-secondary-button-link>
                         </div>
                         @if($emergencyEncounters->isEmpty())
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Þu anda acil bekleyen hasta bulunmuyor.</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">ï¿½u anda acil bekleyen hasta bulunmuyor.</p>
                         @else
                             <div class="space-y-3">
                                 @foreach($emergencyEncounters as $encounter)
                                     @php
                                         $triageLabel = match ($encounter->triage_level?->value) {
-                                            'red' => 'Kýrmýzý',
-                                            'yellow' => 'Sarý',
-                                            'green' => 'Yeþil',
-                                            default => 'Belirtilmemiþ',
+                                            'red' => 'Kï¿½rmï¿½zï¿½',
+                                            'yellow' => 'Sarï¿½',
+                                            'green' => 'Yeï¿½il',
+                                            default => 'Belirtilmemiï¿½',
                                         };
                                         $arrivalTime = $encounter->arrived_at?->format('H:i') ?? $encounter->created_at?->format('H:i') ?? '--';
                                     @endphp
@@ -121,11 +121,11 @@
                                             <div>
                                                 <p class="font-medium text-gray-900 dark:text-gray-100">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                    Triyaj: {{ $triageLabel }} • Geliþ: {{ $arrivalTime }}
+                                                    Triyaj: {{ $triageLabel }} ï¿½ Geliï¿½: {{ $arrivalTime }}
                                                 </p>
                                             </div>
                                             <x-primary-button-link href="{{ route('waiting-room.action', $encounter) }}">
-                                                Ýþlem Yap
+                                                ï¿½ï¿½lem Yap
                                             </x-primary-button-link>
                                         </div>
                                     </div>

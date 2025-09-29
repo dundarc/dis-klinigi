@@ -1,8 +1,10 @@
 ﻿import "./bootstrap";
 import "./quick-actions";
+import "./themeManager";
 
 import Alpine from "alpinejs";
 
-window.Alpine = Alpine;
-
-Alpine.start();
+document.addEventListener('DOMContentLoaded', () => {
+    window.Alpine = Alpine;
+    Alpine.start();
+});

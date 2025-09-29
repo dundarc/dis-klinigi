@@ -116,8 +116,133 @@ class DashboardController extends Controller
                     'patient_name' => $appointment->patient->first_name . ' ' . $appointment->patient->last_name,
                     'doctor_name' => $appointment->dentist->name,
                     'time' => $appointment->start_at->format('d/m/Y H:i'),
+                    'status' => $appointment->status->label(),
+                    'status_color' => match($appointment->status->value) {
+                        'scheduled' => 'bg-blue-100 text-blue-800',
+                        'confirmed' => 'bg-green-100 text-green-800',
+                        'checked_in' => 'bg-purple-100 text-purple-800',
+                        'completed' => 'bg-emerald-100 text-emerald-800',
+                        'cancelled' => 'bg-red-100 text-red-800',
+                        'no_show' => 'bg-gray-100 text-gray-800',
+                        default => 'bg-gray-100 text-gray-800'
+                    }
                 ];
             });
+
+        // Today's Appointments Table
+        $todaysAppointments = Appointment::with('patient', 'dentist')
+            ->whereDate('start_at', $today)
+            ->orderBy('start_at')
+            ->get()
+            ->map(function ($appointment) {
+                return [
+                    'id' => $appointment->id,
+                    'patient_name' => $appointment->patient->first_name . ' ' . $appointment->patient->last_name,
+                    'patient_phone' => $appointment->patient->phone_primary ?: $appointment->patient->phone_secondary,
+                    'doctor_name' => $appointment->dentist->name,
+                    'time' => $appointment->start_at->format('H:i'),
+                    'status' => $appointment->status->label(),
+                    'status_color' => match($appointment->status->value) {
+                        'scheduled' => 'bg-blue-100 text-blue-800',
+                        'confirmed' => 'bg-green-100 text-green-800',
+                        'checked_in' => 'bg-purple-100 text-purple-800',
+                        'completed' => 'bg-emerald-100 text-emerald-800',
+                        'cancelled' => 'bg-red-100 text-red-800',
+                        'no_show' => 'bg-gray-100 text-gray-800',
+                        default => 'bg-gray-100 text-gray-800'
+                    },
+                    'notes' => $appointment->notes,
+                ];
+            });
+
+        // Recent Activities (Last 10 activities)
+        $recentActivities = collect();
+
+        // Recent patient registrations
+        $recentPatients = Patient::latest('created_at')->take(3)->get()->map(function ($patient) {
+            return [
+                'type' => 'patient',
+                'icon' => '👤',
+                'title' => 'Yeni Hasta Kaydı',
+                'description' => $patient->first_name . ' ' . $patient->last_name,
+                'time' => $patient->created_at->diffForHumans(),
+                'url' => route('patients.show', $patient->id),
+                'color' => 'text-green-600'
+            ];
+        });
+
+        // Recent appointments
+        $recentAppointments = Appointment::with('patient')->latest('created_at')->take(3)->get()->map(function ($appointment) {
+            return [
+                'type' => 'appointment',
+                'icon' => '📅',
+                'title' => 'Yeni Randevu',
+                'description' => $appointment->patient->first_name . ' ' . $appointment->patient->last_name . ' - ' . $appointment->start_at->format('d/m/Y H:i'),
+                'time' => $appointment->created_at->diffForHumans(),
+                'url' => route('calendar.show', $appointment->id),
+                'color' => 'text-blue-600'
+            ];
+        });
+
+        // Recent treatments
+        $recentTreatments = PatientTreatment::with('patient', 'treatment')->latest('created_at')->take(3)->get()->map(function ($treatment) {
+            return [
+                'type' => 'treatment',
+                'icon' => '🦷',
+                'title' => 'Tedavi Tamamlandı',
+                'description' => $treatment->patient->first_name . ' ' . $treatment->patient->last_name . ' - ' . ($treatment->treatment->name ?? 'Tedavi'),
+                'time' => $treatment->created_at->diffForHumans(),
+                'url' => route('patients.show', $treatment->patient_id),
+                'color' => 'text-purple-600'
+            ];
+        });
+
+        // Recent invoices
+        $recentInvoices = Invoice::with('patient')->latest('created_at')->take(3)->get()->map(function ($invoice) {
+            return [
+                'type' => 'invoice',
+                'icon' => '💰',
+                'title' => 'Yeni Fatura',
+                'description' => $invoice->patient->first_name . ' ' . $invoice->patient->last_name . ' - ' . number_format($invoice->grand_total, 2, ',', '.') . ' ₺',
+                'time' => $invoice->created_at->diffForHumans(),
+                'url' => route('accounting.invoices.show', $invoice->id),
+                'color' => 'text-orange-600'
+            ];
+        });
+
+        $recentActivities = $recentPatients->concat($recentAppointments)->concat($recentTreatments)->concat($recentInvoices)
+            ->sortByDesc(function ($activity) {
+                return strtotime($activity['time']);
+            })->take(10);
+
+        // Financial Summary Cards
+        $thisMonth = now()->month;
+        $thisYear = now()->year;
+
+        $monthlyRevenue = Payment::whereYear('created_at', $thisYear)
+            ->whereMonth('created_at', $thisMonth)
+            ->sum('amount');
+
+        $monthlyExpenses = \App\Models\Stock\StockExpense::whereYear('expense_date', $thisYear)
+            ->whereMonth('expense_date', $thisMonth)
+            ->where('payment_status', 'paid')
+            ->sum('total_amount');
+
+        $monthlyProfit = $monthlyRevenue - $monthlyExpenses;
+
+        // Patient Statistics
+        $totalPatients = Patient::count();
+        $newPatientsThisMonth = Patient::whereYear('created_at', $thisYear)
+            ->whereMonth('created_at', $thisMonth)
+            ->count();
+
+        // Treatment Plan Statistics
+        $activeTreatmentPlans = \App\Models\TreatmentPlan::where('status', 'active')->count();
+        $completedTreatments = \App\Models\TreatmentPlanItem::where('status', 'done')->count();
+
+        // Stock Statistics
+        $lowStockItems = \App\Models\Stock\StockItem::whereRaw('quantity <= minimum_quantity')->count();
+        $totalStockValue = \App\Models\Stock\StockItem::sum(DB::raw('quantity'));
 
         // Calculate donut chart data for appointments
         $appointmentStats = [
@@ -143,6 +268,16 @@ class DashboardController extends Controller
             'lastCollections' => $lastCollections,
             'lastProcedures' => $lastProcedures,
             'lastAppointments' => $lastAppointments,
+            'todaysAppointments' => $todaysAppointments,
+            'recentActivities' => $recentActivities,
+            'monthlyRevenue' => $monthlyRevenue,
+            'monthlyProfit' => $monthlyProfit,
+            'totalPatients' => $totalPatients,
+            'newPatientsThisMonth' => $newPatientsThisMonth,
+            'activeTreatmentPlans' => $activeTreatmentPlans,
+            'completedTreatments' => $completedTreatments,
+            'lowStockItems' => $lowStockItems,
+            'totalStockValue' => $totalStockValue,
             'showFinanceCard' => $showFinanceCard,
             'showStockCard' => $showStockCard,
         ]);

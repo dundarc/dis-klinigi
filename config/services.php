@@ -31,4 +31,17 @@ return [
         ],
     ],
 
+    'ocr' => [
+        'driver' => env('OCR_DRIVER', 'tesseract'),
+        'lang' => env('OCR_LANG', 'tur+eng'),
+        'psm' => env('OCR_PSM', 6), // Page segmentation mode
+        'oem' => env('OCR_OEM', 1), // OCR Engine mode (LSTM)
+        'dpi' => env('OCR_DPI', 300), // DPI for PDF rasterization
+        'pdf_engine' => env('OCR_PDF_ENGINE', 'imagick'), // imagick | poppler
+        'max_pages' => env('OCR_MAX_PAGES', 10), // Maximum pages to process
+        'timeout' => env('OCR_TIMEOUT', 45), // Timeout in seconds
+        'strict_mode' => env('OCR_STRICT_MODE', false), // Strict parsing mode
+        'temp_dir' => env('OCR_TEMP_DIR', sys_get_temp_dir() . '/ocr'),
+    ],
+
 ];

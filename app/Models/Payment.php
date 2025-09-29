@@ -16,6 +16,7 @@ class Payment extends Model
         'amount',
         'paid_at',
         'txn_ref',
+        'notes',
     ];
 
     protected function casts(): array

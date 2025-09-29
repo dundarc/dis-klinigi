@@ -9,8 +9,7 @@ class InvoiceItem extends Model
 {
     use HasFactory;
 
-    // Bu tablonun migration'ında created_at/updated_at oluşturmamıştık.
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'invoice_id',

@@ -66,6 +66,17 @@ class TreatmentPlanService
     public function updatePlan(TreatmentPlan $plan, array $data): TreatmentPlan
     {
         return DB::transaction(function () use ($plan, $data) {
+            // Null relation safety check - dentist_id kontrolü
+            if (empty($data['dentist_id'])) {
+                throw new \InvalidArgumentException('Dentist ID is required for treatment plan update');
+            }
+
+            // Dentist varlığını kontrol et
+            $dentist = \App\Models\User::find($data['dentist_id']);
+            if (!$dentist) {
+                throw new \InvalidArgumentException('Selected dentist not found');
+            }
+
             $plan->update([
                 'dentist_id' => $data['dentist_id'],
                 'status' => $data['status'] ?? $plan->status,
@@ -77,34 +88,18 @@ class TreatmentPlanService
                 foreach ($data['deleted_items'] as $itemId) {
                     $item = TreatmentPlanItem::find($itemId);
                     if ($item && $item->treatment_plan_id === $plan->id) {
-                        // Detach from appointment if linked
-                        if ($item->appointment_id) {
-                            $appointment = $item->appointment;
-                            
-                            // Log appointment history before detaching
-                            \App\Models\TreatmentPlanItemAppointment::create([
-                                'treatment_plan_item_id' => $item->id,
-                                'appointment_id' => $appointment->id,
-                                'action' => TreatmentPlanItemAppointmentAction::REMOVED,
-                                'notes' => 'Item removed from treatment plan, appointment cancelled',
-                                'user_id' => auth()->id(),
-                            ]);
-
-                            // Check if appointment has other items
-                            $remainingItems = TreatmentPlanItem::where('appointment_id', $appointment->id)
-                                ->where('id', '!=', $item->id)
-                                ->count();
-                            
-                            if ($remainingItems === 0) {
-                                $appointment->update([
-                                    'status' => AppointmentStatus::CANCELLED,
-                                    'notes' => ($appointment->notes ? $appointment->notes . ' | ' : '') . 'Tedavi öğeleri kaldırıldı - otomatik iptal edildi'
-                                ]);
-                            }
+                        // İş kuralı: Tamamlanan öğeler düzenlenemez
+                        if ($item->status === \App\Enums\TreatmentPlanItemStatus::DONE) {
+                            throw new \InvalidArgumentException('Tamamlanan tedavi kalemleri düzenlenemez veya silinemez.');
                         }
 
+                        // Randevulu item silinirse randevu yönetimi
+                        $this->detachItemFromAppointment($item, 'Item removed from treatment plan');
+
                         // Detach from encounters safely
-                        $item->encounters()->detach();
+                        if ($item->encounters()->exists()) {
+                            $item->encounters()->detach();
+                        }
 
                         // Log status change to cancelled and delete
                         $item->changeStatus(
@@ -120,115 +115,61 @@ class TreatmentPlanService
             }
 
             $totalCost = 0;
-            
+
             // Handle existing items
             if (!empty($data['items'])) {
                 foreach ($data['items'] as $itemData) {
-                    $appointmentId = null;
-                    $oldAppointmentId = null;
+                    // Validate required fields for each item
+                    if (empty($itemData['treatment_id']) || !isset($itemData['estimated_price'])) {
+                        throw new \InvalidArgumentException('Treatment ID and estimated price are required for all items');
+                    }
 
                     // Handle existing items
                     if (isset($itemData['id']) && $itemData['id']) {
                         $existingItem = TreatmentPlanItem::find($itemData['id']);
                         if ($existingItem && $existingItem->treatment_plan_id === $plan->id) {
+                            // İş kuralı: Tamamlanan öğeler düzenlenemez
+                            if ($existingItem->status === \App\Enums\TreatmentPlanItemStatus::DONE) {
+                                throw new \InvalidArgumentException('Tamamlanan tedavi kalemleri düzenlenemez.');
+                            }
+
                             $oldAppointmentId = $existingItem->appointment_id;
 
-                            // Handle appointment date changes
-                            if (!empty($itemData['appointment_date'])) {
-                                if ($existingItem->appointment) {
-                                    // Update existing appointment
-                                    $appointment = $existingItem->appointment;
-                                    $appointment->update([
-                                        'patient_id' => $plan->patient_id,
-                                        'dentist_id' => $data['dentist_id'],
-                                        'start_at' => $itemData['appointment_date'],
-                                        'end_at' => Carbon::parse($itemData['appointment_date'])->addMinutes(30),
-                                        'status' => AppointmentStatus::SCHEDULED,
-                                    ]);
-                                    $appointmentId = $appointment->id;
-                                } else {
-                                    // Create new appointment
-                                    $appointment = Appointment::create([
-                                        'patient_id' => $plan->patient_id,
-                                        'dentist_id' => $data['dentist_id'],
-                                        'start_at' => $itemData['appointment_date'],
-                                        'end_at' => Carbon::parse($itemData['appointment_date'])->addMinutes(30),
-                                        'status' => AppointmentStatus::SCHEDULED,
-                                        'notes' => 'Tedavi planından oluşturuldu.'
-                                    ]);
-                                    $appointmentId = $appointment->id;
-                                }
-                            } else {
-                                // Remove appointment if date is cleared
-                                if ($existingItem->appointment_id) {
-                                    $oldAppointment = $existingItem->appointment;
-                                    $remainingItems = TreatmentPlanItem::where('appointment_id', $oldAppointment->id)
-                                        ->where('id', '!=', $existingItem->id)
-                                        ->count();
-                                    
-                                    if ($remainingItems === 0) {
-                                        $oldAppointment->update([
-                                            'status' => AppointmentStatus::CANCELLED,
-                                            'notes' => ($oldAppointment->notes ? $oldAppointment->notes . ' | ' : '') . 'Tedavi öğeleri kaldırıldı - otomatik iptal edildi'
-                                        ]);
-                                    }
-                                }
-                                $appointmentId = null;
-                            }
+                            // Randevu tarihi değişirse eski iptal, yeni oluştur
+                            $appointmentId = $this->rescheduleItemAppointment(
+                                $existingItem,
+                                $itemData['appointment_date'] ?? null,
+                                $data['dentist_id'],
+                                $plan->patient_id
+                            );
 
                             // Update existing item
                             $existingItem->update([
                                 'treatment_id' => $itemData['treatment_id'],
-                                'tooth_number' => $itemData['tooth_number'],
+                                'tooth_number' => $itemData['tooth_number'] ?? null,
                                 'appointment_id' => $appointmentId,
-                                'estimated_price' => $itemData['estimated_price'],
+                                'estimated_price' => (float) $itemData['estimated_price'],
+                                'status' => $itemData['status'] ?? \App\Enums\TreatmentPlanItemStatus::PLANNED,
                             ]);
                             $planItem = $existingItem;
-
-                            // Log appointment changes if any
-                            if ($appointmentId !== $oldAppointmentId) {
-                                if ($appointmentId) {
-                                    \App\Models\TreatmentPlanItemAppointment::create([
-                                        'treatment_plan_item_id' => $planItem->id,
-                                        'appointment_id' => $appointmentId,
-                                        'action' => $oldAppointmentId ? TreatmentPlanItemAppointmentAction::UPDATED : TreatmentPlanItemAppointmentAction::PLANNED,
-                                        'notes' => 'Appointment ' . ($oldAppointmentId ? 'updated' : 'planned') . ' during treatment plan update',
-                                        'user_id' => auth()->id(),
-                                    ]);
-                                }
-                                
-                                if ($oldAppointmentId && !$appointmentId) {
-                                    \App\Models\TreatmentPlanItemAppointment::create([
-                                        'treatment_plan_item_id' => $planItem->id,
-                                        'appointment_id' => $oldAppointmentId,
-                                        'action' => TreatmentPlanItemAppointmentAction::REMOVED,
-                                        'notes' => 'Appointment removed during treatment plan update',
-                                        'user_id' => auth()->id(),
-                                    ]);
-                                }
-                            }
                         } else {
                             // Create new item if ID doesn't exist or doesn't belong to this plan
                             $appointmentId = null;
                             if (!empty($itemData['appointment_date'])) {
-                                $appointment = Appointment::create([
-                                    'patient_id' => $plan->patient_id,
-                                    'dentist_id' => $data['dentist_id'],
-                                    'start_at' => $itemData['appointment_date'],
-                                    'end_at' => Carbon::parse($itemData['appointment_date'])->addMinutes(30),
-                                    'status' => AppointmentStatus::SCHEDULED,
-                                    'notes' => 'Tedavi planından oluşturuldu.'
-                                ]);
-                                $appointmentId = $appointment->id;
+                                $appointmentId = $this->createAppointmentForItem(
+                                    $plan->patient_id,
+                                    $data['dentist_id'],
+                                    $itemData['appointment_date']
+                                );
                             }
 
                             $planItem = TreatmentPlanItem::create([
                                 'treatment_plan_id' => $plan->id,
                                 'treatment_id' => $itemData['treatment_id'],
-                                'tooth_number' => $itemData['tooth_number'],
+                                'tooth_number' => $itemData['tooth_number'] ?? null,
                                 'appointment_id' => $appointmentId,
-                                'estimated_price' => $itemData['estimated_price'],
-                                'status' => \App\Enums\TreatmentPlanItemStatus::PLANNED,
+                                'estimated_price' => (float) $itemData['estimated_price'],
+                                'status' => $itemData['status'] ?? \App\Enums\TreatmentPlanItemStatus::PLANNED,
                             ]);
 
                             if ($appointmentId) {
@@ -242,27 +183,34 @@ class TreatmentPlanService
                             }
                         }
                     } else {
-                        // Create new item
+                        // Create new item - Yeni öğe ekleme + tarih varsa randevu oluştur
                         $appointmentId = null;
+                        \Illuminate\Support\Facades\Log::info('Yeni öğe için randevu kontrolü', [
+                            'treatment_id' => $itemData['treatment_id'] ?? null,
+                            'appointment_date' => $itemData['appointment_date'] ?? null,
+                            'estimated_price' => $itemData['estimated_price'] ?? null
+                        ]);
+
                         if (!empty($itemData['appointment_date'])) {
-                            $appointment = Appointment::create([
-                                'patient_id' => $plan->patient_id,
-                                'dentist_id' => $data['dentist_id'],
-                                'start_at' => $itemData['appointment_date'],
-                                'end_at' => Carbon::parse($itemData['appointment_date'])->addMinutes(30),
-                                'status' => AppointmentStatus::SCHEDULED,
-                                'notes' => 'Tedavi planından oluşturuldu.'
+                            \Illuminate\Support\Facades\Log::info('Yeni öğe için randevu oluşturuluyor', [
+                                'appointment_date' => $itemData['appointment_date']
                             ]);
-                            $appointmentId = $appointment->id;
+                            $appointmentId = $this->createAppointmentForItem(
+                                $plan->patient_id,
+                                $data['dentist_id'],
+                                $itemData['appointment_date']
+                            );
+                        } else {
+                            \Illuminate\Support\Facades\Log::info('Yeni öğe için randevu tarihi yok');
                         }
 
                         $planItem = TreatmentPlanItem::create([
                             'treatment_plan_id' => $plan->id,
                             'treatment_id' => $itemData['treatment_id'],
-                            'tooth_number' => $itemData['tooth_number'],
+                            'tooth_number' => $itemData['tooth_number'] ?? null,
                             'appointment_id' => $appointmentId,
-                            'estimated_price' => $itemData['estimated_price'],
-                            'status' => \App\Enums\TreatmentPlanItemStatus::PLANNED,
+                            'estimated_price' => (float) $itemData['estimated_price'],
+                            'status' => $itemData['status'] ?? \App\Enums\TreatmentPlanItemStatus::PLANNED,
                         ]);
 
                         if ($appointmentId) {
@@ -639,6 +587,170 @@ class TreatmentPlanService
             ]);
         }
     }
+
+    /**
+     * Randevu tarihi değişirse eski randevuyu iptal et ve yeni randevu oluştur/güncelle
+     */
+    private function rescheduleItemAppointment(TreatmentPlanItem $item, ?string $newDate, int $dentistId, int $patientId): ?int
+    {
+        $oldAppointmentId = $item->appointment_id;
+
+        if (!empty($newDate)) {
+            // Randevu çakışma kontrolü
+            $appointmentDate = Carbon::parse($newDate);
+            if ($appointmentDate->isPast()) {
+                throw new \InvalidArgumentException('Appointment date must be in the future');
+            }
+
+            // Çakışma kontrolü
+            if ($this->checkAppointmentConflict($dentistId, $newDate, $appointmentDate->addMinutes(30)->format('Y-m-d H:i:s'), $oldAppointmentId)) {
+                throw new \InvalidArgumentException('Bu tarih ve saatte doktorun başka randevusu var.');
+            }
+
+            if ($item->appointment) {
+                // Mevcut randevuyu güncelle
+                $appointment = $item->appointment;
+                $appointment->update([
+                    'patient_id' => $patientId,
+                    'dentist_id' => $dentistId,
+                    'start_at' => $newDate,
+                    'end_at' => $appointmentDate->addMinutes(30),
+                    'status' => AppointmentStatus::SCHEDULED,
+                ]);
+                $appointmentId = $appointment->id;
+
+                // Log appointment update
+                \App\Models\TreatmentPlanItemAppointment::create([
+                    'treatment_plan_item_id' => $item->id,
+                    'appointment_id' => $appointmentId,
+                    'action' => TreatmentPlanItemAppointmentAction::UPDATED,
+                    'notes' => 'Appointment rescheduled during treatment plan update',
+                    'user_id' => auth()->id(),
+                ]);
+            } else {
+                // Yeni randevu oluştur
+                $appointmentId = $this->createAppointmentForItem($patientId, $dentistId, $newDate);
+
+                // Log appointment creation
+                \App\Models\TreatmentPlanItemAppointment::create([
+                    'treatment_plan_item_id' => $item->id,
+                    'appointment_id' => $appointmentId,
+                    'action' => TreatmentPlanItemAppointmentAction::PLANNED,
+                    'notes' => 'Appointment planned during treatment plan update',
+                    'user_id' => auth()->id(),
+                ]);
+            }
+        } else {
+            // Randevu tarihi kaldırıldı - mevcut randevuyu ayır
+            if ($oldAppointmentId) {
+                $this->detachItemFromAppointment($item, 'Appointment date cleared during treatment plan update');
+            }
+            $appointmentId = null;
+        }
+
+        return $appointmentId;
+    }
+
+    /**
+     * Item'ı randevudan ayır ve gerekirse randevuyu iptal et
+     */
+    private function detachItemFromAppointment(TreatmentPlanItem $item, string $reason): void
+    {
+        if (!$item->appointment_id) {
+            return;
+        }
+
+        $appointment = $item->appointment;
+        if (!$appointment) {
+            return;
+        }
+
+        // Log appointment removal
+        \App\Models\TreatmentPlanItemAppointment::create([
+            'treatment_plan_item_id' => $item->id,
+            'appointment_id' => $appointment->id,
+            'action' => TreatmentPlanItemAppointmentAction::REMOVED,
+            'notes' => $reason,
+            'user_id' => auth()->id(),
+        ]);
+
+        // Check if appointment has other items
+        $remainingItems = TreatmentPlanItem::where('appointment_id', $appointment->id)
+            ->where('id', '!=', $item->id)
+            ->count();
+
+        if ($remainingItems === 0) {
+            // Randevuda başka item kalmadı, iptal et
+            $this->cancelAppointmentWithReason($appointment, 'Tedavi öğeleri kaldırıldı - otomatik iptal edildi');
+        }
+
+        // Item'ı randevudan ayır
+        $item->update(['appointment_id' => null]);
+    }
+
+    /**
+     * Randevuyu açıklama ile iptal et
+     */
+    private function cancelAppointmentWithReason(Appointment $appointment, string $reason): void
+    {
+        $appointment->update([
+            'status' => AppointmentStatus::CANCELLED,
+            'cancelled_at' => now(),
+            'notes' => ($appointment->notes ? $appointment->notes . ' | ' : '') . $reason
+        ]);
+    }
+
+    /**
+     * Yeni öğe için randevu oluştur
+     */
+    private function createAppointmentForItem(int $patientId, int $dentistId, string $dateTime): int
+    {
+        $appointmentDate = Carbon::parse($dateTime);
+
+        // Çakışma kontrolü
+        if ($this->checkAppointmentConflict($dentistId, $dateTime, $appointmentDate->addMinutes(30)->format('Y-m-d H:i:s'))) {
+            throw new \InvalidArgumentException('Bu tarih ve saatte doktorun başka randevusu var.');
+        }
+
+        $appointment = Appointment::create([
+            'patient_id' => $patientId,
+            'dentist_id' => $dentistId,
+            'start_at' => $dateTime,
+            'end_at' => $appointmentDate->addMinutes(30),
+            'status' => AppointmentStatus::SCHEDULED,
+            'notes' => 'Tedavi planından oluşturuldu.'
+        ]);
+
+        return $appointment->id;
+    }
+
+    /**
+     * Randevu çakışma kontrolü - doktor bazında
+     */
+    public function checkAppointmentConflict(int $dentistId, string $startAt, string $endAt, ?int $ignoreId = null): bool
+    {
+        $query = Appointment::where('dentist_id', $dentistId)
+            ->where('status', '!=', AppointmentStatus::CANCELLED)
+            ->where(function ($q) use ($startAt, $endAt) {
+                $q->whereBetween('start_at', [$startAt, $endAt])
+                  ->orWhereBetween('end_at', [$startAt, $endAt])
+                  ->orWhere(function ($q2) use ($startAt, $endAt) {
+                      $q2->where('start_at', '<=', $startAt)
+                         ->where('end_at', '>=', $endAt);
+                  });
+            });
+
+        if ($ignoreId) {
+            $query->where('id', '!=', $ignoreId);
+        }
+
+        return $query->exists();
+    }
+
+
+
+
+
 
     /**
      * Get cost summary for a treatment plan.

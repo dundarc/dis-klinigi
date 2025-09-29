@@ -100,5 +100,19 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('invoices/{invoice}/send-email', [InvoiceManagementController::class, 'sendEmail']);
         Route::get('reports/financial', [FinancialReportController::class, 'summary']);
     });
+
+    // API v1 - Accounting Routes (Commented out - controllers don't exist)
+    // Route::prefix('v1/accounting')->middleware('can:accessAccountingFeatures')->group(function () {
+    //     Route::get('/invoices', [\App\Http\Controllers\Api\V1\Accounting\InvoiceController::class, 'index']);
+    //     Route::post('/invoices', [\App\Http\Controllers\Api\V1\Accounting\InvoiceController::class, 'store']);
+    //     Route::get('/invoices/{invoice}', [\App\Http\Controllers\Api\V1\Accounting\InvoiceController::class, 'show']);
+    //     Route::put('/invoices/{invoice}', [\App\Http\Controllers\Api\V1\Accounting\InvoiceController::class, 'update']);
+    //     Route::delete('/invoices/{invoice}', [\App\Http\Controllers\Api\V1\Accounting\InvoiceController::class, 'destroy']);
+    //
+    //     Route::get('/reports/revenue', [\App\Http\Controllers\Api\V1\Accounting\ReportController::class, 'revenue']);
+    //     Route::get('/reports/overdue', [\App\Http\Controllers\Api\V1\Accounting\ReportController::class, 'overdue']);
+    //     Route::get('/reports/dentist-performance', [\App\Http\Controllers\Api\V1\Accounting\ReportController::class, 'dentistPerformance']);
+    //     Route::get('/reports/payment-methods', [\App\Http\Controllers\Api\V1\Accounting\ReportController::class, 'paymentMethods']);
+    // });
 });
 

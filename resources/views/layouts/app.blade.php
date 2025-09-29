@@ -11,53 +11,12 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         @if(app()->environment('local'))
-            <!-- Development: Use CDN for faster development -->
-            <script src="https://cdn.tailwindcss.com"></script>
-            <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+            <!-- Development: Use Vite compiled assets for proper dark mode support -->
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
         @else
             <!-- Production: Use Vite compiled assets -->
-            @vite(['resources/css/app.css', 'resources/js/app.js'])
+            <script src="{{ asset('build/assets/app.js') }}" defer></script>
         @endif
-
-        <!-- Dark Mode Management -->
-        <script>
-            // Global dark mode state
-            window.darkModeState = {
-                isDark: false,
-                init() {
-                    const saved = localStorage.getItem('dark-mode');
-                    if (saved !== null) {
-                        this.isDark = saved === 'true';
-                    } else {
-                        this.isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    }
-                    this.applyTheme();
-
-                    // Listen for system changes
-                    if (window.matchMedia && localStorage.getItem('dark-mode') === null) {
-                        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                            this.isDark = e.matches;
-                            this.applyTheme();
-                        });
-                    }
-                },
-                toggle() {
-                    this.isDark = !this.isDark;
-                    localStorage.setItem('dark-mode', this.isDark.toString());
-                    this.applyTheme();
-                },
-                applyTheme() {
-                    if (this.isDark) {
-                        document.documentElement.classList.add('dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                    }
-                }
-            };
-
-            // Initialize on page load
-            window.darkModeState.init();
-        </script>
 
         <!-- Chart.js CDN -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

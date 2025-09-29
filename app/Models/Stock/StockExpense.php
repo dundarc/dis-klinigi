@@ -33,6 +33,7 @@ class StockExpense extends Model
         'vat_rate' => 'decimal:2',
         'vat_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'payment_method' => \App\Enums\PaymentMethod::class,
     ];
 
     public function category()

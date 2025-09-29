@@ -19,6 +19,7 @@ class Invoice extends Model
         'payment_method',
         'due_date',
         'payment_details',
+        'currency',
     ];
 
     protected function casts(): array
@@ -42,6 +43,23 @@ class Invoice extends Model
     public function patient() { return $this->belongsTo(Patient::class); }
     public function items() { return $this->hasMany(InvoiceItem::class); }
     public function payments() { return $this->hasMany(Payment::class); }
+
+    /**
+     * Get the amount payable by the patient after insurance and discounts.
+     *
+     * This accessor calculates the net amount the patient needs to pay
+     * by subtracting insurance coverage and discounts from the grand total.
+     *
+     * @return float
+     */
+    public function getPatientPayableAmountAttribute()
+    {
+        $totalPaid = $this->payments()->sum('amount');
+        $insuranceCoverage = $this->insurance_coverage_amount ?? 0;
+        $discount = $this->discount_total ?? 0;
+
+        return max(0, $this->grand_total - $insuranceCoverage - $discount - $totalPaid);
+    }
 
     // Scopes
     public function scopeStatus($query, InvoiceStatus $status)

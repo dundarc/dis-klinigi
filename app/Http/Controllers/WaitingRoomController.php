@@ -32,8 +32,7 @@ class WaitingRoomController extends Controller
     }
 
     /**
-     * Bekleme OdasÄ± ana sayfasÄ±nÄ± gÃ¶sterir.
-     */
+      */
     public function index()
     {
         $doctorEncounters = collect();
@@ -353,6 +352,21 @@ class WaitingRoomController extends Controller
      */
     public function updateAction(Request $request, Encounter $encounter)
     {
+        // Debug logging - logout sorununu araştırmak için
+        \Illuminate\Support\Facades\Log::info('WR:updateAction', [
+            'sid' => session()->getId(),
+            'uid' => auth()->id(),
+            'url' => request()->fullUrl(),
+            'host' => request()->getHost(),
+            'path' => request()->getPathInfo(),
+            'cookies' => array_keys(request()->cookies->all()),
+            'method' => $request->method(),
+            'encounter_id' => $encounter->id,
+            'user_agent' => $request->userAgent(),
+            'csrf_token' => $request->header('X-CSRF-TOKEN'),
+            'referer' => $request->header('referer'),
+        ]);
+
         $this->authorize('update', $encounter);
 
         $validated = $request->validate([
@@ -363,45 +377,114 @@ class WaitingRoomController extends Controller
             'prescription_text' => ['nullable', 'string'],
         ]);
 
-        // Handle action
-        if ($request->action === 'complete') {
-            $validated['status'] = EncounterStatus::DONE->value;
+        DB::beginTransaction();
+        try {
+            // Handle action
+            if ($request->action === 'complete') {
+                $validated['status'] = EncounterStatus::DONE->value;
 
-            // If this encounter is linked to an appointment, mark the appointment as completed
-            if ($encounter->appointment_id) {
-                $encounter->appointment->update(['status' => AppointmentStatus::COMPLETED]);
+                // If this encounter is linked to an appointment, mark the appointment as completed
+                if ($encounter->appointment_id) {
+                    $encounter->appointment->update(['status' => AppointmentStatus::COMPLETED]);
+                }
+            } elseif (!$request->has('status') || empty($request->status)) {
+                $validated['status'] = $encounter->status->value; // Keep current status
             }
-        } elseif (!$request->has('status') || empty($request->status)) {
-            $validated['status'] = $encounter->status->value; // Keep current status
-        }
 
-        // Decode applied treatments
-        $appliedTreatments = [];
-        if ($request->applied_treatments) {
-            $appliedTreatments = json_decode($request->applied_treatments, true) ?? [];
-        }
+            // Update encounter basic info
+            $encounter->update([
+                'status' => $validated['status'],
+                'notes' => $validated['notes'] ?? $encounter->notes,
+                'started_at' => $validated['status'] === EncounterStatus::IN_SERVICE->value && !$encounter->started_at ? now() : $encounter->started_at,
+                'ended_at' => $validated['status'] === EncounterStatus::DONE->value && !$encounter->ended_at ? now() : $encounter->ended_at,
+            ]);
 
-        // Convert applied treatments to the expected format
-        $treatments = [];
-        foreach ($appliedTreatments as $treatment) {
-            $treatments[] = [
-                'treatment_id' => $treatment['treatment_id'] ?? null,
-                'tooth_number' => $treatment['tooth_number'] ?? null,
-                'unit_price' => $treatment['unit_price'] ?? 0,
-                'treatment_plan_item_id' => $treatment['treatment_plan_item_id'] ?? null,
-                'is_scheduled' => $treatment['is_scheduled'] ?? false,
-            ];
-        }
+            // Decode applied treatments
+            $appliedTreatments = [];
+            if ($request->applied_treatments) {
+                $appliedTreatments = json_decode($request->applied_treatments, true) ?? [];
+            }
 
-        $validated['treatments'] = $treatments;
+            // Process treatments
+            if (!empty($appliedTreatments)) {
+                foreach ($appliedTreatments as $treatmentData) {
+                    // Handle treatment plan item operations
+                    if (!empty($treatmentData['treatment_plan_item_id'])) {
+                        $planItem = \App\Models\TreatmentPlanItem::find($treatmentData['treatment_plan_item_id']);
+                        if ($planItem) {
+                            // Create patient treatment record
+                            $patientTreatment = $encounter->treatments()->create([
+                                'patient_id' => $encounter->patient_id,
+                                'dentist_id' => $encounter->dentist_id,
+                                'treatment_id' => $planItem->treatment_id,
+                                'tooth_number' => $treatmentData['tooth_number'] ?? $planItem->tooth_number,
+                                'unit_price' => $treatmentData['unit_price'] ?? $planItem->estimated_price,
+                                'vat' => $planItem->treatment->default_vat ?? 20,
+                                'status' => \App\Enums\PatientTreatmentStatus::DONE,
+                                'performed_at' => now(),
+                                'notes' => 'Tedavi planı öğesinden oluşturuldu',
+                                'display_treatment_name' => $planItem->treatment ? $planItem->treatment->name : 'Unknown Treatment',
+                                'treatment_plan_item_id' => $planItem->id,
+                            ]);
 
-        // Use EncounterService to handle the complex update logic
-        $result = $this->encounterService->updateEncounterWithTreatments($encounter, $validated);
+                            // Link treatment plan item to encounter
+                            $encounter->treatmentPlanItems()->attach($planItem->id, [
+                                'price' => $treatmentData['unit_price'] ?? $planItem->estimated_price,
+                                'notes' => 'Applied during encounter',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
 
-        if ($result['success']) {
+                            // Mark treatment plan item as done if encounter is completed
+                            if ($validated['status'] === EncounterStatus::DONE->value) {
+                                $planItem->changeStatus(
+                                    \App\Enums\TreatmentPlanItemStatus::DONE,
+                                    auth()->user(),
+                                    'Completed during encounter #' . $encounter->id,
+                                    ['encounter_id' => $encounter->id]
+                                );
+                            }
+                        }
+                    }
+                    // Handle regular new treatments
+                    elseif (!empty($treatmentData['treatment_id'])) {
+                        $patientTreatment = $encounter->treatments()->create([
+                            'patient_id' => $encounter->patient_id,
+                            'dentist_id' => $encounter->dentist_id,
+                            'treatment_id' => $treatmentData['treatment_id'],
+                            'tooth_number' => $treatmentData['tooth_number'] ?? null,
+                            'unit_price' => $treatmentData['unit_price'] ?? 0,
+                            'vat' => \App\Models\Treatment::find($treatmentData['treatment_id'])->default_vat ?? 20,
+                            'status' => \App\Enums\PatientTreatmentStatus::DONE,
+                            'performed_at' => now(),
+                            'display_treatment_name' => \App\Models\Treatment::find($treatmentData['treatment_id'])->name ?? 'Unknown Treatment',
+                        ]);
+                    }
+                }
+            }
+
+            // Handle prescriptions
+            if (!empty($validated['prescription_text'])) {
+                $encounter->prescriptions()->create([
+                    'patient_id' => $encounter->patient_id,
+                    'dentist_id' => $encounter->dentist_id,
+                    'text' => $validated['prescription_text'],
+                ]);
+            }
+
+            DB::commit();
+
             return redirect()->back()->with('success', 'Ziyaret kaydi başarıyla güncellendi.');
-        } else {
-            return redirect()->back()->with('error', $result['message'] ?? 'Güncelleme başarısız oldu.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Illuminate\Support\Facades\Log::error('WaitingRoom updateAction failed', [
+                'encounter_id' => $encounter->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Güncelleme başarısız oldu: ' . $e->getMessage());
         }
     }
 

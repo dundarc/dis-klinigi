@@ -12,17 +12,26 @@ class PdfExportService
 {
     public function generateTreatmentPlanPdf(TreatmentPlan $plan): Response
     {
+        // Güvenli eager loading - sadece mevcut ilişkileri yükle
         $plan->load([
-            'patient',
-            'dentist',
-            'items.treatment',
-            'items.appointment.dentist',
-            'items.appointmentHistory.appointment',
-            'items.appointmentHistory.user',
-            'items.histories.user',
-            'items.encounters'
+            'patient:id,first_name,last_name,national_id,phone_primary',
+            'dentist:id,name',
+            'items' => function ($query) {
+                $query->with([
+                    'treatment:id,name',
+                    'appointment:id,start_at,status,updated_at,dentist_id',
+                    'appointment.dentist:id,name',
+                    'appointmentHistory' => function ($q) {
+                        $q->with(['user:id,name'])->orderBy('created_at', 'desc');
+                    },
+                    'histories' => function ($q) {
+                        $q->with(['user:id,name'])->orderBy('created_at', 'desc');
+                    }
+                ]);
+            }
         ]);
 
+        // Cost summary hesapla
         $costSummary = app(TreatmentPlanService::class)->getCostSummary($plan);
 
         $data = [
@@ -30,8 +39,18 @@ class PdfExportService
             'costSummary' => $costSummary,
         ];
 
-        $pdf = Pdf::loadView('treatment_plans.pdf', $data);
+        try {
+            $pdf = Pdf::loadView('treatment_plans.pdf', $data);
+            return $pdf->download('treatment-plan-' . $plan->id . '.pdf');
+        } catch (\Exception $e) {
+            // PDF oluşturma hatası durumunda logla ve hata döndür
+            \Illuminate\Support\Facades\Log::error('PDF generation failed', [
+                'plan_id' => $plan->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
-        return $pdf->download('treatment-plan-' . $plan->id . '.pdf');
+            throw new \Exception('PDF oluşturma sırasında bir hata oluştu: ' . $e->getMessage());
+        }
     }
 }

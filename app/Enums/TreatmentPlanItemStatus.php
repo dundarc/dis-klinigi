@@ -8,6 +8,8 @@ enum TreatmentPlanItemStatus: string
     case IN_PROGRESS = 'in_progress';
     case DONE = 'done';
     case CANCELLED = 'cancelled';
+    case NO_SHOW = 'no_show';
+    case INVOICED = 'invoiced';
 
     public function label(): string
     {
@@ -16,6 +18,8 @@ enum TreatmentPlanItemStatus: string
             self::IN_PROGRESS => __('In Progress'),
             self::DONE => __('Done'),
             self::CANCELLED => __('Cancelled'),
+            self::NO_SHOW => __('No Show'),
+            self::INVOICED => __('Invoiced'),
         };
     }
 
@@ -26,6 +30,8 @@ enum TreatmentPlanItemStatus: string
             self::IN_PROGRESS => 'blue',
             self::DONE => 'green',
             self::CANCELLED => 'red',
+            self::NO_SHOW => 'orange',
+            self::INVOICED => 'purple',
         };
     }
 }

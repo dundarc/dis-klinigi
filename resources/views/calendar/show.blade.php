@@ -1,13 +1,31 @@
 <x-app-layout>
+    <x-slot name="header">
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                Randevu Detayı
+            </h2>
+        </div>
+    </x-slot>
+
     <div class="py-10">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
                     {{ __('Randevu Detayı') }}
                 </h2>
-                <x-secondary-button type="button" onclick="window.location.href='{{ route('calendar') }}'">
-                    {{ __('Takvime Dön') }}
-                </x-secondary-button>
+                <div class="flex gap-3">
+                    @if($appointment->status->value !== 'done' && $appointment->status->value !== 'cancelled')
+                        <x-primary-button type="button" onclick="window.location.href='{{ route('waiting-room.action', $appointment->id) }}'">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            {{ __('Tedavi İşlemleri') }}
+                        </x-primary-button>
+                    @endif
+                    <x-secondary-button type="button" onclick="window.location.href='{{ route('calendar') }}'">
+                        {{ __('Takvime Dön') }}
+                    </x-secondary-button>
+                </div>
             </div>
 
             @if (session('status'))
@@ -158,7 +176,7 @@
                 </x-card>
             @endcan
 
-            @if($unplannedItems->isNotEmpty())
+            @if($unplannedItems->isNotEmpty() && $appointment->status->value !== 'done' && $appointment->status->value !== 'cancelled')
             <x-card>
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ __('Planlanmamış Tedaviler') }}</h3>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">

@@ -133,7 +133,7 @@ Route::middleware('auth')->group(function () {
     Route::get('treatment-plans/all', [\App\Http\Controllers\TreatmentPlanController::class, 'all'])->name('treatment-plans.all');
     Route::get('treatment-plans/search', [\App\Http\Controllers\TreatmentPlanController::class, 'all'])->name('treatment-plans.search');
     Route::resource('treatment-plans', \App\Http\Controllers\TreatmentPlanController::class)->except(['create']);
-    Route::get('treatment-plans/{id}/pdf', [\App\Http\Controllers\TreatmentPlanController::class, 'downloadPdf'])->name('treatment-plans.pdf');
+    Route::get('treatment-plans/{id}/pdf', [\App\Http\Controllers\TreatmentPlanController::class, 'downloadPdf'])->name('treatment-plans.pdf')->withoutMiddleware('auth');
     Route::post('treatment-plans/{treatment_plan}/generate-invoice', [\App\Http\Controllers\TreatmentPlanController::class, 'generateInvoice'])->name('treatment-plans.generateInvoice');
     Route::get('treatment-plans/{treatment_plan}/cost-report', [\App\Http\Controllers\TreatmentPlanController::class, 'costReport'])->name('treatment-plans.cost-report');
     Route::post('treatment-plans/{treatment_plan}/items', [\App\Http\Controllers\QuickActionsController::class, 'addTreatmentPlanItem'])->name('treatment-plans.items.store');
@@ -258,8 +258,11 @@ Route::middleware('auth')->group(function () {
         });
     });
 
+    // Log Viewer - Sadece Admin
+  //  Route::get('/logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']) ->middleware('can:accessAdminFeatures') ->name('logs');
+
     // Muhasebe RotalarÄ±
-    Route::prefix('accounting')->name('accounting.')->middleware('can:accessAccountingFeatures')->group(function () {
+    Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [AccountingController::class, 'index'])->name('index');
     Route::get('/search', [AccountingController::class, 'search'])->name('search');
     Route::post('/update', [AccountingController::class, 'updateOverdueInvoices'])->name('update');
@@ -271,10 +274,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [AccountingController::class, 'store'])->name('store');
 
         Route::get('/invoices/{invoice}/show', [AccountingController::class, 'show'])->name('invoices.show');
+        Route::get('/invoices/{invoice}/payment', [AccountingController::class, 'payment'])->name('invoices.payment');
+        Route::post('/invoices/{invoice}/payments', [AccountingController::class, 'storePayment'])->name('invoices.store-payment');
+        Route::delete('/invoices/{invoice}/payments/{payment}', [AccountingController::class, 'removePayment'])->name('invoices.remove-payment');
+        Route::patch('/invoices/{invoice}/insurance', [AccountingController::class, 'updateInsuranceCoverage'])->name('invoices.update-insurance');
         Route::get('/invoices/{invoice}/action', [AccountingController::class, 'action'])->name('invoices.action');
         Route::post('/invoices/{invoice}/items', [AccountingController::class, 'addItem'])->name('invoices.items.store');
         Route::put('/invoices/{invoice}/items/{item}', [AccountingController::class, 'updateItem'])->name('invoices.items.update');
         Route::delete('/invoices/{invoice}/items/{item}', [AccountingController::class, 'destroyItem'])->name('invoices.items.destroy');
+        Route::patch('/invoices/{invoice}/status', [AccountingController::class, 'updateStatus'])->name('invoices.update-status');
         Route::put('/invoices/{invoice}', [AccountingController::class, 'update'])->name('invoices.update');
         Route::delete('/invoices/{invoice}', [AccountingController::class, 'destroy'])->name('invoices.destroy');
         Route::get('/trash', [AccountingController::class, 'trash'])->name('trash');
@@ -298,7 +306,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/completed', [WaitingRoomController::class, 'completed'])->name('completed');
         Route::get('/{encounter}/show', [WaitingRoomController::class, 'show'])->name('show');
         Route::get('/{encounter}/action', [WaitingRoomController::class, 'action'])->name('action');
-        Route::match(['get', 'post', 'put'], '/{encounter}/action', [WaitingRoomController::class, 'updateAction'])->name('action.update');
+        Route::match(['post', 'put'], '/{encounter}/action', [WaitingRoomController::class, 'updateAction'])->name('action.update');
     });
 });
 

@@ -8,10 +8,12 @@ use App\Models\Appointment;
 use App\Models\TreatmentPlanItem;
 use App\Models\Stock\StockPurchaseInvoice;
 use App\Models\Stock\StockUsage;
+use App\Models\InvoiceItem;
 use App\Observers\AppointmentObserver;
 use App\Observers\TreatmentPlanItemObserver;
 use App\Observers\StockPurchaseInvoiceObserver;
 use App\Observers\StockUsageObserver;
+use App\Modules\Accounting\Observers\InvoiceItemObserver;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -37,5 +39,6 @@ class AppServiceProvider extends ServiceProvider
         TreatmentPlanItem::observe(TreatmentPlanItemObserver::class);
         StockPurchaseInvoice::observe(StockPurchaseInvoiceObserver::class);
         StockUsage::observe(StockUsageObserver::class);
+        InvoiceItem::observe(InvoiceItemObserver::class);
     }
 }

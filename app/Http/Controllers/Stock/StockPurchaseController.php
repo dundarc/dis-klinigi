@@ -271,21 +271,36 @@ class StockPurchaseController extends Controller
 
         $validated = $request->validate([
             'files' => ['required', 'array', 'min:1', 'max:10'],
-            'files.*' => ['required', 'file', 'mimes:pdf', 'max:20480'],
+            'files.*' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480'],
             'supplier_id' => ['required', 'exists:stock_suppliers,id'],
         ]);
 
         $results = $this->ocrService->batchProcess($validated['files']);
         $successCount = 0;
         $errors = [];
+        $lowConfidenceCount = 0;
 
         foreach ($results as $result) {
+            if (!$result['success']) {
+                $errors[] = "File {$result['original_name']}: {$result['error']}";
+                continue;
+            }
+
             try {
-                $invoiceData = array_merge($result['parsed_data'], [
+                $parsedData = $result['parsed_data'];
+
+                // Check confidence score in strict mode
+                if (config('services.ocr.strict_mode', false) && ($parsedData['confidence_score'] ?? 0) < 70) {
+                    $lowConfidenceCount++;
+                    $errors[] = "File {$result['original_name']}: Düşük güven skoru ({$parsedData['confidence_score']}%)";
+                    continue;
+                }
+
+                $invoiceData = array_merge($parsedData, [
                     'supplier_id' => $validated['supplier_id'],
                     'payment_status' => PaymentStatus::PENDING,
                     'file_path' => Storage::putFile('stock/invoices', $validated['files'][$result['file_index']], 'public'),
-                    'parsed_payload' => $result['parsed_data'],
+                    'parsed_payload' => $parsedData,
                 ]);
 
                 StockPurchaseInvoice::create($invoiceData);
@@ -296,11 +311,16 @@ class StockPurchaseController extends Controller
         }
 
         $message = "Başarıyla işlenen: {$successCount} fatura.";
+        if ($lowConfidenceCount > 0) {
+            $message .= " Düşük güven skoru: {$lowConfidenceCount} fatura.";
+        }
         if (!empty($errors)) {
             $message .= ' Hatalar: ' . implode(', ', $errors);
         }
 
-        return redirect()->route('stock.purchases.index')->with('success', $message);
+        $messageType = $successCount > 0 ? 'success' : 'error';
+
+        return redirect()->route('stock.purchases.index')->with($messageType, $message);
     }
 
     public function processOcr(Request $request)
@@ -313,23 +333,42 @@ class StockPurchaseController extends Controller
 
         try {
             $parsedData = $this->ocrService->parseDocument($validated['file']);
-            
+
+            // Check if there was an error in parsing
+            if (isset($parsedData['error']) && $parsedData['error']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OCR işlemi sırasında hata oluştu: ' . $parsedData['error'],
+                    'error_code' => 'OCR_PROCESSING_ERROR',
+                    'processing_time_ms' => $parsedData['processing_time_ms'] ?? 0
+                ], 422);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $parsedData,
                 'message' => 'OCR işlemi başarıyla tamamlandı',
-                'confidence' => $parsedData['confidence_score'] ?? 0
+                'confidence' => $parsedData['confidence_score'] ?? 0,
+                'processing_time_ms' => $parsedData['processing_time_ms'] ?? 0,
+                'needs_review' => $parsedData['needs_review'] ?? false
             ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'error_code' => 'INVALID_FILE'
+            ], 400);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('OCR Processing Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'OCR işlemi sırasında hata oluştu: ' . $e->getMessage()
-            ], 422);
+                'message' => 'OCR işlemi sırasında beklenmeyen bir hata oluştu',
+                'error_code' => 'INTERNAL_ERROR'
+            ], 500);
         }
     }
 

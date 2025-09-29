@@ -40,6 +40,7 @@ class StockPurchaseInvoice extends Model
         'payment_schedule' => 'array',
         'is_installment' => 'boolean',
         'payment_status' => PaymentStatus::class,
+        'payment_method' => \App\Enums\PaymentMethod::class,
     ];
 
     public function supplier()

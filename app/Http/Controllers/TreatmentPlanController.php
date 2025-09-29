@@ -83,6 +83,7 @@ class TreatmentPlanController extends Controller
         }
 
         return view('treatment-plans.all', [
+            'title' => 'Tedavi Planları',
             'plans' => $plans,
             'transformedPlans' => $transformedPlans
         ]);
@@ -130,6 +131,7 @@ class TreatmentPlanController extends Controller
         ]);
         $patient = $treatmentPlan->patient()->first();
         return view('treatment_plans.show', [
+            'title' => 'Tedavi Planı',
             'treatmentPlan' => $treatmentPlan,
             'patient' => $patient
         ]);
@@ -140,6 +142,11 @@ class TreatmentPlanController extends Controller
      */
     public function edit(TreatmentPlan $treatmentPlan)
     {
+        // Null relation safety check - tedavi planının geçerli bir hastası olduğundan emin ol
+        if (!$treatmentPlan->patient) {
+            abort(404, 'Treatment plan patient not found');
+        }
+
         $dentists = \App\Models\User::where('role', \App\Enums\UserRole::DENTIST)->select('id', 'name')->get()->map(function($d) {
             return ['id' => $d->id, 'name' => $d->name];
         })->toArray();
@@ -153,15 +160,34 @@ class TreatmentPlanController extends Controller
             return ['value' => $case->value, 'label' => $case->label()];
         })->toArray();
 
-        // Load basic treatment plan info without items (will be loaded via AJAX)
-        $treatmentPlan->load('patient:id,first_name,last_name');
+        // Load treatment plan with all necessary relations
+        $treatmentPlan->load([
+            'patient:id,first_name,last_name',
+            'items.treatment:id,name,default_price',
+            'items.appointment:id,start_at'
+        ]);
+
+        // Transform items for frontend
+        $items = $treatmentPlan->items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'treatment_id' => $item->treatment_id ? $item->treatment_id : '',
+                'treatment_name' => $item->treatment ? $item->treatment->name : '',
+                'tooth_number' => $item->tooth_number ?? '',
+                'appointment_date' => $item->appointment ? $item->appointment->start_at->format('Y-m-d\TH:i') : '',
+                'estimated_price' => max($item->estimated_price ?? 0.00, 0.01), // Minimum 0.01
+                'status' => $item->status->value,
+                'treatment_plan_id' => $item->treatment_plan_id
+            ];
+        })->toArray();
 
         return view('treatment_plans.edit', [
             'treatmentPlan' => $treatmentPlan,
             'dentists' => $dentists,
             'treatments' => $treatments,
             'fileTypes' => $fileTypes,
-            'planStatuses' => $planStatuses
+            'planStatuses' => $planStatuses,
+            'items' => $items
         ]);
     }
 
@@ -170,38 +196,73 @@ class TreatmentPlanController extends Controller
      */
     public function update(UpdateTreatmentPlanRequest $request, TreatmentPlan $treatmentPlan)
     {
-        $validated = $request->validated();
+        try {
+            $validated = $request->validated();
 
-        // Handle new items if any
-        if ($request->has('new_items')) {
-            $validated['new_items'] = $request->input('new_items', []);
-        }
+            // Handle new items if any (for auto-save compatibility)
+            if ($request->has('new_items')) {
+                $validated['new_items'] = $request->input('new_items', []);
+            }
 
-        $updatedPlan = $this->treatmentPlanService->updatePlan($treatmentPlan, $validated);
+            // Handle deleted items if any
+            if ($request->has('deleted_items')) {
+                $validated['deleted_items'] = $request->input('deleted_items', []);
+            }
 
-        // Check if it's an AJAX request (autosave)
-        if ($request->expectsJson()) {
-            // Reload the plan with updated items
-            $updatedPlan->load(['items.treatment', 'items.appointment']);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Treatment plan updated successfully.',
-                'updated_items' => $updatedPlan->items->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'treatment_id' => $item->treatment_id,
-                        'tooth_number' => $item->tooth_number,
-                        'estimated_price' => $item->estimated_price,
-                        'status' => $item->status->value,
-                        'treatment_plan_id' => $item->treatment_plan_id,
-                    ];
-                }),
-                'total_cost' => $updatedPlan->total_estimated_cost
+            $updatedPlan = $this->treatmentPlanService->updatePlan($treatmentPlan, $validated);
+
+            // Check if it's an AJAX request (autosave)
+            if ($request->expectsJson()) {
+                // Reload the plan with updated items and relations
+                $updatedPlan->load(['items.treatment', 'items.appointment']);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tedavi planı başarıyla güncellendi.',
+                    'updated_items' => $updatedPlan->items->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'treatment_id' => $item->treatment_id,
+                            'treatment_name' => $item->treatment->name ?? '',
+                            'tooth_number' => $item->tooth_number,
+                            'appointment_date' => $item->appointment?->start_at?->format('Y-m-d\TH:i'),
+                            'estimated_price' => $item->estimated_price,
+                            'status' => $item->status->value,
+                            'treatment_plan_id' => $item->treatment_plan_id,
+                        ];
+                    }),
+                    'total_cost' => $updatedPlan->total_estimated_cost,
+                    'plan_status' => $updatedPlan->status->value,
+                    'updated_at' => $updatedPlan->updated_at->toISOString()
+                ]);
+            }
+
+            return redirect()->route('treatment-plans.show', $updatedPlan)->with('success', 'Tedavi planı başarıyla güncellendi.');
+        } catch (\InvalidArgumentException $e) {
+            // Validation/data related errors
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+            return back()->withErrors(['general' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            // General errors
+            \Illuminate\Support\Facades\Log::error('Treatment plan update failed', [
+                'plan_id' => $treatmentPlan->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-        }
 
-        return redirect()->route('treatment-plans.show', $updatedPlan)->with('success', 'Treatment plan updated successfully.');
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tedavi planı güncellenirken bir hata oluştu.'
+                ], 500);
+            }
+            return back()->withErrors(['general' => 'Tedavi planı güncellenirken bir hata oluştu.']);
+        }
     }
 
     /**
@@ -227,14 +288,21 @@ class TreatmentPlanController extends Controller
      */
     public function pdf(TreatmentPlan $treatmentPlan)
     {
+        // Debug için basit eager loading - adım adım yükle
         $plan = TreatmentPlan::with([
-            'patient',
-            'dentist',
-            'items.treatment',
-            'items.appointment.dentist',
-            'items.histories.user',
-            'items.appointmentHistory.user',
+            'patient:id,first_name,last_name,national_id,phone_primary',
+            'dentist:id,name',
+            'items.treatment:id,name',
+            'items.appointment.dentist:id,name'
         ])->findOrFail($treatmentPlan->id);
+
+        // Ek ilişkileri ayrı yükle
+        if ($plan->items->count() > 0) {
+            $plan->load([
+                'items.histories.user:id,name',
+                'items.appointmentHistory.user:id,name'
+            ]);
+        }
 
         return view('treatment-plans.pdf', compact('plan'));
     }
@@ -265,30 +333,57 @@ class TreatmentPlanController extends Controller
         try {
             $validated = $request->validated();
 
+            // Handle new items if any (for auto-save compatibility)
+            if ($request->has('new_items')) {
+                $validated['new_items'] = $request->input('new_items', []);
+            }
+
+            // Handle deleted items if any
+            if ($request->has('deleted_items')) {
+                $validated['deleted_items'] = $request->input('deleted_items', []);
+            }
+
             $updatedPlan = $this->treatmentPlanService->updatePlan($treatmentPlan, $validated);
-            
-            // Reload the plan with updated items
+
+            // Reload the plan with updated items and relations
             $updatedPlan->load(['items.treatment', 'items.appointment']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Treatment plan autosaved successfully.',
+                'message' => 'Tedavi planı otomatik kaydedildi.',
                 'updated_items' => $updatedPlan->items->map(function ($item) {
                     return [
                         'id' => $item->id,
                         'treatment_id' => $item->treatment_id,
+                        'treatment_name' => $item->treatment->name ?? '',
                         'tooth_number' => $item->tooth_number,
+                        'appointment_date' => $item->appointment?->start_at?->format('Y-m-d\TH:i'),
                         'estimated_price' => $item->estimated_price,
                         'status' => $item->status->value,
                         'treatment_plan_id' => $item->treatment_plan_id,
                     ];
                 }),
-                'total_cost' => $updatedPlan->total_estimated_cost
+                'total_cost' => $updatedPlan->total_estimated_cost,
+                'plan_status' => $updatedPlan->status->value,
+                'autosaved_at' => now()->toISOString()
             ]);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
+            // Validation/data related errors
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to autosave: ' . $e->getMessage()
+                'message' => 'Otomatik kaydetme başarısız: ' . $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            // General errors - log for debugging
+            \Illuminate\Support\Facades\Log::error('Treatment plan autosave failed', [
+                'plan_id' => $treatmentPlan->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Otomatik kaydetme sırasında bir hata oluştu.'
             ], 500);
         }
     }

@@ -100,7 +100,7 @@
     <div class="header">
         <h1>Tedavi Planı #{{ $plan->id }}</h1>
         <div class="subtitle">
-            Oluşturulma Tarihi: {{ $plan->created_at ? $plan->created_at->format('d.m.Y H:i') : 'Tarih Yok' }}
+            Oluşturulma Tarihi: {{ $plan->created_at ? \Carbon\Carbon::parse($plan->created_at)->format('d.m.Y H:i') : 'Tarih Yok' }}
         </div>
     </div>
 
@@ -124,15 +124,15 @@
         </tr>
         <tr>
             <td>Plan Durumu:</td>
-            <td>{{ optional($plan->status)->label() ?? 'Durum Yok' }}</td>
+            <td>{{ $plan->status ? $plan->status->label() : 'Durum Yok' }}</td>
         </tr>
         <tr>
             <td>Plan Oluşturulma:</td>
-            <td>{{ $plan->created_at ? $plan->created_at->format('d.m.Y H:i') : 'Tarih Yok' }}</td>
+            <td>{{ $plan->created_at ? \Carbon\Carbon::parse($plan->created_at)->format('d.m.Y H:i') : 'Tarih Yok' }}</td>
         </tr>
         <tr>
             <td>Son Güncelleme:</td>
-            <td>{{ $plan->updated_at ? $plan->updated_at->format('d.m.Y H:i') : 'Tarih Yok' }}</td>
+            <td>{{ $plan->updated_at ? \Carbon\Carbon::parse($plan->updated_at)->format('d.m.Y H:i') : 'Tarih Yok' }}</td>
         </tr>
         <tr>
             <td>Tahmini Toplam Maliyet:</td>
@@ -166,19 +166,19 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ optional($item->treatment)->name ?? 'Tedavi Bilgisi Silinmiş' }}</td>
                     <td>{{ $item->tooth_number ?? '-' }}</td>
-                    <td>{{ optional($item->status)->label() ?? 'Durum Yok' }}</td>
+                    <td>{{ $item->status ? $item->status->label() : 'Durum Yok' }}</td>
                     <td>
                         @if($item->appointment)
-                            <strong>Tarih:</strong> {{ $item->appointment->start_at ? $item->appointment->start_at->format('d.m.Y H:i') : 'Tarih Yok' }}<br>
+                            <strong>Tarih:</strong> {{ $item->appointment->start_at ? \Carbon\Carbon::parse($item->appointment->start_at)->format('d.m.Y H:i') : 'Tarih Yok' }}<br>
                             <strong>Durum:</strong>
                             @if($item->appointment->status === \App\Enums\AppointmentStatus::COMPLETED)
                                 Tamamlandı
                             @elseif($item->appointment->status === \App\Enums\AppointmentStatus::CANCELLED)
-                                İptal Edildi ({{ $item->appointment->updated_at ? $item->appointment->updated_at->format('d.m.Y') : 'Tarih Yok' }})
+                                İptal Edildi ({{ $item->appointment->updated_at ? \Carbon\Carbon::parse($item->appointment->updated_at)->format('d.m.Y') : 'Tarih Yok' }})
                             @elseif($item->appointment->status === \App\Enums\AppointmentStatus::NO_SHOW)
                                 Gelinmedi
                             @else
-                                {{ optional($item->appointment->status)->label() ?? 'Durum Yok' }}
+                                {{ $item->appointment->status ? $item->appointment->status->label() : 'Durum Yok' }}
                             @endif
                         @else
                             Randevu atanmamış
@@ -226,48 +226,58 @@
 
     <h2>Tedavi Geçmişi ve Durum Değişiklikleri</h2>
     @php
-        $timelineEvents = collect();
-        foreach($plan->items as $item) {
-            // Item creation
-            $timelineEvents->push([
-                'date' => $item->created_at,
-                'type' => 'created',
-                'title' => 'Tedavi Kalemi Oluşturuldu',
-                'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' tedavisi planlandı',
-                'item' => $item
-            ]);
+        try {
+            $timelineEvents = collect();
+            if ($plan->items) {
+                foreach($plan->items as $item) {
+                    // Item creation
+                    $timelineEvents->push([
+                        'date' => $item->created_at,
+                        'type' => 'created',
+                        'title' => 'Tedavi Kalemi Oluşturuldu',
+                        'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' tedavisi planlandı',
+                        'item' => $item
+                    ]);
 
-            // Status history from histories table
-            foreach($item->histories as $history) {
-                $timelineEvents->push([
-                    'date' => $history->created_at,
-                    'type' => 'status_change',
-                    'title' => 'Durum Değişikliği',
-                    'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' - ' .
-                                    (optional($history->old_status)->label() ?? 'Yeni') . ' → ' . (optional($history->new_status)->label() ?? 'Durum Yok') .
-                                    ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
-                    'item' => $item,
-                    'history' => $history
-                ]);
+                    // Status history from histories table
+                    if ($item->histories) {
+                        foreach($item->histories as $history) {
+                            $timelineEvents->push([
+                                'date' => $history->created_at,
+                                'type' => 'status_change',
+                                'title' => 'Durum Değişikliği',
+                                'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' - ' .
+                                                ($history->old_status ? $history->old_status->label() : 'Yeni') . ' → ' . ($history->new_status ? $history->new_status->label() : 'Durum Yok') .
+                                                ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
+                                'item' => $item,
+                                'history' => $history
+                            ]);
+                        }
+                    }
+
+                    // Appointment history
+                    if ($item->appointmentHistory) {
+                        foreach($item->appointmentHistory as $history) {
+                            $actionValue = $history->action ? $history->action->value : 'unknown';
+                            $actionLabel = $history->action ? $history->action->label() : 'Bilinmeyen İşlem';
+                            $timelineEvents->push([
+                                'date' => $history->created_at,
+                                'type' => 'appointment_' . $actionValue,
+                                'title' => $actionLabel . ' Randevu',
+                                'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' için randevu ' . $actionLabel .
+                                               ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
+                                'item' => $item,
+                                'appointment' => $history->appointment
+                            ]);
+                        }
+                    }
+                }
             }
 
-            // Appointment history
-            foreach($item->appointmentHistory as $history) {
-                $actionValue = optional($history->action)->value ?? 'unknown';
-                $actionLabel = optional($history->action)->label() ?? 'Bilinmeyen İşlem';
-                $timelineEvents->push([
-                    'date' => $history->created_at,
-                    'type' => 'appointment_' . $actionValue,
-                    'title' => $actionLabel . ' Randevu',
-                    'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' için randevu ' . $actionLabel .
-                                   ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
-                    'item' => $item,
-                    'appointment' => $history->appointment
-                ]);
-            }
+            $timelineEvents = $timelineEvents->sortByDesc('date');
+        } catch (\Exception $e) {
+            $timelineEvents = collect(); // Fallback to empty collection
         }
-
-        $timelineEvents = $timelineEvents->sortByDesc('date');
     @endphp
 
     @if($timelineEvents->isNotEmpty())
@@ -283,7 +293,7 @@
             <tbody>
                 @foreach($timelineEvents as $event)
                     <tr>
-                        <td>{{ $event['date'] ? $event['date']->format('d.m.Y H:i') : 'Tarih Yok' }}</td>
+                        <td>{{ $event['date'] ? \Carbon\Carbon::parse($event['date'])->format('d.m.Y H:i') : 'Tarih Yok' }}</td>
                         <td>{{ $event['title'] }}</td>
                         <td>{{ $event['description'] }}</td>
                         <td>{{ optional($event['item']->treatment)->name ?? 'Tedavi Silinmiş' }}</td>
@@ -296,7 +306,7 @@
     @endif
 
     <div class="footer">
-        <p>Bu rapor {{ now()->format('d.m.Y H:i') }} tarihinde oluşturulmuştur.</p>
+        <p>Bu rapor {{ \Carbon\Carbon::now()->format('d.m.Y H:i') }} tarihinde oluşturulmuştur.</p>
         <p>Diş Hekimliği Yönetim Sistemi</p>
     </div>
 </body>
