@@ -66,7 +66,7 @@
                             </div>
                             <div>
                                 <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Ödeme Yöntemi</dt>
-                                <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">{{ $expense->payment_method ? ucfirst(str_replace('_', ' ', $expense->payment_method)) : '-' }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900 dark:text-slate-100">{{ $expense->payment_method?->label() ?? '-' }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -83,7 +83,13 @@
                                                 {{ number_format($payment['amount'], 2, ',', '.') }} TL
                                             </div>
                                             <div class="text-sm text-slate-500 dark:text-slate-400">
-                                                {{ \Carbon\Carbon::parse($payment['date'])->format('d.m.Y') }} - {{ ucfirst(str_replace('_', ' ', $payment['method'])) }}
+                                                {{ \Carbon\Carbon::parse($payment['date'])->format('d.m.Y') }} - {{ match($payment['method']) {
+                                                    'nakit' => 'Nakit',
+                                                    'kredi_karti' => 'Kredi Kartı',
+                                                    'havale' => 'Havale',
+                                                    'cek' => 'Çek',
+                                                    default => ucfirst(str_replace('_', ' ', $payment['method']))
+                                                } }}
                                             </div>
                                             @if(isset($payment['notes']) && $payment['notes'])
                                                 <div class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ $payment['notes'] }}</div>

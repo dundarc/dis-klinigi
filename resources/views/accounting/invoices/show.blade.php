@@ -163,7 +163,7 @@
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                     <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">{{ $payment->paid_at?->format('d.m.Y H:i') }}</td>
                                     <td class="px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400">{{ number_format($payment->amount, 2, ',', '.') }} TL</td>
-                                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">{{ ucfirst(str_replace('_', ' ', $payment->method ?? 'belirtilmemiş')) }}</td>
+                                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">{{ $payment->method?->label() ?? 'Belirtilmemiş' }}</td>
                                     <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{{ $payment->notes ?? '-' }}</td>
                                 </tr>
                             @empty
