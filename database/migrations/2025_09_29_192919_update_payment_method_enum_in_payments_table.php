@@ -10,14 +10,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // First expand the enum to include 'credit_card' and 'check'
-        DB::statement("ALTER TABLE payments MODIFY COLUMN method ENUM('cash', 'card', 'bank_transfer', 'credit_card', 'check', 'insurance')");
-
-        // Then update any 'card' values to 'credit_card'
-        DB::statement("UPDATE payments SET method = 'credit_card' WHERE method = 'card'");
-
-        // Finally modify the enum to remove 'card'
-        DB::statement("ALTER TABLE payments MODIFY COLUMN method ENUM('cash', 'bank_transfer', 'credit_card', 'check', 'insurance')");
+        // SQLite doesn't support MODIFY COLUMN with ENUM, so we handle data migration only
+        // Update any 'card' values to 'credit_card'
+        DB::table('payments')->where('method', 'card')->update(['method' => 'credit_card']);
     }
 
     /**
@@ -25,6 +20,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE payments MODIFY COLUMN method ENUM('cash', 'card', 'bank_transfer', 'insurance')");
+        // Convert credit_card back to card for SQLite compatibility
+        DB::table('payments')->where('method', 'credit_card')->update(['method' => 'card']);
     }
 };

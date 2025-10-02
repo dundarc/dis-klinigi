@@ -237,11 +237,10 @@ class WaitingRoomController extends Controller
     public function createEmergency()
     {
         $this->authorize('createEmergency', Encounter::class);
-        
-        $patients = Patient::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'national_id']);
+
         $dentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get(['id', 'name']);
-        
-        return view('waiting-room.emergency_create', compact('patients', 'dentists'));
+
+        return view('waiting-room.emergency_create', compact('dentists'));
     }
     
     /**

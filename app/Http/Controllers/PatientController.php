@@ -68,6 +68,7 @@ class PatientController extends Controller
         $user = auth()->user();
 
         $patientsQuery = Patient::query()
+            ->with('consents')
             ->when($user->role === UserRole::DENTIST, function ($q) use ($user) {
                 $q->whereHas('appointments', function ($subQ) use ($user) {
                     $subQ->where('dentist_id', $user->id);
@@ -91,7 +92,7 @@ class PatientController extends Controller
                 'id' => $patient->id,
                 'name' => $patient->first_name . ' ' . $patient->last_name,
                 'phone' => $patient->phone_primary,
-                'kvkk_consent' => $patient->consent_kvkk_at ? true : false,
+                'kvkk_consent' => \App\Services\Kvkk\ConsentService::hasActive($patient),
                 'created_at' => $patient->created_at->format('d.m.Y H:i'),
             ];
         });
@@ -123,7 +124,6 @@ class PatientController extends Controller
         $validatedData = $request->validated();
         $patient = new Patient($validatedData);
         $patient->has_private_insurance = $request->boolean('has_private_insurance');
-        $patient->consent_kvkk_at = $request->boolean('consent_kvkk') ? now() : null;
         $patient->save();
 
         return redirect()->route('patients.index')->with('success', 'Hasta başarıyla eklendi.');
@@ -249,11 +249,7 @@ class PatientController extends Controller
      */
     public function update(UpdatePatientRequest $request, Patient $patient)
     {
-        $validatedData = $request->validated();
-        $updateData = $validatedData;
-        $updateData['consent_kvkk_at'] = $validatedData['consent_kvkk'] ? ($patient->consent_kvkk_at ?? now()) : null;
-        unset($updateData['consent_kvkk']);
-        $patient->update($updateData);
+        $patient->update($request->validated());
 
         return redirect()->route('patients.show', $patient)->with('success', 'Hasta bilgileri başarıyla güncellendi.');
     }

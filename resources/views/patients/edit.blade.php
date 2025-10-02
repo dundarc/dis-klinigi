@@ -125,10 +125,14 @@
                                 <input id="has_private_insurance" name="has_private_insurance" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded" @checked(old('has_private_insurance', $patient->has_private_insurance)) />
                                 <label for="has_private_insurance" class="ml-2 block text-sm text-slate-900 dark:text-slate-100">Özel Sağlık Sigortası Var</label>
                             </div>
-                            <div class="flex items-center">
-                                <input id="consent_kvkk" name="consent_kvkk" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded" @checked(old('consent_kvkk', $patient->consent_kvkk_at)) />
-                                <label for="consent_kvkk" class="ml-2 block text-sm text-slate-900 dark:text-slate-100">KVKK Onayı Verildi</label>
-                            </div>
+                            
+                                <div class="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 100 2 1 1 0 000-2zm-1 4a1 1 0 000 2h2a1 1 0 100-2h-2z" clip-rule="evenodd" /></svg>
+                                    <div class="text-sm text-slate-700 dark:text-slate-200">
+                                        KVKK onayı bu ekrandan yönetilmez. Onam verme/geri alma ve yazdırma işlemleri için KVKK modülünü kullanın (Menü > KVKK).
+                                    </div>
+                                </div>
+
                         </div>
                     </div>
 

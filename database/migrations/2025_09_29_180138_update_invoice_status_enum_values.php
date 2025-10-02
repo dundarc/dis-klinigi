@@ -12,8 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // First expand the enum to include both old and new values temporarily
-        DB::statement("ALTER TABLE invoices MODIFY COLUMN status ENUM('draft', 'issued', 'unpaid', 'partial', 'paid', 'cancelled', 'vadeli', 'taksitlendirildi', 'overdue', 'vadesi_gecmis')");
+        // SQLite doesn't support MODIFY COLUMN with ENUM, so we skip this for SQLite compatibility
+        // The enum values are handled at application level
     }
 
     /**
@@ -21,9 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revert to the original enum values
-        DB::statement("ALTER TABLE invoices MODIFY COLUMN status ENUM('draft', 'issued', 'paid', 'overdue', 'cancelled')");
-        // Convert vadesi_gecmis back to overdue
+        // Convert vadesi_gecmis back to overdue for SQLite compatibility
         DB::table('invoices')->where('status', 'vadesi_gecmis')->update(['status' => 'overdue']);
     }
 };

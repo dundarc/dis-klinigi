@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <form method="POST" action="{{ route('accounting.store') }}" x-data="invoicePrepareManager({ initialItems: {{ $items->toJson() }} })">
+            <form method="POST" action="{{ route('accounting.store') }}" x-data="invoicePrepareManager({ initialItems: {{ $items->toJson() }}, selectedStatus: 'draft' })">
                 @csrf
                 {{-- Formun göndereceği zorunlu alanlar --}}
                 <input type="hidden" name="patient_id" value="{{ $patient->id }}">
@@ -20,6 +20,41 @@
                     </h3>
                     <p class="text-sm text-gray-500 mb-6">Aşağıdaki fatura kalemlerini düzenleyebilir veya yeni kalemler ekleyebilirsiniz.</p>
 
+                    <!-- Invoice Status Selection -->
+                    <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Fatura Durumu</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="radio" name="status" value="draft" class="text-blue-600 focus:ring-blue-500" checked>
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Taslak (DRAFT)</span>
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1">Fatura düzenlenebilir kalır</p>
+                            </div>
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="radio" name="status" value="unpaid" class="text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Ödenmedi (UNPAID)</span>
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1">Fatura yayınlanır, ödeme beklenir</p>
+                            </div>
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="radio" name="status" value="vadeli" class="text-blue-600 focus:ring-blue-500" x-model="selectedStatus">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Vadeli (POSTPONED)</span>
+                                </label>
+                                <p class="text-xs text-gray-500 mt-1">Vade tarihi belirlenir</p>
+                            </div>
+                        </div>
+
+                        <!-- Due Date Field - Only show when POSTPONED is selected -->
+                        <div class="mt-4" x-show="selectedStatus === 'vadeli'" x-transition>
+                            <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vade Tarihi</label>
+                            <input type="date" id="due_date" name="due_date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" :required="selectedStatus === 'vadeli'" :min="new Date().toISOString().slice(0, 10)">
+                            <p class="text-xs text-gray-500 mt-1">Faturanın ödenmesi gereken tarih</p>
+                        </div>
+                    </div>
+
                     <div class="space-y-2">
                         <h4 class="font-semibold text-gray-900 dark:text-gray-100">Fatura Kalemleri</h4>
                         <template x-for="(item, index) in items" :key="index">
@@ -30,20 +65,20 @@
                                     <x-text-input x-bind:id="`desc_${index}`" type="text" x-bind:name="`items[${index}][description]`" class="w-full mt-1" x-model="item.description" />
                                 </div>
                                 <div class="w-20">
-                                    <x-input-label x-bind:for="`qty_${index}`" value="Adet"/>
-                                    <x-text-input x-bind:id="`qty_${index}`" type="number" x-bind:name="`items[${index}][qty]`" class="w-full mt-1" x-model.number="item.qty" />
+                                    <x-input-label x-bind:for="`quantity_${index}`" value="Adet"/>
+                                    <x-text-input x-bind:id="`quantity_${index}`" type="number" x-bind:name="`items[${index}][quantity]`" class="w-full mt-1" x-model.number="item.quantity" />
                                 </div>
                                 <div class="w-28">
                                     <x-input-label x-bind:for="`price_${index}`" value="Birim Fiyat"/>
                                     <x-text-input x-bind:id="`price_${index}`" type="number" step="0.01" x-bind:name="`items[${index}][unit_price]`" class="w-full mt-1" x-model.number="item.unit_price" />
                                 </div>
-                                <input type="hidden" x-bind:name="`items[${index}][vat]`" x-bind:value="item.vat ?? {{ config('accounting.vat_rate') * 100 }}">
+                                <input type="hidden" x-bind:name="`items[${index}][vat_rate]`" x-bind:value="item.vat_rate ?? {{ config('accounting.vat_rate') * 100 }}">
                                 <x-danger-button type="button" @click="items.splice(index, 1)">X</x-danger-button>
                             </div>
                         </template>
                     </div>
 
-                    <x-secondary-button type="button" @click="items.push({ description: '', qty: 1, unit_price: 0, vat: {{ config('accounting.vat_rate') * 100 }}, patient_treatment_id: null })" class="mt-2">
+                    <x-secondary-button type="button" @click="items.push({ description: '', quantity: 1, unit_price: 0, vat_rate: {{ config('accounting.vat_rate') * 100 }}, patient_treatment_id: null })" class="mt-2">
                         Yeni Kalem Ekle
                     </x-secondary-button>
 
@@ -65,12 +100,13 @@
     <script>
         function invoicePrepareManager(config) {
             return {
+                selectedStatus: config.selectedStatus || 'draft',
                 items: config.initialItems || [],
                 get subtotal() {
-                    return this.items.reduce((total, item) => total + (item.qty * item.unit_price), 0);
+                    return this.items.reduce((total, item) => total + (item.quantity * item.unit_price), 0);
                 },
                 get vatTotal() {
-                    return this.items.reduce((total, item) => total + (item.qty * item.unit_price * ((item.vat || {{ config('accounting.vat_rate') * 100 }}) / 100)), 0);
+                    return this.items.reduce((total, item) => total + (item.quantity * item.unit_price * ((item.vat_rate || {{ config('accounting.vat_rate') * 100 }}) / 100)), 0);
                 },
                 get grandTotal() {
                     return this.subtotal + this.vatTotal;

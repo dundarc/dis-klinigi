@@ -40,7 +40,6 @@ class StorePatientRequest extends FormRequest
             'medications_used' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
             'has_private_insurance' => ['sometimes', 'boolean'],
-            'consent_kvkk' => ['accepted'], // KVKK onayı zorunlu
         ];
     }
 }

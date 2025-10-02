@@ -210,11 +210,10 @@
                                         <textarea x-model="patientUpdate.addressText" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                                     </div>
                                     <div>
-                                        <label class="flex items-center">
-                                            <input x-model="patientUpdate.consentKvkk" type="checkbox" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">KVKK Onayı</span>
-                                        </label>
-                                    </div>
+                                        <div class="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-amber-600 dark:text-amber-300 mt-0.5"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 100 2 1 1 0 000-2zm-1 4a1 1 0 000 2h2a1 1 0 100-2h-2z" clip-rule="evenodd" /></svg>
+                                            <p class="text-xs text-slate-600 dark:text-slate-200">KVKK onayı hızlı işlemlerden yönetilmez. Onam verme veya geri alma için KVKK modülünü kullanın.</p>
+                                        </div>
                                 </div>
                             </div>
                         </div>

@@ -70,13 +70,7 @@
                                     <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">{{ $payment->paid_at->format('d.m.Y H:i') }}</td>
                                     <td class="px-4 py-3 text-sm font-medium text-green-600 dark:text-green-400">{{ number_format($payment->amount, 2, ',', '.') }} TL</td>
                                     <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
-                                        {{ match($payment->method) {
-                                            'cash' => 'Nakit',
-                                            'bank_transfer' => 'Havale/EFT',
-                                            'credit_card' => 'Kredi Kartı',
-                                            'check' => 'Çek',
-                                            default => ucfirst($payment->method)
-                                        } }}
+                                        {{ $payment->method?->label() ?? 'Bilinmiyor' }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{{ $payment->notes ?? '-' }}</td>
                                     <td class="px-4 py-3 text-right">

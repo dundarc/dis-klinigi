@@ -117,11 +117,29 @@ class AccountingController extends Controller
     }
 
     /**
-     * SeÃ§ilen tedavilerden bir fatura Ã¶nizlemesi hazÄ±rlar ve gÃ¶sterir.
+     * Seçilen tedavilerden bir fatura önizlemesi hazırlar ve gösterir.
      */
     public function prepare(Request $request)
     {
         $this->authorize('accessAccountingFeatures');
+
+        // Handle GET request - redirect to new invoice page if no parameters
+        if ($request->isMethod('get')) {
+            $patientId = $request->query('patient_id');
+            $treatmentIds = $request->query('treatment_ids');
+
+            if (!$patientId || !$treatmentIds) {
+                return redirect()->route('accounting.new')
+                    ->with('info', 'Fatura hazırlamak için önce hasta ve tedavileri seçin.');
+            }
+
+            // Validate query parameters
+            $request->merge([
+                'patient_id' => $patientId,
+                'treatment_ids' => is_array($treatmentIds) ? $treatmentIds : explode(',', $treatmentIds),
+            ]);
+        }
+
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'treatment_ids' => 'required|array|min:1',
@@ -134,9 +152,9 @@ class AccountingController extends Controller
         $items = $treatments->map(function ($treatment) {
             return [
                 'description' => $treatment->display_treatment_name,
-                'qty' => 1,
+                'quantity' => 1,
                 'unit_price' => $treatment->unit_price,
-                'vat' => $treatment->vat,
+                'vat_rate' => $treatment->vat,
                 'patient_treatment_id' => $treatment->id,
             ];
         });
@@ -163,15 +181,17 @@ class AccountingController extends Controller
                 $subtotal = 0;
                 $vatTotal = 0;
                 foreach ($validated['items'] as $item) {
-                    $lineTotal = $item['qty'] * $item['unit_price'];
+                    $lineTotal = $item['quantity'] * $item['unit_price'];
                     $subtotal += $lineTotal;
-                    $vatTotal += $lineTotal * (($item['vat'] ?? config('accounting.vat_rate') * 100) / 100);
+                    $vatTotal += $lineTotal * (($item['vat_rate'] ?? config('accounting.vat_rate') * 100) / 100);
                 }
 
                 $invoice = Invoice::create([
                     'patient_id' => $validated['patient_id'],
                     'invoice_no' => 'FAT-' . time(),
                     'issue_date' => now(),
+                    'status' => InvoiceStatus::from($validated['status']),
+                    'due_date' => $validated['status'] === InvoiceStatus::POSTPONED->value ? $validated['due_date'] : null,
                     'subtotal' => $subtotal,
                     'vat_total' => $vatTotal,
                     'discount_total' => 0, // DÃœZELTME: Eksik olan alan eklendi.
@@ -179,7 +199,7 @@ class AccountingController extends Controller
                 ]);
 
                 foreach ($validated['items'] as $item) {
-                    $invoice->items()->create($item + ['line_total' => $item['qty'] * $item['unit_price']]);
+                    $invoice->items()->create($item + ['line_total' => $item['quantity'] * $item['unit_price']]);
                 }
                 return $invoice;
             });
@@ -252,13 +272,13 @@ class AccountingController extends Controller
 
         $data = $request->validated();
 
-        $lineTotal = $data['qty'] * $data['unit_price'];
+        $lineTotal = $data['quantity'] * $data['unit_price'];
 
         $invoice->items()->create([
             'description' => $data['description'],
-            'qty' => $data['qty'],
+            'quantity' => $data['quantity'],
             'unit_price' => $data['unit_price'],
-            'vat' => $data['vat'],
+            'vat_rate' => $data['vat_rate'],
             'line_total' => $lineTotal,
             'patient_treatment_id' => $data['patient_treatment_id'] ?? null,
         ]);
@@ -278,13 +298,13 @@ class AccountingController extends Controller
 
         $data = $request->validated();
 
-        $lineTotal = $data['qty'] * $data['unit_price'];
+        $lineTotal = $data['quantity'] * $data['unit_price'];
 
         $item->update([
             'description' => $data['description'],
-            'qty' => $data['qty'],
+            'quantity' => $data['quantity'],
             'unit_price' => $data['unit_price'],
-            'vat' => $data['vat'],
+            'vat_rate' => $data['vat_rate'],
             'line_total' => $lineTotal,
         ]);
 
@@ -625,8 +645,8 @@ class AccountingController extends Controller
     {
         $invoice->loadMissing('items');
 
-        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->qty * $item->unit_price);
-        $vatTotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->qty * $item->unit_price * (($item->vat ?? 0) / 100));
+        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->quantity * $item->unit_price);
+        $vatTotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->quantity * $item->unit_price * (($item->vat_rate ?? 0) / 100));
         $grandTotal = $subtotal + $vatTotal;
 
         $invoice->forceFill([

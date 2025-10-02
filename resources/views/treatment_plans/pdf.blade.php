@@ -1,3 +1,20 @@
+{{--
+    DEBUG/PERFORMANCE NOTE:
+    To prevent N+1 query issues and improve performance, the controller rendering this view
+    should eager-load all necessary relationships. This will significantly speed up PDF generation.
+    Example:
+    $plan = TreatmentPlan::with([
+        'patient',
+        'dentist',
+        'items.treatment',
+        'items.appointment.dentist',
+        'items.histories.user',
+        'items.appointmentHistory.user',
+        'items.appointmentHistory.appointment'
+    ])->findOrFail($id);
+
+    The items should also be sorted in the controller, not in the view.
+--}}
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -160,7 +177,6 @@
             </tr>
         </thead>
         <tbody>
-            @php $total = 0; @endphp
             @forelse($plan->items->sortBy('created_at') as $index => $item)
                 <tr class="status-{{ $item->status->value }}">
                     <td>{{ $index + 1 }}</td>
@@ -187,7 +203,6 @@
                     <td>{{ optional(optional($item->appointment)->dentist)->name ?? '-' }}</td>
                     <td style="text-align: right;">{{ number_format($item->estimated_price, 2, ',', '.') }} TL</td>
                 </tr>
-                @php $total += $item->estimated_price; @endphp
             @empty
                 <tr>
                     <td colspan="7" style="text-align: center; font-style: italic;">Bu tedavi planında henüz kalem bulunmuyor.</td>
@@ -196,7 +211,7 @@
             @if($plan->items->count() > 0)
             <tr class="total-row">
                 <td colspan="6" style="text-align: right; font-weight: bold;">TOPLAM:</td>
-                <td style="text-align: right; font-weight: bold;">{{ number_format($total, 2, ',', '.') }} TL</td>
+                <td style="text-align: right; font-weight: bold;">{{ number_format($plan->total_estimated_cost, 2, ',', '.') }} TL</td>
             </tr>
             @endif
         </tbody>
@@ -226,57 +241,65 @@
 
     <h2>Tedavi Geçmişi ve Durum Değişiklikleri</h2>
     @php
+        // DEBUG/REFACTOR NOTE:
+        // This complex logic to build the timeline should be moved from the Blade view into the controller
+        // or a dedicated service class. Passing a pre-processed $timelineEvents collection to the view
+        // improves performance, maintainability, and allows for better error handling.
+        // The try-catch block here hides potential errors during PDF generation.
         try {
-            $timelineEvents = collect();
-            if ($plan->items) {
-                foreach($plan->items as $item) {
-                    // Item creation
-                    $timelineEvents->push([
-                        'date' => $item->created_at,
-                        'type' => 'created',
-                        'title' => 'Tedavi Kalemi Oluşturuldu',
-                        'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' tedavisi planlandı',
-                        'item' => $item
-                    ]);
+            if (!isset($timelineEvents)) { // Avoid re-calculating if already passed from controller
+                $timelineEvents = collect();
+                if ($plan->items) {
+                    foreach($plan->items as $item) {
+                        // Item creation
+                        $timelineEvents->push([
+                            'date' => $item->created_at,
+                            'type' => 'created',
+                            'title' => 'Tedavi Kalemi Oluşturuldu',
+                            'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' tedavisi planlandı',
+                            'item' => $item
+                        ]);
 
-                    // Status history from histories table
-                    if ($item->histories) {
-                        foreach($item->histories as $history) {
-                            $timelineEvents->push([
-                                'date' => $history->created_at,
-                                'type' => 'status_change',
-                                'title' => 'Durum Değişikliği',
-                                'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' - ' .
-                                                ($history->old_status ? $history->old_status->label() : 'Yeni') . ' → ' . ($history->new_status ? $history->new_status->label() : 'Durum Yok') .
-                                                ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
-                                'item' => $item,
-                                'history' => $history
-                            ]);
+                        // Status history from histories table
+                        if ($item->histories) {
+                            foreach($item->histories as $history) {
+                                $timelineEvents->push([
+                                    'date' => $history->created_at,
+                                    'type' => 'status_change',
+                                    'title' => 'Durum Değişikliği',
+                                    'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' - ' .
+                                                    ($history->old_status ? $history->old_status->label() : 'Yeni') . ' → ' . ($history->new_status ? $history->new_status->label() : 'Durum Yok') .
+                                                    ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
+                                    'item' => $item,
+                                    'history' => $history
+                                ]);
+                            }
                         }
-                    }
 
-                    // Appointment history
-                    if ($item->appointmentHistory) {
-                        foreach($item->appointmentHistory as $history) {
-                            $actionValue = $history->action ? $history->action->value : 'unknown';
-                            $actionLabel = $history->action ? $history->action->label() : 'Bilinmeyen İşlem';
-                            $timelineEvents->push([
-                                'date' => $history->created_at,
-                                'type' => 'appointment_' . $actionValue,
-                                'title' => $actionLabel . ' Randevu',
-                                'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' için randevu ' . $actionLabel .
-                                               ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
-                                'item' => $item,
-                                'appointment' => $history->appointment
-                            ]);
+                        // Appointment history
+                        if ($item->appointmentHistory) {
+                            foreach($item->appointmentHistory as $history) {
+                                $actionValue = $history->action ? $history->action->value : 'unknown';
+                                $actionLabel = $history->action ? $history->action->label() : 'Bilinmeyen İşlem';
+                                $timelineEvents->push([
+                                    'date' => $history->created_at,
+                                    'type' => 'appointment_' . $actionValue,
+                                    'title' => $actionLabel . ' Randevu',
+                                    'description' => (optional($item->treatment)->name ?: 'Tedavi Silinmiş') . ' için randevu ' . $actionLabel .
+                                                   ($history->user ? ' (Tarafından: ' . $history->user->name . ')' : ''),
+                                    'item' => $item,
+                                    'appointment' => $history->appointment
+                                ]);
+                            }
                         }
                     }
                 }
-            }
 
-            $timelineEvents = $timelineEvents->sortByDesc('date');
+                $timelineEvents = $timelineEvents->sortByDesc('date');
+            }
         } catch (\Exception $e) {
-            $timelineEvents = collect(); // Fallback to empty collection
+            // Fallback to empty collection on error. Note: This hides errors.
+            $timelineEvents = collect();
         }
     @endphp
 

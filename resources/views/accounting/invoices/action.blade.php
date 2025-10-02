@@ -77,6 +77,17 @@
                             </svg>
                         </div>
                     </div>
+        
+                    @if($invoice->status === \App\Enums\InvoiceStatus::DRAFT)
+                    <!-- Save Actions -->
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                        <div class="flex justify-end gap-3">
+                            <button type="button" @click="saveAllChanges()" :disabled="!hasChanges" :class="hasChanges ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-400 cursor-not-allowed'" class="px-6 py-2 text-white font-medium rounded-lg transition-colors">
+                                Tüm Değişiklikleri Kaydet
+                            </button>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -106,12 +117,18 @@
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Fatura Kalemleri</h3>
-                    <button type="button" @click="addItem()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Kalem Ekle
-                    </button>
+                    @if($invoice->status === \App\Enums\InvoiceStatus::DRAFT)
+                        <button type="button" @click="addItem()" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Kalem Ekle
+                        </button>
+                    @else
+                        <div class="text-sm text-slate-500 dark:text-slate-400">
+                            Bu fatura düzenleme için uygun değil. Sadece taslak faturalar düzenlenebilir.
+                        </div>
+                    @endif
                 </div>
 
                 <div class="overflow-x-auto">
@@ -129,21 +146,23 @@
                             <template x-for="(item, index) in items" :key="'item-' + index">
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                     <td class="px-4 py-3">
-                                        <input type="text" x-model="item.description" x-bind:name="'items[' + index + '][description]'" class="w-full border-0 bg-transparent focus:ring-0 text-sm" placeholder="Kalem açıklaması" />
+                                        <input type="text" x-model="item.description" x-bind:name="'items[' + index + '][description]'" :readonly="{{ $invoice->status !== \App\Enums\InvoiceStatus::DRAFT ? 'true' : 'false' }}" class="w-full border-0 bg-transparent focus:ring-0 text-sm {{ $invoice->status !== \App\Enums\InvoiceStatus::DRAFT ? 'cursor-not-allowed text-slate-500' : '' }}" placeholder="Kalem açıklaması" />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <input type="number" min="1" x-model="item.qty" x-bind:name="'items[' + index + '][qty]'" class="w-full border-0 bg-transparent focus:ring-0 text-sm text-center" placeholder="1" @input="updateTotals()" />
+                                        <input type="number" min="1" x-model="item.quantity" x-bind:name="'items[' + index + '][quantity]'" :readonly="{{ $invoice->status !== \App\Enums\InvoiceStatus::DRAFT ? 'true' : 'false' }}" class="w-full border-0 bg-transparent focus:ring-0 text-sm text-center {{ $invoice->status !== \App\Enums\InvoiceStatus::DRAFT ? 'cursor-not-allowed text-slate-500' : '' }}" placeholder="1" @input="updateTotals()" />
                                     </td>
                                     <td class="px-4 py-3">
-                                        <input type="number" step="0.01" min="0" x-model="item.unit_price" x-bind:name="'items[' + index + '][unit_price]'" class="w-full border-0 bg-transparent focus:ring-0 text-sm text-right" placeholder="0.00" @input="updateTotals()" />
+                                        <input type="number" step="0.01" min="0" x-model="item.unit_price" x-bind:name="'items[' + index + '][unit_price]'" :readonly="{{ $invoice->status !== \App\Enums\InvoiceStatus::DRAFT ? 'true' : 'false' }}" class="w-full border-0 bg-transparent focus:ring-0 text-sm text-right {{ $invoice->status !== \App\Enums\InvoiceStatus::DRAFT ? 'cursor-not-allowed text-slate-500' : '' }}" placeholder="0.00" @input="updateTotals()" />
                                     </td>
-                                    <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100" x-text="formatCurrency((item.qty || 0) * (item.unit_price || 0))"></td>
+                                    <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100" x-text="formatCurrency((item.quantity || 0) * (item.unit_price || 0))"></td>
                                     <td class="px-4 py-3">
-                                        <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
+                                        @if($invoice->status === \App\Enums\InvoiceStatus::DRAFT)
+                                            <button type="button" @click="removeItem(index)" x-show="items.length > 1" class="text-red-600 hover:text-red-800">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             </template>
@@ -170,59 +189,6 @@
                 </div>
             </div>
 
-            <!-- Invoice Settings -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Fatura Ayarları</h3>
-                <form method="POST" action="{{ route('accounting.invoices.update', $invoice) }}" class="space-y-4">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="patient_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Hasta</label>
-                            <select id="patient_id" name="patient_id" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                @isset($patients)
-                                    @foreach($patients as $patient)
-                                        <option value="{{ $patient->id }}" @selected($invoice->patient_id === $patient->id)>{{ $patient->first_name }} {{ $patient->last_name }}</option>
-                                    @endforeach
-                                @endisset
-                            </select>
-                        </div>
-                        <div>
-                            <label for="issue_date" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Fatura Tarihi</label>
-                            <input id="issue_date" name="issue_date" type="date" value="{{ $invoice->issue_date?->format('Y-m-d') }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                        </div>
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Ödeme Durumu</label>
-                            <select id="status" name="status" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                @isset($statuses)
-                                    @foreach($statuses as $status)
-                                        <option value="{{ $status->value }}" @selected($invoice->status->value === $status->value)>{{ ucfirst(str_replace('_', ' ', $status->value)) }}</option>
-                                    @endforeach
-                                @endisset
-                            </select>
-                        </div>
-                        <div>
-                            <label for="insurance_coverage_amount" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Sigorta Karşılama Tutarı (TL)</label>
-                            <input id="insurance_coverage_amount" name="insurance_coverage_amount" type="number" step="0.01" min="0" value="{{ $invoice->insurance_coverage_amount ?? 0 }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Notlar</label>
-                        <textarea id="notes" name="notes" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ $invoice->notes ?? '' }}</textarea>
-                    </div>
-
-                    <div class="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <a href="{{ route('accounting.invoices.show', $invoice) }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
-                            İptal
-                        </a>
-                        <button type="submit" :disabled="!hasChanges" :class="hasChanges ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-400 cursor-not-allowed'" class="px-6 py-2 text-white font-medium rounded-lg transition-colors">
-                            Kaydet
-                        </button>
-                    </div>
-                </form>
-            </div>
         </div>
     </div>
 
@@ -233,12 +199,12 @@
                 items: @json($invoice->items->map(function($item) {
                     return [
                         'description' => $item->description,
-                        'qty' => $item->qty,
+                        'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price
                     ];
                 })->toArray()) ?? [{
                     description: '',
-                    qty: 1,
+                    quantity: 1,
                     unit_price: 0
                 }],
                 subtotal: 0,
@@ -252,24 +218,32 @@
                 addItem() {
                     this.items.push({
                         description: '',
-                        qty: 1,
+                        quantity: 1,
                         unit_price: 0
                     });
                     this.updateTotals();
+                    this.hasChanges = true;
                 },
 
                 removeItem(index) {
                     if (this.items.length > 1) {
                         this.items.splice(index, 1);
                         this.updateTotals();
+                        this.hasChanges = true;
                     }
+                },
+
+                saveAllChanges() {
+                    // For draft invoices, redirect to show page with success message
+                    this.hasChanges = false;
+                    window.location.href = '{{ route("accounting.invoices.show", $invoice) }}';
                 },
 
                 updateTotals() {
                     this.subtotal = this.items.reduce((sum, item) => {
-                        const qty = parseFloat(item.qty) || 0;
+                        const quantity = parseFloat(item.quantity) || 0;
                         const price = parseFloat(item.unit_price) || 0;
-                        return sum + (qty * price);
+                        return sum + (quantity * price);
                     }, 0);
 
                     this.vat = this.subtotal * {{ config('accounting.vat_rate') }}; // {{ config('accounting.vat_rate') * 100 }}% KDV

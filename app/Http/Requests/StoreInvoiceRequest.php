@@ -28,11 +28,13 @@ class StoreInvoiceRequest extends FormRequest
         return [
             'patient_id' => ['required', 'exists:patients,id'],
             'issue_date' => ['required', 'date'],
+            'status' => ['required', 'in:draft,unpaid,vadeli'],
+            'due_date' => ['required_if:status,vadeli', 'nullable', 'date', 'after:today'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.description' => ['required', 'string', 'max:255'],
-            'items.*.qty' => ['required', 'integer', 'min:1'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'items.*.vat' => ['required', 'numeric', 'min:0', 'max:100'],
+            'items.*.vat_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.patient_treatment_id' => ['nullable', 'integer', 'exists:patient_treatments,id'],
         ];
     }

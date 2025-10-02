@@ -1,205 +1,349 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Haftalık Takvim
-            </h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100">Haftalık Takvim</h2>
+                <p class="text-slate-600 dark:text-slate-400 mt-1">{{ $monthLabel }}</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="window.print()"
+                        class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Yazdır</button>
+                </a>
+                <a href="{{ route('calendar.export', ['format' => 'pdf'] + request()->query()) }}"
+                   class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    PDF
+                </a>
+                <a href="{{ route('waiting-room.appointments.search') }}"
+                   class="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Randevu Ara
+                </a>
+                @can('create', \App\Models\Appointment::class)
+                <a href="{{ route('waiting-room.appointments.create') }}"
+                   class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Yeni Randevu
+                </a>
+                @endcan
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-10">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-            {{-- Üst Başlık ve Görünümler --}}
-            <div class="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between">
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{ __('calendar.title') }}
-                    </h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $monthLabel }}</p>
-                </div>
-                <div class="flex space-x-2">
-                    <x-secondary-button-link :href="route('calendar.day') . '?' . http_build_query(request()->query())" :active="$currentView==='day'">
-                        {{ __('Günlük') }}
-                    </x-secondary-button-link>
-                    <x-secondary-button-link :href="route('calendar.week') . '?' . http_build_query(request()->query())" :active="$currentView==='week'">
-                        {{ __('Haftalık') }}
-                    </x-secondary-button-link>
-                    <x-secondary-button-link :href="route('calendar') . '?' . http_build_query(request()->query())" :active="$currentView==='month'">
-                        {{ __('Aylık') }}
-                    </x-secondary-button-link>
-                    @if(in_array($currentView, ['week', 'day']))
-                        <button onclick="window.print()" class="px-4 py-2 bg-green-600 text-white rounded-md">
-                            {{ __('Yazdır') }}
-                        </button>
-                        <a href="{{ route('calendar.export', ['format' => 'pdf'] + request()->query()) }}" class="px-4 py-2 bg-red-600 text-white rounded-md">
-                            {{ __('PDF') }}
-                        </a>
-                    @endif
+            {{-- Modern Header with View Toggle --}}
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Haftalık Görünüm</h3>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">Saat bazlı randevu takibi</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                            <a href="{{ route('calendar.day') . '?' . http_build_query(request()->query()) }}"
+                               class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $currentView === 'day' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100' }}">
+                                Günlük
+                            </a>
+                            <a href="{{ route('calendar.week') . '?' . http_build_query(request()->query()) }}"
+                               class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $currentView === 'week' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100' }}">
+                                Haftalık
+                            </a>
+                            <a href="{{ route('calendar') . '?' . http_build_query(request()->query()) }}"
+                               class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $currentView === 'month' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100' }}">
+                                Aylık
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {{-- Filtre Kartı --}}
-            <x-card class="no-print">
+            {{-- Modern Filter Section --}}
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 no-print">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Filtreler</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">Haftalık randevuları filtreleyin</p>
+                    </div>
+                </div>
+
                 <form method="GET" class="space-y-6">
                     <input type="hidden" name="view" value="{{ $currentView }}">
 
-                    <div class="grid gap-6 md:grid-cols-2">
-
-                        {{-- Doktor Seçimi --}}
-                        <div>
-                            <x-input-label value="{{ __('calendar.dentists') }}" />
-                            <div class="mt-3">
+                    <div class="grid gap-6 lg:grid-cols-2">
+                        {{-- Modern Doctor Selection --}}
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                Doktor Seçimi
+                            </label>
+                            <div class="relative">
                                 @if($showDentistFilter)
-                                    {{-- Çoklu Seçim Dropdown --}}
                                     <div x-data="{ open: false }" class="relative">
                                         <button type="button" @click="open = !open"
-                                            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200">
-                                            @if(count($selectedDentists))
-                                                {{ __('Seçili:') }} {{ count($selectedDentists) }}
-                                            @else
-                                                {{ __('Doktor seçin') }}
-                                            @endif
+                                            class="w-full flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-left text-sm shadow-sm transition-colors hover:border-slate-400 dark:hover:border-slate-500">
+                                            <span class="text-slate-900 dark:text-slate-100">
+                                                @if(count($selectedDentists))
+                                                    {{ count($selectedDentists) }} doktor seçildi
+                                                @else
+                                                    Tüm doktorlar
+                                                @endif
+                                            </span>
+                                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
                                         </button>
 
                                         <div x-show="open" @click.away="open=false"
-                                            class="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg dark:bg-gray-800 dark:border-gray-700">
-                                            <div class="max-h-60 overflow-y-auto p-2 space-y-2">
+                                            class="absolute z-20 mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-xl">
+                                            <div class="max-h-64 overflow-y-auto p-3 space-y-3">
                                                 @foreach($dentists as $dentist)
-                                                    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                                    <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
                                                         <input type="checkbox" name="dentists[]" value="{{ $dentist->id }}"
-                                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900"
+                                                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
                                                             @checked(in_array($dentist->id, $selectedDentists, true))>
-                                                        <span>{{ $dentist->name }}</span>
+                                                        <div class="flex items-center gap-2">
+                                                            <div class="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
+                                                                <span class="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                                                    {{ substr($dentist->name, 0, 1) }}
+                                                                </span>
+                                                            </div>
+                                                            <span class="text-sm text-slate-700 dark:text-slate-300">{{ $dentist->name }}</span>
+                                                        </div>
                                                     </label>
                                                 @endforeach
                                             </div>
                                         </div>
                                     </div>
                                 @else
-                                    {{-- Doktor kendi adını sadece görür --}}
-                                    <p class="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                                        {{ auth()->user()->name }}
-                                    </p>
+                                    <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center">
+                                            <span class="text-sm font-medium text-blue-600 dark:text-blue-400">
+                                                {{ substr(auth()->user()->name, 0, 1) }}
+                                            </span>
+                                        </div>
+                                        <span class="text-sm text-slate-700 dark:text-slate-300">{{ auth()->user()->name }}</span>
+                                    </div>
                                     <input type="hidden" name="dentists[]" value="{{ auth()->id() }}">
                                 @endif
                             </div>
                         </div>
 
-                        {{-- Durum Filtreleri --}}
-                        <div>
-                            <x-input-label value="{{ __('calendar.statuses') }}" />
-                            <div class="mt-3 space-y-2">
+                        {{-- Modern Status Filters --}}
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Randevu Durumları
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
                                 @foreach($statusOptions as $status)
-                                    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label class="flex items-center gap-2 p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 cursor-pointer transition-colors">
                                         <input type="checkbox" name="statuses[]" value="{{ $status['value'] }}"
-                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900"
+                                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
                                             @checked(in_array($status['value'], $selectedStatuses, true))>
-                                        <span>{{ $status['label'] }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 rounded-full {{ $statusStyles[$status['value']] ? 'bg-green-500' : 'bg-slate-400' }}"></div>
+                                            <span class="text-sm text-slate-700 dark:text-slate-300">{{ $status['label'] }}</span>
+                                        </div>
                                     </label>
                                 @endforeach
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap justify-end gap-3">
+                    <div class="flex flex-wrap justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-600">
                         @if($filtersApplied)
-                            <x-secondary-button-link :href="route('calendar', ['view'=>$currentView])">
-                                {{ __('calendar.clear_filters') }}
-                            </x-secondary-button-link>
+                            <a href="{{ route('calendar.week') }}"
+                               class="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Filtreleri Temizle
+                            </a>
                         @endif
-                        <x-primary-button>{{ __('calendar.apply_filters') }}</x-primary-button>
+                        <button type="submit"
+                                class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                            Filtreleri Uygula
+                        </button>
                     </div>
                 </form>
-            </x-card>
+            </div>
 
-            {{-- Takvim Navigasyonu --}}
-            <div class="no-print flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap items-center gap-2">
+            {{-- Modern Navigation --}}
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 no-print">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        {{-- Previous/Next Navigation --}}
+                        <div class="flex items-center gap-2">
+                            <a href="{{ $previousWeekUrl }}"
+                               class="inline-flex items-center px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition-colors">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                                Önceki Hafta
+                            </a>
+                            <a href="{{ $nextWeekUrl }}"
+                               class="inline-flex items-center px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition-colors">
+                                Sonraki Hafta
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </a>
+                        </div>
 
-                    {{-- Görünüme göre navigasyon --}}
-                    @if($currentView === 'month')
-                        <x-secondary-button-link :href="$previousMonthUrl">&larr; {{ __('Önceki Ay') }}</x-secondary-button-link>
-                        <x-secondary-button-link :href="$nextMonthUrl">{{ __('Sonraki Ay') }} &rarr;</x-secondary-button-link>
-                    @elseif($currentView === 'week')
-                        <x-secondary-button-link :href="$previousWeekUrl">&larr; {{ __('Önceki Hafta') }}</x-secondary-button-link>
-                        <x-secondary-button-link :href="$nextWeekUrl">{{ __('Sonraki Hafta') }} &rarr;</x-secondary-button-link>
-                    @elseif($currentView === 'day')
-                        <x-secondary-button-link :href="$previousDayUrl">&larr; {{ __('Önceki Gün') }}</x-secondary-button-link>
-                        <x-secondary-button-link :href="$nextDayUrl">{{ __('Sonraki Gün') }} &rarr;</x-secondary-button-link>
-                    @endif
+                        {{-- Today Button --}}
+                        <a href="{{ route('calendar.today') }}"
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Bugün
+                        </a>
+                    </div>
 
-                    {{-- Her zaman görünen butonlar --}}
- 
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    <x-secondary-button-link href="{{ route('waiting-room.appointments.search') }}">
-                        {{ __('Randevu Ara') }}
-                    </x-secondary-button-link>
-                    @can('create', \App\Models\Appointment::class)
-                        <x-primary-button-link :href="route('waiting-room.appointments.create')">
-                            {{ __('calendar.new_appointment') }}
-                        </x-primary-button-link>
-                    @endcan
+                    <div class="flex items-center gap-3">
+                        <div class="text-sm text-slate-600 dark:text-slate-400">
+                            {{ $monthLabel }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {{-- Saat bazlı görünüm --}}
-            <div class="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800">
+            {{-- Modern Weekly Schedule Table --}}
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900">
+                    <table class="min-w-full">
+                        <thead class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    {{ __('Saat') }}
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider w-20">
+                                    Saat
                                 </th>
                                 @foreach($days as $day)
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        {{ $day['date']->format('D j M') }}
-                                        @if($day['isToday'])
-                                            <span class="text-indigo-600 dark:text-indigo-400"> ({{ __('Bugün') }})</span>
-                                        @endif
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider min-w-[200px]">
+                                        <div class="flex flex-col">
+                                            <span>{{ $day['date']->format('D') }}</span>
+                                            <span class="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">{{ $day['date']->format('j') }}</span>
+                                            @if($day['isToday'])
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 mt-2 w-fit">
+                                                    Bugün
+                                                </span>
+                                            @endif
+                                        </div>
                                     </th>
                                 @endforeach
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
                             @php
                                 $hours = collect(range(8, 18));
                             @endphp
                             @foreach($hours as $hour)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {{ sprintf('%02d:00', $hour) }}
+                                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/20">
+                                    <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-600">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+                                                <span class="text-xs font-bold text-slate-600 dark:text-slate-400">
+                                                    {{ sprintf('%02d', $hour) }}
+                                                </span>
+                                            </div>
+                                            <span class="text-sm">:00</span>
+                                        </div>
                                     </td>
                                     @foreach($days as $day)
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-6 py-4 align-top">
                                             @php
                                                 $hourData = $day['hours']->firstWhere('hour', $hour);
                                             @endphp
                                             @if($hourData && $hourData['appointments']->count() > 0)
-                                                <div class="space-y-2">
+                                                <div class="space-y-3">
                                                     @foreach($hourData['appointments'] as $appointment)
                                                         @php
                                                             $statusValue = $appointment->status->value;
-                                                            $badgeClasses = $statusStyles[$statusValue] ?? $statusStyles['default'];
+                                                            $statusColor = match($statusValue) {
+                                                                'confirmed' => 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700',
+                                                                'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-700',
+                                                                'cancelled' => 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700',
+                                                                'completed' => 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700',
+                                                                default => 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600'
+                                                            };
                                                         @endphp
+
                                                         <a href="{{ route('calendar.show', $appointment) }}"
-                                                            title="{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }} - {{ optional($appointment->treatment)->name ?? 'N/A' }}"
-                                                            class="block rounded border-l-4 px-2 py-1 text-xs leading-tight transition hover:bg-indigo-50 dark:hover:bg-indigo-900/40 {{ $badgeClasses }}">
-                                                            <div class="font-semibold">{{ $appointment->start_at->format('H:i') }}</div>
-                                                            <div class="text-sm">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</div>
-                                                            <div class="text-xs text-gray-600 dark:text-gray-300">{{ $appointment->dentist->name }}</div>
+                                                           class="block p-3 rounded-lg border transition-all hover:shadow-md hover:scale-[1.02] {{ $statusColor }}"
+                                                           title="{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }} - {{ optional($appointment->treatment)->name ?? 'N/A' }}">
+
+                                                            {{-- Time and Status --}}
+                                                            <div class="flex items-center justify-between mb-2">
+                                                                <span class="text-sm font-bold">{{ $appointment->start_at->format('H:i') }}</span>
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
+                                                                    {{ $statusLabels[$statusValue] ?? ucfirst($statusValue) }}
+                                                                </span>
+                                                            </div>
+
+                                                            {{-- Patient Name --}}
+                                                            <div class="text-sm font-medium mb-1">
+                                                                {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}
+                                                            </div>
+
+                                                            {{-- Treatment --}}
+                                                            <div class="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                                                                {{ optional($appointment->treatment)->name ?? 'Tedavi belirtilmemiş' }}
+                                                            </div>
+
+                                                            {{-- Doctor --}}
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-5 h-5 bg-slate-200 dark:bg-slate-600 rounded-full flex items-center justify-center">
+                                                                    <span class="text-xs font-medium text-slate-600 dark:text-slate-300">
+                                                                        {{ mb_substr($appointment->dentist?->name ?? '', 0, 1) }}
+                                                                    </span>
+                                                                </div>
+                                                                <span class="text-xs text-slate-600 dark:text-slate-400">{{ $appointment->dentist?->name ?? '-' }}</span>
+                                                            </div>
                                                         </a>
                                                     @endforeach
                                                 </div>
                                             @else
-                                                <div class="flex justify-center">
+                                                {{-- Empty slot with add button --}}
+                                                <div class="flex justify-center py-4">
                                                     <a href="{{ route('waiting-room.appointments.create', ['date' => $day['date']->toDateString(), 'hour' => $hour]) }}"
-                                                        title="{{ __('Randevu Ekle') }}"
-                                                        class="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400">
-                                                        +
+                                                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+                                                       title="Randevu Ekle">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                        </svg>
                                                     </a>
                                                 </div>
                                             @endif

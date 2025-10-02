@@ -39,7 +39,7 @@ class AccountingTest extends TestCase
             'items' => [
                 [
                     'description' => 'Diş Temizliği',
-                    'qty' => 1,
+                    'quantity' => 1,
                     'unit_price' => 500.00,
                     'vat' => 20,
                     'patient_treatment_id' => null,
@@ -187,7 +187,7 @@ class AccountingTest extends TestCase
         // Create invoice item
         InvoiceItem::factory()->create([
             'invoice_id' => $invoice->id,
-            'qty' => 1,
+            'quantity' => 1,
             'unit_price' => 500.00,
             'vat' => 20,
             'line_total' => 500.00,

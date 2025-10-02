@@ -17,7 +17,14 @@ class ConsentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'patient_id' => \App\Models\Patient::factory(),
+            'version' => '1.0',
+            'status' => \App\Enums\ConsentStatus::ACTIVE,
+            'accepted_at' => now(),
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'TestAgent',
+            'snapshot' => ['test' => 'data'],
+            'hash' => hash('sha256', json_encode(['test' => 'data'])),
         ];
     }
 }

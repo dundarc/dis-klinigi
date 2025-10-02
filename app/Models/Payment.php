@@ -5,6 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $invoice_id
+ * @property \App\Enums\PaymentMethod $method
+ * @property float $amount
+ * @property \Carbon\Carbon $paid_at
+ * @property string|null $txn_ref
+ * @property string|null $notes
+ * @property-read \App\Models\Invoice $invoice
+ */
 class Payment extends Model
 {
     /** @use HasFactory<\Database\Factories\PaymentFactory> */

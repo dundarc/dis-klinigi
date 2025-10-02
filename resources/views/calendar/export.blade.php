@@ -48,7 +48,7 @@
                                             $statusClass = $appointment->status->value;
                                         @endphp
                                         <div class="appointment {{ $statusClass }}">
-                                            {{ $appointment->start_at->format('H:i') }} - {{ $appointment->dentist->name }}<br>
+                                            {{ $appointment->start_at->format('H:i') }} - {{ $appointment->dentist?->name ?? '-' }}<br>
                                             {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}
                                         </div>
                                     @endforeach
@@ -85,7 +85,7 @@
                                         <div class="appointment {{ $statusClass }}">
                                             {{ $appointment->start_at->format('H:i') }}<br>
                                             {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}<br>
-                                            {{ $appointment->dentist->name }}
+                                            {{ $appointment->dentist?->name ?? '-' }}
                                         </div>
                                     @endforeach
                                 @endif
@@ -119,7 +119,7 @@
                                     <div class="appointment {{ $statusClass }}">
                                         {{ $appointment->start_at->format('H:i') }}<br>
                                         {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}<br>
-                                        {{ $appointment->dentist->name }}
+                                        {{ $appointment->dentist?->name ?? '-' }}
                                     </div>
                                 @endforeach
                             @endif

@@ -29,7 +29,7 @@ class InvoiceService
             $invoice = $this->invoiceRepository->create($invoiceData);
 
             foreach ($data['items'] as $item) {
-                $invoice->items()->create($item + ['line_total' => $item['qty'] * $item['unit_price']]);
+                $invoice->items()->create($item + ['line_total' => $item['quantity'] * $item['unit_price']]);
             }
 
             return $invoice->load('items');
@@ -120,7 +120,7 @@ class InvoiceService
         $vatTotal = 0;
 
         foreach ($data['items'] as $item) {
-            $lineTotal = $item['qty'] * $item['unit_price'];
+            $lineTotal = $item['quantity'] * $item['unit_price'];
             $subtotal += $lineTotal;
             $vatTotal += $lineTotal * (($item['vat'] ?? 20) / 100);
         }

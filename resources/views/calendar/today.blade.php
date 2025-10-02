@@ -82,7 +82,7 @@
                                                         {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}
                                                     </div>
                                                     <div class="text-xs text-gray-600 dark:text-gray-400">
-                                                        Hekim: {{ $appointment->dentist->name }}
+                                                        Hekim: {{ $appointment->dentist?->name ?? '-' }}
                                                     </div>
                                                 </a>
                                             @endforeach

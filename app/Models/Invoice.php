@@ -7,6 +7,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; // 1. SoftDeletes'i import et
 
+/**
+ * @property int $id
+ * @property int $patient_id
+ * @property string $invoice_no
+ * @property \Carbon\Carbon $issue_date
+ * @property float $subtotal
+ * @property float $vat_total
+ * @property float $discount_total
+ * @property float $grand_total
+ * @property InvoiceStatus $status
+ * @property \Carbon\Carbon|null $due_date
+ * @property string|null $notes
+ * @property float $insurance_coverage_amount
+ * @property string|null $payment_method
+ * @property \Carbon\Carbon|null $paid_at
+ * @property array|null $payment_details
+ * @property string|null $currency
+ * @property-read float $patient_payable_amount
+ * @property-read \App\Models\Patient $patient
+ * @property-read \Illuminate\Database\Eloquent\Collection $items
+ * @property-read \Illuminate\Database\Eloquent\Collection $payments
+ */
 class Invoice extends Model
 {
     use HasFactory, SoftDeletes; // 2. SoftDeletes'i kullan

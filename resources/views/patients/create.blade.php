@@ -70,11 +70,14 @@
                                 <input id="has_private_insurance" name="has_private_insurance" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" @checked(old('has_private_insurance'))>
                                 <label for="has_private_insurance" class="ms-2 block text-sm text-gray-900 dark:text-gray-100">Özel Sağlık Sigortası Var</label>
                             </div>
-                            <div class="flex items-center">
-                                <input id="consent_kvkk" name="consent_kvkk" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" required>
-                                <label for="consent_kvkk" class="ms-2 block text-sm text-gray-900 dark:text-gray-100">KVKK Aydınlatma Metnini okudum, anladım ve onaylıyorum. <span class="text-red-500">*</span></label>
-                                <x-input-error :messages="$errors->get('consent_kvkk')" class="mt-2" />
+                            
+                            <div class="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 100 2 1 1 0 000-2zm-1 4a1 1 0 000 2h2a1 1 0 100-2h-2z" clip-rule="evenodd" /></svg>
+                                <div class="text-sm text-slate-700 dark:text-slate-200">
+                                    KVKK onayı bu ekrandan yönetilmez. Onam verme/geri alma ve yazdırma işlemleri için KVKK modülünü kullanın (Menü > KVKK).
+                                </div>
                             </div>
+
                         </div>
 
                         <div class="flex items-center justify-end mt-6">

@@ -22,10 +22,30 @@ class QuickActionsController extends Controller
     {
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx',
+            'type' => 'required|in:xray,photo,document,other',
+            'file' => 'required|file|max:10240',
+            'notes' => 'nullable|string|max:1000',
             'appointment_id' => 'nullable|exists:appointments,id',
             'encounter_id' => 'nullable|exists:encounters,id',
             'treatment_plan_item_id' => 'nullable|exists:treatment_plan_items,id',
+        ]);
+
+        // Validate file type based on selected type
+        $fileType = \App\Enums\FileType::from($request->type);
+        $allowedMimeTypes = $fileType->mimeTypes();
+        $maxSize = $fileType->maxFileSize();
+
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:' . ($maxSize / 1024), // Convert to KB for validation
+                function ($attribute, $value, $fail) use ($allowedMimeTypes) {
+                    if (!in_array($value->getMimeType(), $allowedMimeTypes)) {
+                        $fail('Seçilen dosya tipi için geçersiz dosya formatı.');
+                    }
+                },
+            ],
         ]);
 
         try {
@@ -34,10 +54,13 @@ class QuickActionsController extends Controller
 
             $fileRecord = \App\Models\File::create([
                 'patient_id' => $request->patient_id,
+                'type' => $fileType,
                 'filename' => $file->getClientOriginalName(),
+                'original_filename' => $file->getClientOriginalName(),
                 'path' => $path,
                 'mime_type' => $file->getMimeType(),
                 'size' => $file->getSize(),
+                'notes' => $request->notes,
                 'uploader_id' => auth()->id(),
                 'appointment_id' => $request->appointment_id,
                 'encounter_id' => $request->encounter_id,
@@ -52,7 +75,7 @@ class QuickActionsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Dosya yüklenirken bir hata oluştu.'
+                'message' => 'Dosya yüklenirken bir hata oluştu: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -98,7 +121,6 @@ class QuickActionsController extends Controller
             'phone_secondary' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'address_text' => 'nullable|string|max:500',
-            'consent_kvkk' => 'nullable|boolean'
         ]);
 
         try {
@@ -108,10 +130,6 @@ class QuickActionsController extends Controller
                 'email',
                 'address_text'
             ]);
-
-            if ($request->has('consent_kvkk')) {
-                $updateData['consent_kvkk_at'] = $request->consent_kvkk ? now() : null;
-            }
 
             $patient->update($updateData);
 

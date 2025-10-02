@@ -119,6 +119,7 @@
                             </span>
                         </x-nav-link>
                     @endcan
+
                 </div>
             </div>
 

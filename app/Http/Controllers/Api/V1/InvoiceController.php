@@ -61,9 +61,9 @@ class InvoiceController extends Controller
                 $invoice->items()->create([
                     'patient_treatment_id' => $treatment->id,
                     'description' => $treatment->display_treatment_name,
-                    'qty' => 1,
+                    'quantity' => 1,
                     'unit_price' => $treatment->unit_price,
-                    'vat' => $treatment->vat,
+                    'vat_rate' => $treatment->vat,
                     'line_total' => $treatment->unit_price,
                 ]);
             }
@@ -88,15 +88,15 @@ class InvoiceController extends Controller
             $vatTotal = 0;
 
             foreach ($validated['items'] as $item) {
-                $lineTotal = $item['qty'] * $item['unit_price'];
+                $lineTotal = $item['quantity'] * $item['unit_price'];
                 $subtotal += $lineTotal;
-                $vatTotal += $lineTotal * ($item['vat'] / 100);
+                $vatTotal += $lineTotal * ($item['vat_rate'] / 100);
 
                 $invoice->items()->create([
                     'description' => $item['description'],
-                    'qty' => $item['qty'],
+                    'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'vat' => $item['vat'] ?? 20,
+                    'vat_rate' => $item['vat_rate'] ?? 20,
                     'line_total' => $lineTotal,
                 ]);
             }

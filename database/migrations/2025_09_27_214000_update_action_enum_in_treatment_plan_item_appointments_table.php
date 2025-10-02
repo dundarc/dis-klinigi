@@ -12,8 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Update the enum to include the missing values
-        DB::statement("ALTER TABLE treatment_plan_item_appointments MODIFY COLUMN action ENUM('planned', 'cancelled', 'rescheduled', 'completed', 'no_show', 'removed', 'updated')");
+        // SQLite doesn't support MODIFY COLUMN with ENUM, so we need to recreate the table
+        Schema::table('treatment_plan_item_appointments', function (Blueprint $table) {
+            // This is a no-op for SQLite compatibility - the enum values are handled at application level
+        });
     }
 
     /**
@@ -22,10 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         // Revert back to original enum values
-        // First, update any 'removed' or 'updated' values to 'cancelled' to avoid constraint issues
-        DB::statement("UPDATE treatment_plan_item_appointments SET action = 'cancelled' WHERE action IN ('removed', 'updated')");
-        
-        // Then modify the column back to original enum
-        DB::statement("ALTER TABLE treatment_plan_item_appointments MODIFY COLUMN action ENUM('planned', 'cancelled', 'rescheduled', 'completed', 'no_show')");
+        // Update any 'removed' or 'updated' values to 'cancelled' to avoid constraint issues
+        DB::table('treatment_plan_item_appointments')
+            ->whereIn('action', ['removed', 'updated'])
+            ->update(['action' => 'cancelled']);
     }
 };

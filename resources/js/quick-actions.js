@@ -123,7 +123,6 @@ document.addEventListener('alpine:init', () => {
             phoneSecondary: '',
             email: '',
             addressText: '',
-            consentKvkk: false
         },
 
         openModal(modalType) {
@@ -175,7 +174,7 @@ document.addEventListener('alpine:init', () => {
                     this.newPayment = { accountId: '', invoiceId: '', amount: '', method: 'cash', date: new Date().toISOString().split('T')[0], selectedFile: null };
                     break;
                 case 'patientUpdate':
-                    this.patientUpdate = { query: '', results: [], selectedPatient: null, phonePrimary: '', phoneSecondary: '', email: '', addressText: '', consentKvkk: false };
+                    this.patientUpdate = { query: '', results: [], selectedPatient: null, phonePrimary: '', phoneSecondary: '', email: '', addressText: '' };
                     break;
             }
         },
@@ -535,7 +534,6 @@ document.addEventListener('alpine:init', () => {
                 phone_secondary: this.patientUpdate.phoneSecondary,
                 email: this.patientUpdate.email,
                 address_text: this.patientUpdate.addressText,
-                consent_kvkk: this.patientUpdate.consentKvkk
             };
 
             const response = await fetch(`/quick-actions/update-patient/${this.patientUpdate.selectedPatient.id}`, {

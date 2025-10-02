@@ -126,7 +126,7 @@
             </div>
 
             {{-- Sistem Yönetimi Kartları --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                 {{-- Kullanıcılar --}}
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 sm:rounded-xl border border-gray-200 dark:border-gray-600 group hover:border-blue-300 dark:hover:border-blue-500">
@@ -271,6 +271,66 @@
                             <a href="{{ route('system.trash-docs.index') }}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-medium rounded-lg transition-all duration-300 shadow-sm hover:shadow-md">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                Yönet
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- E-posta Ayarları --}}
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 sm:rounded-xl border border-gray-200 dark:border-gray-600 group hover:border-indigo-300 dark:hover:border-indigo-500">
+                    <div class="p-6 flex flex-col h-full">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div class="p-3 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">E-posta Ayarları</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">SMTP ve şablonlar</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                SMTP ayarları, e-posta şablonları, gönderim logları ve istatistikleri yönetin.
+                            </p>
+                        </div>
+                        <div class="mt-4">
+                            <a href="{{ route('system.email.dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white text-sm font-medium rounded-lg transition-all duration-300 shadow-sm hover:shadow-md">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                                Yönet
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- AI Ayarları --}}
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 sm:rounded-xl border border-gray-200 dark:border-gray-600 group hover:border-cyan-300 dark:hover:border-cyan-500">
+                    <div class="p-6 flex flex-col h-full">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-4 mb-4">
+                                <div class="p-3 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">AI Ayarları</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Yapay zeka entegrasyonu</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                AI API anahtarı ve bağlantı ayarlarını yapılandırın, test edin.
+                            </p>
+                        </div>
+                        <div class="mt-4">
+                            <a href="{{ route('system.ai.index') }}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white text-sm font-medium rounded-lg transition-all duration-300 shadow-sm hover:shadow-md">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                                 Yönet
                             </a>

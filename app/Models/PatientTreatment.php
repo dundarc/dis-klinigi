@@ -6,6 +6,29 @@ use App\Enums\PatientTreatmentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $patient_id
+ * @property int|null $encounter_id
+ * @property int|null $dentist_id
+ * @property int|null $treatment_id
+ * @property int|null $treatment_plan_item_id
+ * @property string|null $tooth_number
+ * @property PatientTreatmentStatus $status
+ * @property float $unit_price
+ * @property float $vat
+ * @property float $discount
+ * @property \Carbon\Carbon|null $performed_at
+ * @property string|null $notes
+ * @property string|null $display_treatment_name
+ * @property-read string $display_treatment_name
+ * @property-read \App\Models\Patient $patient
+ * @property-read \App\Models\User|null $dentist
+ * @property-read \App\Models\Treatment|null $treatment
+ * @property-read \App\Models\InvoiceItem|null $invoiceItem
+ * @property-read \App\Models\Encounter|null $encounter
+ * @property-read \App\Models\TreatmentPlanItem|null $treatmentPlanItem
+ */
 class PatientTreatment extends Model
 {
     use HasFactory;

@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Enums\ConsentStatus;
+use App\Models\Consent;
+use App\Services\Kvkk\ConsentService;
+
 class Patient extends Model
 {
     use HasFactory, SoftDeletes;
@@ -27,7 +31,6 @@ class Patient extends Model
         'email',
         'address_text',
         'tax_office',
-        'consent_kvkk_at', // --- EKSİK OLAN ALAN BUYDU ---
         'notes',
         'emergency_contact_person',
         'emergency_contact_phone',
@@ -44,7 +47,6 @@ class Patient extends Model
     {
         return [
             'birth_date' => 'date',
-            'consent_kvkk_at' => 'datetime',
             'gender' => Gender::class,
             'has_private_insurance' => 'boolean',
         ];
@@ -86,16 +88,23 @@ class Patient extends Model
         return $this->hasMany(Consent::class);
     }
 
+    public function kvkkAuditLogs()
+    {
+        return $this->hasMany(KvkkAuditLog::class);
+    }
+
     public function treatmentPlans()
     {
         return $this->hasMany(TreatmentPlan::class);
     }
+
 
     public function getFirstNameAttribute($value)
     {
         if (is_array($value)) {
             return $value[0] ?? '';
         }
+
         return (string) $value;
     }
 
@@ -104,8 +113,40 @@ class Patient extends Model
         if (is_array($value)) {
             return $value[0] ?? '';
         }
+
         return (string) $value;
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim(
+            collect([$this->first_name, $this->last_name])
+                ->filter()
+                ->implode(' ')
+        );
+    }
+
+    public function latestConsent(): ?\App\Models\Consent
+    {
+        return ConsentService::latest(
+            $this->relationLoaded('consents') ? $this : $this->loadMissing('consents')
+        );
+    }
+
+    public function hasKvkkConsent(): bool
+    {
+        return ConsentService::hasActive(
+            $this->relationLoaded('consents') ? $this : $this->loadMissing('consents')
+        );
+    }
+
+    public function scopeWithActiveConsentFlag($query)
+    {
+        $sub = Consent::selectRaw('CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END')
+            ->whereColumn('patient_id', 'patients.id')
+            ->where('status', ConsentStatus::ACTIVE);
+
+        return $query->addSelect(['has_active_consent' => $sub]);
     }
 }
 
-    

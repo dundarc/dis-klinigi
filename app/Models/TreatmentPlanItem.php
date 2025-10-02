@@ -1,6 +1,5 @@
 <?php
 
-declare(strict_types=1);
 
 namespace App\Models;
 
@@ -10,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TreatmentPlanItem extends Model
 {
@@ -18,6 +18,7 @@ class TreatmentPlanItem extends Model
     protected $fillable = [
         'treatment_plan_id',
         'treatment_id',
+        'dentist_id',
         'appointment_id',
         'tooth_number',
         'estimated_price',
@@ -38,6 +39,11 @@ class TreatmentPlanItem extends Model
         return $this->belongsTo(TreatmentPlan::class);
     }
 
+    public function dentist(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dentist_id');
+    }
+
     public function treatment(): BelongsTo
     {
         return $this->belongsTo(Treatment::class);
@@ -46,6 +52,11 @@ class TreatmentPlanItem extends Model
     public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
+    }
+
+    public function invoiceItem(): HasOne
+    {
+        return $this->hasOne(InvoiceItem::class, 'treatment_plan_item_id');
     }
 
     public function appointmentHistory(): HasMany
@@ -117,6 +128,45 @@ class TreatmentPlanItem extends Model
         return $saved;
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $item): void {
+            if (! $item->dentist_id) {
+                $item->dentist_id = static::resolveDefaultDentistId($item);
+            }
+        });
+
+        static::updating(function (self $item): void {
+            if ($item->isDirty('appointment_id') && $item->appointment_id && ! $item->dentist_id) {
+                $item->dentist_id = static::resolveDefaultDentistId($item);
+            }
+        });
+    }
+
+    protected static function resolveDefaultDentistId(self $item): ?int
+    {
+        if ($item->relationLoaded('appointment') && $item->appointment) {
+            return $item->appointment?->dentist_id;
+        }
+
+        if ($item->appointment_id) {
+            $appointment = Appointment::query()->find($item->appointment_id);
+            if ($appointment) {
+                return $appointment->dentist_id;
+            }
+        }
+
+        if ($item->relationLoaded('treatmentPlan') && $item->treatmentPlan) {
+            return $item->treatmentPlan->dentist_id;
+        }
+
+        if ($item->treatment_plan_id) {
+            return TreatmentPlan::query()->whereKey($item->treatment_plan_id)->value('dentist_id');
+        }
+
+        return null;
+    }
+
     /**
      * Ensure the treatment plan item is linked to an encounter when marked as DONE.
      *
@@ -156,7 +206,7 @@ class TreatmentPlanItem extends Model
                     'arrived_at' => now(),
                     'started_at' => now(),
                     'ended_at' => now(),
-                    'notes' => 'Otomatik olarak tedavi kalemi tamamlanmasından oluşturuldu.',
+                    'notes' => 'Otomatik olarak tedavi kalemi tamamlanmasÄ±ndan oluÅŸturuldu.',
                 ]);
             }
         }
@@ -165,7 +215,7 @@ class TreatmentPlanItem extends Model
         if ($encounter) {
             $this->encounters()->attach($encounter->id, [
                 'price' => $this->estimated_price,
-                'notes' => 'Tedavi kalemi tamamlanmasından otomatik olarak bağlandı.',
+                'notes' => 'Tedavi kalemi tamamlanmasÄ±ndan otomatik olarak baÄŸlandÄ±.',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

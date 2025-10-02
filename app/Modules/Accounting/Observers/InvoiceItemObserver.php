@@ -26,8 +26,8 @@ class InvoiceItemObserver
     {
         $invoice->loadMissing('items');
 
-        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->qty * $item->unit_price);
-        $vatTotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->qty * $item->unit_price * (($item->vat ?? 0) / 100));
+        $subtotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->quantity * $item->unit_price);
+        $vatTotal = $invoice->items->sum(fn (InvoiceItem $item) => $item->quantity * $item->unit_price * (($item->vat_rate ?? 0) / 100));
         $grandTotal = $subtotal + $vatTotal;
 
         $invoice->forceFill([

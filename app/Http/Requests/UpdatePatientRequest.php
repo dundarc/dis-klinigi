@@ -25,8 +25,6 @@ class UpdatePatientRequest extends FormRequest
             // değerini false (0) olarak ayarla. Geliyorsa true (1) yap.
             'has_private_insurance' => $this->boolean('has_private_insurance'),
             
-            // Aynı mantığı KVKK onayı için de uygula.
-            'consent_kvkk' => $this->boolean('consent_kvkk'),
         ]);
     }
 
@@ -46,7 +44,6 @@ class UpdatePatientRequest extends FormRequest
             
             // Hazırlanan bu alanların sadece boolean (true/false) olmasını bekle.
             'has_private_insurance' => ['required', 'boolean'],
-            'consent_kvkk' => ['required', 'boolean'],
         ];
     }
 }

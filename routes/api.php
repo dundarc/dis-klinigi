@@ -87,10 +87,15 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // Treatment Plan API routes
     Route::get('treatment-plans/{treatmentPlan}', [ApiTreatmentPlanController::class, 'show']);
     Route::get('treatment-plans/{treatmentPlan}/items', [\App\Http\Controllers\Api\V1\TreatmentPlanItemController::class, 'index']); // Existing items API
-    
 
-        Route::get('/patients/{patient}/uninvoiced-treatments', [PatientController::class, 'getUninvoicedTreatments']);
-        Route::get('/patients/{patient}/uninvoiced-treatments', [ApiPatientController::class, 'getUninvoicedTreatments']);
+    // Patient Search API
+    Route::get('patients/search', [\App\Http\Controllers\Api\V1\PatientController::class, 'search']);
+
+    Route::get('/patients/{patient}/uninvoiced-treatments', [PatientController::class, 'getUninvoicedTreatments']);
+    Route::get('/patients/{patient}/uninvoiced-treatments', [ApiPatientController::class, 'getUninvoicedTreatments']);
+
+    // KVKK API
+    Route::get('patients/{patient}/consent-status', [\App\Http\Controllers\Api\KvkkController::class, 'consentStatus']);
 
 
     // Muhasebe ve Admin'e Ã¶zel rotalar

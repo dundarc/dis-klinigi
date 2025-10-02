@@ -16,9 +16,9 @@ class AddInvoiceItemRequest extends FormRequest
     {
         return [
             'description' => ['required', 'string', 'max:255'],
-            'qty' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:1'],
             'unit_price' => ['required', 'numeric', 'min:0'],
-            'vat' => ['required', 'numeric', 'min:0', 'max:100'],
+            'vat_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'patient_treatment_id' => ['nullable', 'exists:patient_treatments,id'],
         ];
     }
@@ -27,16 +27,16 @@ class AddInvoiceItemRequest extends FormRequest
     {
         return [
             'description.required' => 'Açıklama alanı zorunludur.',
-            'qty.required' => 'Miktar alanı zorunludur.',
-            'qty.integer' => 'Miktar tam sayı olmalıdır.',
-            'qty.min' => 'Miktar en az 1 olmalıdır.',
+            'quantity.required' => 'Miktar alanı zorunludur.',
+            'quantity.integer' => 'Miktar tam sayı olmalıdır.',
+            'quantity.min' => 'Miktar en az 1 olmalıdır.',
             'unit_price.required' => 'Birim fiyat alanı zorunludur.',
             'unit_price.numeric' => 'Birim fiyat sayı olmalıdır.',
             'unit_price.min' => 'Birim fiyat 0\'dan büyük olmalıdır.',
-            'vat.required' => 'KDV oranı zorunludur.',
-            'vat.numeric' => 'KDV oranı sayı olmalıdır.',
-            'vat.min' => 'KDV oranı 0\'dan küçük olamaz.',
-            'vat.max' => 'KDV oranı 100\'den büyük olamaz.',
+            'vat_rate.required' => 'KDV oranı zorunludur.',
+            'vat_rate.numeric' => 'KDV oranı sayı olmalıdır.',
+            'vat_rate.min' => 'KDV oranı 0\'dan küçük olamaz.',
+            'vat_rate.max' => 'KDV oranı 100\'den büyük olamaz.',
             'patient_treatment_id.exists' => 'Seçilen tedavi geçersiz.',
         ];
     }

@@ -35,7 +35,7 @@
                         </div>
                         <div class="w-20">
                             <x-input-label value="Adet"/>
-                            <input x-model.number="item.qty" type="number" 
+                            <input x-model.number="item.quantity" type="number"
                                    class="w-full mt-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="w-28">
@@ -46,8 +46,8 @@
                         <x-danger-button type="button" @click="invoice.items.splice(index, 1)">Sil</x-danger-button>
                     </div>
                 </template>
-                <x-secondary-button type="button" 
-                                    @click="invoice.items.push({description: '', qty: 1, unit_price: 0, vat: 20})">
+                <x-secondary-button type="button"
+                                    @click="invoice.items.push({description: '', quantity: 1, unit_price: 0, vat_rate: 20})">
                     Yeni Kalem Ekle
                 </x-secondary-button>
             </div>

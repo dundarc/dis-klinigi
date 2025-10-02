@@ -14,6 +14,8 @@ class DatabaseSeeder extends Seeder
         // Core system data - run in dependency order
         $this->call([
             SettingSeeder::class,        // System settings
+            EmailSettingSeeder::class,   // Email settings
+            EmailTemplateSeeder::class,  // Email templates
             UserSeeder::class,           // Users (admin, dentists, staff)
             TreatmentSeeder::class,      // Dental treatments catalog
             PatientSeeder::class,        // Patient records

@@ -69,7 +69,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Diş Hekimi</p>
-                            <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $treatmentPlan->dentist->name }}</p>
+                            <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ $treatmentPlan->dentist?->name ?? 'Hekim atanmamış' }}</p>
                         </div>
                     </div>
                 </div>
@@ -169,7 +169,7 @@
                             <div class="flex items-center justify-between mb-3">
                                 <div>
                                     <h4 class="font-medium text-slate-900 dark:text-slate-100">{{ $appointment->start_at->format('d.m.Y H:i') }}</h4>
-                                    <p class="text-sm text-slate-600 dark:text-slate-400">Dr. {{ $appointment->dentist->name }}</p>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">Dr. {{ $appointment->dentist?->name ?? 'â€”' }}</p>
                                 </div>
                                 <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">{{ $appointment->status->label() }}</span>
                             </div>
@@ -254,7 +254,7 @@
                                                 @elseif($item->status->value === 'no_show')
                                                     <span class="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-900/30 px-2.5 py-1 text-xs font-medium text-orange-800 dark:text-orange-200">Gelmedi</span>
                                                 @else
-                                                    <span class="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 text-xs font-medium text-purple-800 dark:text-purple-200">Faturalandı</span>
+                                                    <span class="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-900/30 px-2.5 py-1 text-xs font-medium text-purple-800 dark:text-purple-200">Faturalandırıldı</span>
                                                 @endif
                                             @endif
                                         </td>
@@ -275,7 +275,7 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                            {{ $item->appointment ? $item->appointment->dentist->name : '-' }}
+                                            {{ $item->appointment?->dentist?->name ?? '-' }}
                                         </td>
                                         <td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-medium">
                                             {{ number_format($item->estimated_price, 2, ',', '.') }} TL
@@ -288,7 +288,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                             </svg>
                                             <h3 class="mt-4 text-lg font-medium text-slate-900 dark:text-slate-100">Tedavi kalemi bulunmuyor</h3>
-                                            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Bu tedavi planında henüz kalem eklenmemiş.</p>
+                                            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Bu tedavi planında hemüz kalem eklenmemiş.</p>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -299,7 +299,7 @@
                     @if($treatmentPlan->items->where('status', \App\Enums\TreatmentPlanItemStatus::DONE)->count() > 0)
                     <div class="mt-6 flex justify-between items-center">
                         <div class="text-sm text-slate-600 dark:text-slate-400">
-                            Faturalanacak kalemleri seçin (seçili değilse tüm tamamlanan kalemler faturalanır)
+                        Faturalanacak kalemleri seçin (seçili değilse tüm tamamlanan kalemler faturalanır)
                         </div>
                         <form method="POST" action="{{ route('treatment-plans.generateInvoice', $treatmentPlan) }}" class="flex gap-2">
                             @csrf
@@ -347,7 +347,7 @@
                                     'date' => $history->created_at,
                                     'type' => 'status_change',
                                     'title' => 'Durum Değişikliği',
-                                    'description' => ($item->treatment ? $item->treatment->name : 'Tedavi Silinmiş') . ' - ' . $history->old_status?->label() . ' → ' . $history->new_status->label(),
+                                    'description' => ($item->treatment ? $item->treatment->name : 'Tedavi Silinmiş') . ' - ' . $history->old_status?->label() . '  ' . $history->new_status->label(),
                                     'item' => $item,
                                     'history' => $history,
                                     'icon' => 'arrow-right',
@@ -432,7 +432,7 @@
                                                             <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
                                                                 Randevu: {{ $event['appointment']->start_at->format('d.m.Y H:i') }}
                                                                 @if($event['appointment']->dentist)
-                                                                    - {{ $event['appointment']->dentist->name }}
+                                                                    - {{ $event['appointment']->dentist?->name ?? 'â€”' }}
                                                                 @endif
                                                             </p>
                                                         @endif

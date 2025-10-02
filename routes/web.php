@@ -1,6 +1,8 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\AiController;
+use App\Http\Controllers\AiSystemController;
 use App\Http\Controllers\AppointmentCheckinController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
@@ -47,12 +49,80 @@ Route::get('/dashboard/quick-actions', function () {
     return view('dashboard.quick-actions');
 })->middleware(['auth', 'verified'])->name('dashboard.quick-actions');
 
+Route::get('/help', function () {
+    return view('help');
+})->middleware(['auth', 'verified'])->name('help');
+
+Route::get('/help/dashboard', function () {
+    return view('help.dashboard');
+})->middleware(['auth', 'verified'])->name('help.dashboard');
+
+Route::get('/help/calendar', function () {
+    return view('help.calendar');
+})->middleware(['auth', 'verified'])->name('help.calendar');
+
+Route::get('/help/patients', function () {
+    return view('help.patients');
+})->middleware(['auth', 'verified'])->name('help.patients');
+
+Route::get('/help/kvkk', function () {
+    return view('help.kvkk');
+})->middleware(['auth', 'verified'])->name('help.kvkk');
+
+Route::get('/help/waiting-room', function () {
+    return view('help.waiting-room');
+})->middleware(['auth', 'verified'])->name('help.waiting-room');
+
+Route::get('/help/stock', function () {
+    return view('help.stock');
+})->middleware(['auth', 'verified'])->name('help.stock');
+
+Route::get('/help/reports', function () {
+    return view('help.reports');
+})->middleware(['auth', 'verified'])->name('help.reports');
+
+Route::get('/help/accounting', function () {
+    return view('help.accounting');
+})->middleware(['auth', 'verified'])->name('help.accounting');
+
+Route::get('/help/notifications', function () {
+    return view('help.notifications');
+})->middleware(['auth', 'verified'])->name('help.notifications');
+
+Route::get('/help/system', function () {
+    return view('help.system');
+})->middleware(['auth', 'verified'])->name('help.system');
+
+Route::get('/help/ai', function () {
+    return view('help.ai');
+})->middleware(['auth', 'verified'])->name('help.ai');
+
+Route::get('/help/profile', function () {
+    return view('help.profile');
+})->middleware(['auth', 'verified'])->name('help.profile');
+
+Route::get('/help/patients', function () {
+    return view('help.patients');
+})->middleware(['auth', 'verified'])->name('help.patients');
+
+Route::get('/help/calendar', function () {
+    return view('help.calendar');
+})->middleware(['auth', 'verified'])->name('help.calendar');
+
+Route::get('/help/treatment-plans', function () {
+    return view('help.treatment-plans');
+})->middleware(['auth', 'verified'])->name('help.treatment-plans');
+
+Route::get('/help/kvkk', function () {
+    return view('help.kvkk');
+})->middleware(['auth', 'verified'])->name('help.kvkk');
+
 Route::get('/search', [DashboardController::class, 'search'])
     ->middleware(['auth', 'verified'])
     ->name('search');
 
 Route::middleware('auth')->group(function () {
-    // Profil Rotaları
+    // Profil RotalarÄ±
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -120,7 +190,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/suppliers', [\App\Http\Controllers\SearchController::class, 'suppliers'])->name('suppliers');
     });
 
-    // Hasta Yönetimi
+    // Hasta YÃ¶netimi
     Route::get('/patients/search', [PatientController::class, 'search'])->name('patients.search');
     Route::get('/dentists/search', [PatientController::class, 'searchDentists'])->name('dentists.search');
     Route::get('/suppliers/search', [PatientController::class, 'searchSuppliers'])->name('suppliers.search');
@@ -128,12 +198,20 @@ Route::middleware('auth')->group(function () {
     Route::put('/patients/{patient}/notes', [PatientController::class, 'updateNotes'])->name('patients.updateNotes');
     Route::get('/patient-files/{file}', [PatientFileController::class, 'show'])->name('patient-files.show');
 
-    // Tedavi planları
+    // Hasta KVKK Ä°ÅŸlemleri
+    Route::prefix('patients/kvkk')->name('patients.kvkk.')->group(function () {
+        Route::get('/reports/missing', [\App\Http\Controllers\PatientKvkkController::class, 'missingConsents'])->name('reports.missing');
+        Route::get('/{patient}', [\App\Http\Controllers\PatientKvkkController::class, 'showConsentForm'])->name('consent');
+        Route::post('/{patient}/consent', [\App\Http\Controllers\PatientKvkkController::class, 'storeConsent'])->name('store-consent');
+        Route::get('/{patient}/details', [\App\Http\Controllers\PatientKvkkController::class, 'show'])->name('show');
+    });
+
+    // Tedavi planlarÄ±
     Route::get('patients/{patient}/treatment-plans/create', [\App\Http\Controllers\TreatmentPlanController::class, 'create'])->name('patients.treatment-plans.create');
     Route::get('treatment-plans/all', [\App\Http\Controllers\TreatmentPlanController::class, 'all'])->name('treatment-plans.all');
     Route::get('treatment-plans/search', [\App\Http\Controllers\TreatmentPlanController::class, 'all'])->name('treatment-plans.search');
     Route::resource('treatment-plans', \App\Http\Controllers\TreatmentPlanController::class)->except(['create']);
-    Route::get('treatment-plans/{id}/pdf', [\App\Http\Controllers\TreatmentPlanController::class, 'downloadPdf'])->name('treatment-plans.pdf')->withoutMiddleware('auth');
+    Route::get('treatment-plans/{treatmentPlan}/pdf', [\App\Http\Controllers\TreatmentPlanController::class, 'downloadPdf'])->name('treatment-plans.pdf')->withoutMiddleware('auth');
     Route::post('treatment-plans/{treatment_plan}/generate-invoice', [\App\Http\Controllers\TreatmentPlanController::class, 'generateInvoice'])->name('treatment-plans.generateInvoice');
     Route::get('treatment-plans/{treatment_plan}/cost-report', [\App\Http\Controllers\TreatmentPlanController::class, 'costReport'])->name('treatment-plans.cost-report');
     Route::post('treatment-plans/{treatment_plan}/items', [\App\Http\Controllers\QuickActionsController::class, 'addTreatmentPlanItem'])->name('treatment-plans.items.store');
@@ -180,20 +258,26 @@ Route::middleware('auth')->group(function () {
     });
 
 
-    // PDF RotalarÄ±
+    // PDF RotalarÃ„Â±
     Route::get('/invoices/{invoice}/pdf', [PdfController::class, 'downloadInvoice'])->name('invoices.pdf');
     Route::get('/prescriptions/{prescription}/pdf', [PdfController::class, 'downloadPrescription'])->name('prescriptions.pdf');
 
-    // "GÃ¼nÃ¼n RandevularÄ±" ve Check-in Ä°ÅŸlemleri
+    // "GÃƒÂ¼nÃƒÂ¼n RandevularÃ„Â±" ve Check-in Ã„Â°Ã…Å¸lemleri
     Route::get('/todays-appointments', [AppointmentCheckinController::class, 'index'])->name('appointments.today');
     Route::post('/appointments/{appointment}/check-in', [AppointmentCheckinController::class, 'checkIn'])->name('appointments.checkin');
     Route::post('/appointments/{appointment}/no-show', [AppointmentCheckinController::class, 'markNoShow'])->name('appointments.no-show');
 
-    // Sistem AyarlarÄ± RotalarÄ± (Sadece Admin eriÅŸebilir)
+    // AI Routes
+    Route::get('/ai', [AiController::class, 'index'])->name('ai.index');
+    Route::post('/ai', [AiController::class, 'chat'])->name('ai.chat');
+
+    // Sistem AyarlarÃ„Â± RotalarÃ„Â± (Sadece Admin eriÃ…Å¸ebilir)
     Route::prefix('system')->name('system.')->middleware('can:accessAdminFeatures')->group(function () {
         Route::get('/', [SystemSettingsController::class, 'index'])->name('index');
         Route::get('/details', [SystemSettingsController::class, 'details'])->name('details');
         Route::post('/details', [SystemSettingsController::class, 'updateDetails'])->name('details.update');
+        Route::get('/ai', [AiSystemController::class, 'index'])->name('ai.index');
+        Route::put('/ai', [AiSystemController::class, 'update'])->name('ai.update');
         Route::get('/users', [SystemSettingsController::class, 'users'])->name('users.index');
         Route::get('/users/create', [SystemSettingsController::class, 'createUser'])->name('users.create');
         Route::post('/users', [SystemSettingsController::class, 'storeUser'])->name('users.store');
@@ -218,8 +302,39 @@ Route::middleware('auth')->group(function () {
             Route::put('/{treatment}', [SystemTreatmentController::class, 'update'])->name('update');
             Route::delete('/{treatment}', [SystemTreatmentController::class, 'destroy'])->name('destroy');
         });
+
+        Route::prefix('email')->name('email.')->group(function () {
+            // Ana sayfa - Dashboard
+            Route::get('/', [\App\Http\Controllers\System\EmailController::class, 'dashboard'])->name('dashboard');
+
+            // SMTP AyarlarÄ±
+            Route::get('/configure', [\App\Http\Controllers\System\EmailController::class, 'index'])->name('index');
+            Route::post('/configure', [\App\Http\Controllers\System\EmailController::class, 'update'])->name('update');
+            Route::post('/test', [\App\Http\Controllers\System\EmailController::class, 'test'])->name('test');
+
+            // Åablonlar
+            Route::get('/templates', [\App\Http\Controllers\System\EmailTemplateController::class, 'index'])->name('templates.index');
+            Route::get('/templates/create', [\App\Http\Controllers\System\EmailTemplateController::class, 'create'])->name('templates.create');
+            Route::post('/templates', [\App\Http\Controllers\System\EmailTemplateController::class, 'store'])->name('templates.store');
+            Route::get('/templates/{template}/edit', [\App\Http\Controllers\System\EmailTemplateController::class, 'edit'])->name('templates.edit');
+            Route::put('/templates/{template}', [\App\Http\Controllers\System\EmailTemplateController::class, 'update'])->name('templates.update');
+            Route::delete('/templates/{template}', [\App\Http\Controllers\System\EmailTemplateController::class, 'destroy'])->name('templates.destroy');
+
+            // Loglar
+            Route::get('/logs', [\App\Http\Controllers\System\EmailLogController::class, 'index'])->name('logs.index');
+            Route::get('/logs/{log}', [\App\Http\Controllers\System\EmailLogController::class, 'show'])->name('logs.show');
+
+            // Ä°statistik
+            Route::get('/stats', [\App\Http\Controllers\System\EmailStatsController::class, 'index'])->name('stats.index');
+
+            // Bounce yÃ¶netimi
+            Route::get('/bounces', [\App\Http\Controllers\System\EmailBounceController::class, 'index'])->name('bounces.index');
+
+            // Bounce webhook (provider-agnostic)
+            Route::post('/webhooks/bounce', [\App\Http\Controllers\System\EmailWebhookController::class, 'bounce'])->name('webhooks.bounce');
+        });
     });
-    // Stok Rotaları
+    // Stok RotalarÄ±
     Route::prefix('stock')->name('stock.')->group(function () {
         Route::middleware('can:accessStockManagement')->group(function () {
             Route::get('/', [StockDashboardController::class, 'index'])->name('dashboard');
@@ -261,16 +376,16 @@ Route::middleware('auth')->group(function () {
     // Log Viewer - Sadece Admin
   //  Route::get('/logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']) ->middleware('can:accessAdminFeatures') ->name('logs');
 
-    // Muhasebe RotalarÄ±
+    // Muhasebe RotalarÃ„Â±
     Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [AccountingController::class, 'index'])->name('index');
     Route::get('/search', [AccountingController::class, 'search'])->name('search');
     Route::post('/update', [AccountingController::class, 'updateOverdueInvoices'])->name('update');
 
-        // DÃœZELTME: Rota, Controller'daki doÄŸru metod adÄ± olan 'create' metodunu iÅŸaret ediyor.
+        // DÃƒÅ“ZELTME: Rota, Controller'daki doÃ„Å¸ru metod adÃ„Â± olan 'create' metodunu iÃ…Å¸aret ediyor.
         Route::get('/new', [AccountingController::class, 'create'])->name('new');
 
-        Route::post('/prepare', [AccountingController::class, 'prepare'])->name('prepare');
+        Route::get('/prepare', [AccountingController::class, 'prepare'])->name('prepare');
         Route::post('/', [AccountingController::class, 'store'])->name('store');
 
         Route::get('/invoices/{invoice}/show', [AccountingController::class, 'show'])->name('invoices.show');
@@ -292,7 +407,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/trash/{invoice}/remove', [AccountingController::class, 'forceDelete'])->name('trash.remove');
     });
 
-    // Bekleme OdasÄ± RotalarÄ±
+    // Bekleme OdasÃ„Â± RotalarÃ„Â±
     Route::prefix('waiting-room')->name('waiting-room.')->group(function () {
         Route::get('/', [WaitingRoomController::class, 'index'])->name('index');
         Route::get('/appointments', [WaitingRoomController::class, 'appointments'])->name('appointments');
@@ -308,9 +423,44 @@ Route::middleware('auth')->group(function () {
         Route::get('/{encounter}/action', [WaitingRoomController::class, 'action'])->name('action');
         Route::match(['post', 'put'], '/{encounter}/action', [WaitingRoomController::class, 'updateAction'])->name('action.update');
     });
+
+    // KVKK RotalarÄ±
+    Route::prefix('kvkk')->name('kvkk.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\KvkkController::class, 'index'])->name('index');
+        Route::get('/search', [\App\Http\Controllers\KvkkController::class, 'search'])->name('search');
+        Route::get('/trash', [\App\Http\Controllers\KvkkController::class, 'restoreIndex'])->name('trash.index')->middleware('can:accessAdminFeatures');
+        Route::get('/{patient}', [\App\Http\Controllers\KvkkController::class, 'show'])->name('show');
+        Route::match(['get', 'post'], '/{patient}/export', [\App\Http\Controllers\KvkkController::class, 'export'])->name('export');
+        Route::get('/download-export/{filename}', [\App\Http\Controllers\KvkkController::class, 'downloadExport'])->name('download-export');
+        Route::post('/{patient}/soft-delete', [\App\Http\Controllers\KvkkController::class, 'softDelete'])->name('soft-delete');
+        Route::get('/{patient}/hard-delete/confirm', [\App\Http\Controllers\KvkkController::class, 'hardDeleteConfirm'])->name('hard-delete.confirm')->middleware('can:accessAdminFeatures');
+        Route::post('/{patient}/hard-delete', [\App\Http\Controllers\KvkkController::class, 'hardDelete'])->name('hard-delete')->middleware('can:accessAdminFeatures');
+        Route::post('/restore/{patient}', [\App\Http\Controllers\KvkkController::class, 'restore'])->name('restore')->middleware('can:accessAdminFeatures');
+        Route::post('/bulk-restore', [\App\Http\Controllers\KvkkController::class, 'bulkRestore'])->name('bulk-restore')->middleware('can:accessAdminFeatures');
+        Route::post('/bulk-hard-delete', [\App\Http\Controllers\KvkkController::class, 'bulkHardDelete'])->name('bulk-hard-delete')->middleware('can:accessAdminFeatures');
+
+        // Consent Management
+        Route::get('/{patient}/create-consent', [\App\Http\Controllers\KvkkController::class, 'createConsent'])->name('create-consent');
+        Route::post('/{patient}/create-consent', [\App\Http\Controllers\KvkkController::class, 'storeConsent'])->name('store-consent');
+        Route::get('/{patient}/consent-success', [\App\Http\Controllers\KvkkController::class, 'consentSuccess'])->name('consent-success');
+        Route::get('/{patient}/consent-pdf', [\App\Http\Controllers\KvkkController::class, 'downloadConsentPdf'])->name('consent-pdf');
+
+        // Email Verification
+        Route::get('/verify-consent/{token}', [\App\Http\Controllers\KvkkController::class, 'showVerifyConsent'])->name('verify-consent');
+        Route::post('/verify-consent/{token}', [\App\Http\Controllers\KvkkController::class, 'processVerifyConsent'])->name('process-verify-consent');
+
+        // Consent Cancellation
+        Route::get('/{patient}/cancel-consent', [\App\Http\Controllers\KvkkController::class, 'cancelConsent'])->name('cancel-consent');
+        Route::get('/{patient}/cancel-consent/pdf', [\App\Http\Controllers\KvkkController::class, 'downloadCancellationPdf'])->name('cancel-consent.pdf');
+        Route::post('/{patient}/cancel-consent', [\App\Http\Controllers\KvkkController::class, 'processCancelConsent'])->name('process-cancel-consent');
+
+        // Reports
+        Route::get('/reports/missing', [\App\Http\Controllers\KvkkReportsController::class, 'missingConsents'])->name('reports.missing');
+    });
 });
 
 require __DIR__.'/auth.php';
+
 
 
 

@@ -16,8 +16,9 @@
 
     <div class="py-8" x-data="{ selectedPatientId: null, selectedTreatments: [] }">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <form method="POST" action="{{ route('accounting.prepare') }}">
+            <form method="POST" action="{{ route('accounting.prepare') }}" x-on:submit="document.getElementById('patient_id').value = selectedPatientId">
                 @csrf
+                <input type="hidden" id="patient_id" name="patient_id" x-model="selectedPatientId" />
 
                 @if($patientsWithTreatments->isEmpty())
                     <!-- Empty State -->

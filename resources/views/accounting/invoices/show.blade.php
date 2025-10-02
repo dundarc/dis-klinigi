@@ -82,7 +82,7 @@
                             @forelse($invoice->items as $item)
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                     <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">{{ $item->description }}</td>
-                                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100 text-center">{{ $item->qty }}</td>
+                                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100 text-center">{{ $item->quantity }}</td>
                                     <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100 text-right">{{ number_format($item->unit_price, 2, ',', '.') }} TL</td>
                                     <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100 text-center">{{ $item->vat }}%</td>
                                     <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100 text-right">{{ number_format($item->line_total, 2, ',', '.') }} TL</td>

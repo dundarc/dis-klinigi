@@ -90,7 +90,7 @@ class ReportsExport implements FromCollection, WithHeadings, WithTitle
                 'users.name as dentist_name',
                 DB::raw('COUNT(DISTINCT patient_treatments.patient_id) as total_patients'),
                 DB::raw('COUNT(patient_treatments.id) as total_treatments'),
-                DB::raw('SUM(invoice_items.unit_price * invoice_items.qty) as total_revenue')
+                DB::raw('SUM(invoice_items.unit_price * invoice_items.quantity) as total_revenue')
             )
             ->groupBy('users.id', 'users.name')
             ->orderBy('users.name');
@@ -118,8 +118,8 @@ class ReportsExport implements FromCollection, WithHeadings, WithTitle
             ->select(
                 'treatments.name as treatment_name',
                 DB::raw('COUNT(patient_treatments.id) as total_applications'),
-                DB::raw('SUM(invoice_items.unit_price * invoice_items.qty) as total_revenue'),
-                DB::raw('AVG(invoice_items.unit_price * invoice_items.qty) as average_revenue')
+                DB::raw('SUM(invoice_items.unit_price * invoice_items.quantity) as total_revenue'),
+                DB::raw('AVG(invoice_items.unit_price * invoice_items.quantity) as average_revenue')
             )
             ->groupBy('treatments.id', 'treatments.name')
             ->orderByDesc('total_revenue')

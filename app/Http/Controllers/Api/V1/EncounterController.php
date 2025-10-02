@@ -218,17 +218,19 @@ class EncounterController extends Controller
                         ->first();
                         
                     if (!$existingTreatment) {
+                        $treatment = \App\Models\Treatment::find($treatmentData['treatment_id']);
+
                         $encounter->treatments()->create([
                             'patient_id' => $encounter->patient_id,
                             'dentist_id' => $encounter->dentist_id,
                             'treatment_id' => $treatmentData['treatment_id'],
                             'tooth_number' => $treatmentData['tooth_number'] ?? null,
                             'unit_price' => $treatmentData['unit_price'] ?? 0,
-                            'vat' => \App\Models\Treatment::find($treatmentData['treatment_id'])->default_vat ?? 20,
-                            'status' => \App\Enums\PatientTreatmentStatus::PENDING,
+                            'vat' => $treatment?->default_vat ?? 20,
+                            'status' => \App\Enums\PatientTreatmentStatus::PLANNED,
                             'performed_at' => null, // Will be set when encounter is completed
                             'notes' => 'Auto-saved during encounter',
-                            'display_treatment_name' => \App\Models\Treatment::find($treatmentData['treatment_id'])?->name ?? 'Unknown Treatment',
+                            'display_treatment_name' => $treatment?->name ?? 'Unknown Treatment',
                         ]);
                     }
                 }

@@ -56,7 +56,7 @@
                     @foreach($invoice->items as $item)
                     <tr>
                         <td>{{ $item->description }}</td>
-                        <td class="text-right">{{ $item->qty }}</td>
+                        <td class="text-right">{{ $item->quantity }}</td>
                         <td class="text-right">{{ number_format($item->unit_price, 2, ',', '.') }} TL</td>
                         <td class="text-right">{{ number_format($item->vat, 2, ',', '.') }}%</td>
                         <td class="text-right">{{ number_format($item->line_total, 2, ',', '.') }} TL</td>
