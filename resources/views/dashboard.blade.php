@@ -386,6 +386,12 @@
             </div>
 
             <!-- Financial & Statistics Cards - Compact -->
+            @php
+                $userRole = auth()->user()->role ?? null;
+                $canViewFinancialData = !in_array($userRole, [\App\Enums\UserRole::DENTIST, \App\Enums\UserRole::RECEPTIONIST]);
+            @endphp
+
+            @if($canViewFinancialData)
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                 <!-- Monthly Revenue -->
                 <div class="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-800 dark:to-emerald-900/20 rounded-lg p-4 shadow-md border border-green-200/50 dark:border-green-700/50">
@@ -416,6 +422,21 @@
                         </div>
                     </div>
                 </div>
+            @else
+            <div class="mt-6 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-6">
+                <div class="flex items-center justify-center space-x-4">
+                    <div class="p-3 bg-gray-500/90 rounded-xl">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Finansal Verilere Erişim Yok</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Doktor ve resepsiyonist rolleri için finansal bilgilere erişim kısıtlanmıştır.</p>
+                    </div>
+                </div>
+            </div>
+            @endif
 
                 <!-- Total Patients -->
                 <div class="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-gray-800 dark:to-pink-900/20 rounded-lg p-4 shadow-md border border-purple-200/50 dark:border-purple-700/50">

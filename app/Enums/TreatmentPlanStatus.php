@@ -8,6 +8,7 @@ enum TreatmentPlanStatus: string
     case ACTIVE = 'active';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
+    case CANCELLED_PARTIAL = 'cancelled_partial';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum TreatmentPlanStatus: string
             self::ACTIVE => __('Aktif'),
             self::COMPLETED => __('Tamamlandı'),
             self::CANCELLED => __('İptal Edildi'),
+            self::CANCELLED_PARTIAL => __('Kısmen İptal'),
         };
     }
 
@@ -26,6 +28,7 @@ enum TreatmentPlanStatus: string
             self::ACTIVE => 'blue',
             self::COMPLETED => 'green',
             self::CANCELLED => 'red',
+            self::CANCELLED_PARTIAL => 'orange',
         };
     }
 }

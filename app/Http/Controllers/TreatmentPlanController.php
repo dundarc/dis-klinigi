@@ -9,7 +9,9 @@ use App\Models\Patient;
 use App\Services\PdfExportService;
 use App\Services\TreatmentPlanService;
 use App\Services\TreatmentPlanDateService;
+use Illuminate\Support\Facades\DB;
 use App\Enums\TreatmentPlanItemStatus;
+use App\Enums\TreatmentPlanStatus;
 use Illuminate\Http\Request;
 
 class TreatmentPlanController extends Controller
@@ -338,7 +340,7 @@ class TreatmentPlanController extends Controller
     {
         try {
             // Check if plan is already cancelled
-            if ($treatmentPlan->status->value === 'cancelled' || $treatmentPlan->status->value === 'cancelled_partial') {
+            if (in_array($treatmentPlan->status, [TreatmentPlanStatus::CANCELLED, TreatmentPlanStatus::CANCELLED_PARTIAL], true)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Tedavi planı zaten iptal edilmiş durumda.'
@@ -349,7 +351,7 @@ class TreatmentPlanController extends Controller
             $totalCount = $treatmentPlan->items()->count();
 
             // Determine new plan status
-            $newPlanStatus = $completedCount > 0 ? 'cancelled_partial' : 'cancelled';
+            $newPlanStatus = $completedCount > 0 ? TreatmentPlanStatus::CANCELLED_PARTIAL : TreatmentPlanStatus::CANCELLED;
 
             DB::transaction(function () use ($treatmentPlan, $newPlanStatus) {
                 // Cancel all incomplete items and their appointments
@@ -376,7 +378,7 @@ class TreatmentPlanController extends Controller
                 }
 
                 // Update plan status
-                $treatmentPlan->update(['status' => $newPlanStatus]);
+                $treatmentPlan->update(['status' => $newPlanStatus->value]);
             });
 
             // Generate message
@@ -395,7 +397,7 @@ class TreatmentPlanController extends Controller
                 $message .= ($message ? ', ' : '') . $cancelledAppointmentsCount . ' randevu iptal edildi';
             }
 
-            if ($newPlanStatus === 'cancelled_partial') {
+            if ($newPlanStatus === TreatmentPlanStatus::CANCELLED_PARTIAL) {
                 $message .= ($message ? ', ' : '') . 'Tedavi Plan Durumu: Kısmen İptal';
             } else {
                 $message .= ($message ? ', ' : '') . 'Tedavi Plan Durumu: İptal';

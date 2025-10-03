@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\AppointmentStatus;
 use App\Enums\TreatmentPlanItemAppointmentAction;
+use App\Enums\TreatmentPlanItemStatus;
+use App\Enums\TreatmentPlanStatus;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\TreatmentPlan;
@@ -823,9 +825,9 @@ class TreatmentPlanService
             }
 
             // Update plan status to cancelled (but mark as partial)
-            $plan->update(['status' => TreatmentPlanStatus::CANCELLED]);
+            $plan->update(['status' => TreatmentPlanStatus::CANCELLED_PARTIAL->value]);
             $results['plan_status_updated'] = true;
-            $results['new_plan_status'] = 'cancelled_partial';
+            $results['new_plan_status'] = TreatmentPlanStatus::CANCELLED_PARTIAL->value;
 
             // Log partial cancellation
             \App\Models\ActivityLog::create([
@@ -835,7 +837,7 @@ class TreatmentPlanService
                 'model_id' => $plan->id,
                 'description' => "Treatment plan partially cancelled. {$completedItemsCount} completed items preserved.",
                 'old_values' => ['status' => $plan->getOriginal('status')],
-                'new_values' => ['status' => 'cancelled_partial'],
+                'new_values' => ['status' => TreatmentPlanStatus::CANCELLED_PARTIAL->value],
                 'ip_address' => request()->ip(),
             ]);
 
@@ -847,9 +849,9 @@ class TreatmentPlanService
                 $results['cancelled_appointments'] = array_merge($results['cancelled_appointments'], $itemResult['appointments']);
             }
 
-            $plan->update(['status' => TreatmentPlanStatus::CANCELLED]);
+            $plan->update(['status' => TreatmentPlanStatus::CANCELLED->value]);
             $results['plan_status_updated'] = true;
-            $results['new_plan_status'] = 'cancelled';
+            $results['new_plan_status'] = TreatmentPlanStatus::CANCELLED->value;
 
             // Log full cancellation
             \App\Models\ActivityLog::create([
@@ -859,7 +861,7 @@ class TreatmentPlanService
                 'model_id' => $plan->id,
                 'description' => 'Treatment plan fully cancelled.',
                 'old_values' => ['status' => $plan->getOriginal('status')],
-                'new_values' => ['status' => 'cancelled'],
+                'new_values' => ['status' => TreatmentPlanStatus::CANCELLED->value],
                 'ip_address' => request()->ip(),
             ]);
         }
@@ -896,9 +898,9 @@ class TreatmentPlanService
         // Check if all items are now cancelled
         $activeItemsCount = $plan->items()->whereNotIn('status', [TreatmentPlanItemStatus::CANCELLED])->count();
         if ($activeItemsCount === 0) {
-            $plan->update(['status' => TreatmentPlanStatus::CANCELLED]);
+            $plan->update(['status' => TreatmentPlanStatus::CANCELLED->value]);
             $results['plan_status_updated'] = true;
-            $results['new_plan_status'] = 'cancelled';
+            $results['new_plan_status'] = TreatmentPlanStatus::CANCELLED->value;
         }
 
         return $results;
@@ -928,7 +930,7 @@ class TreatmentPlanService
                 'model_id' => $appointment->id,
                 'description' => "Appointment cancelled due to treatment plan item cancellation: {$reason}",
                 'old_values' => ['status' => $appointment->getOriginal('status')],
-                'new_values' => ['status' => 'cancelled'],
+                'new_values' => ['status' => AppointmentStatus::CANCELLED->value],
                 'ip_address' => request()->ip(),
             ]);
         }
@@ -1000,3 +1002,4 @@ class TreatmentPlanService
         ];
     }
 }
+

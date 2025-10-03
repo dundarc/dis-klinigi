@@ -55,70 +55,91 @@
                 <!-- Form Content -->
                 <div class="px-8 py-6">
                     <!-- Plan Settings Form -->
-                    <div class="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-700/50 rounded-xl p-6 mb-8">
-                        <div class="flex items-center space-x-4 mb-6">
-                            <div class="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-blue-900 dark:text-blue-100">Tedavi Planı Ayarları</h3>
-                                <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">Temel plan bilgilerini güncelleyin</p>
+                    @php
+                        $planStatus = $treatmentPlan->status;
+                        $planIsCancelled = in_array($planStatus, [\App\Enums\TreatmentPlanStatus::CANCELLED, \App\Enums\TreatmentPlanStatus::CANCELLED_PARTIAL], true);
+                    @endphp
+
+                    @if($planIsCancelled)
+                        <div class="bg-gradient-to-r from-red-50/60 to-red-100/40 dark:from-red-900/30 dark:to-red-800/20 border border-red-200/60 dark:border-red-700/60 rounded-xl p-6 mb-8">
+                            <div class="flex items-start space-x-4">
+                                <div class="p-3 bg-red-500/90 rounded-xl">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M4.293 6.293l7.707-7.707 7.707 7.707M5 21h14a2 2 0 002-2V9a2 2 0 00-.586-1.414l-8-8a2 2 0 00-2.828 0l-8 8A2 2 0 002 9v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-red-900 dark:text-red-100">Tedavi Planı İptal Edildi</h3>
+                                    <p class="text-sm text-red-700 dark:text-red-300 mt-1">İptal edilen tedavi planı ayarları düzenlenemez.</p>
+                                </div>
                             </div>
                         </div>
-
-                        <form method="POST" action="{{ route('treatment-plans.update', $treatmentPlan) }}" class="space-y-6">
-                            @csrf
-                            @method('PATCH')
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="dentist_id" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Sorumlu Diş Hekimi <span class="text-red-500">*</span>
-                                    </label>
-                                    <select id="dentist_id" name="dentist_id" required
-                                        class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                                        <option value="">Hekim Seçiniz</option>
-                                        @foreach($dentists as $dentist)
-                                            <option value="{{ $dentist['id'] }}" {{ $treatmentPlan->dentist_id == $dentist['id'] ? 'selected' : '' }}>
-                                                {{ $dentist['name'] }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                    @else
+                        <div class="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-700/50 rounded-xl p-6 mb-8">
+                            <div class="flex items-center space-x-4 mb-6">
+                                <div class="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
                                 </div>
-
                                 <div>
-                                    <label for="status" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Tedavi Planı Durumu <span class="text-red-500">*</span>
-                                    </label>
-                                    <select id="status" name="status" required
-                                        class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                                        <option value="draft" {{ $treatmentPlan->status == 'draft' ? 'selected' : '' }}>📝 Taslak</option>
-                                        <option value="active" {{ $treatmentPlan->status == 'active' ? 'selected' : '' }}>📅 Aktif</option>
-                                    </select>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        Sadece taslak ve aktif durumları değiştirebilirsiniz. İptal ve tamamlanma işlemleri ayrı olarak yapılır.
-                                    </p>
+                                    <h3 class="text-xl font-bold text-blue-900 dark:text-blue-100">Tedavi Planı Ayarları</h3>
+                                    <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">Temel plan bilgilerini güncelleyin</p>
                                 </div>
                             </div>
 
-                            <div>
-                                <label for="notes" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Plan Notları
-                                </label>
-                                <textarea id="notes" name="notes" rows="4"
-                                    class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                                    placeholder="Tedavi planı ile ilgili genel notlar...">{{ $treatmentPlan->notes }}</textarea>
-                            </div>
+                            <form method="POST" action="{{ route('treatment-plans.update', $treatmentPlan) }}" class="space-y-6">
+                                @csrf
+                                @method('PATCH')
 
-                            <div class="flex items-center justify-end">
-                                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
-                                    Ayarları Kaydet
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="dentist_id" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                            Sorumlu Diş Hekimi <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="dentist_id" name="dentist_id" required
+                                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                                            <option value="">Hekim Seçiniz</option>
+                                            @foreach($dentists as $dentist)
+                                                <option value="{{ $dentist['id'] }}" {{ $treatmentPlan->dentist_id == $dentist['id'] ? 'selected' : '' }}>
+                                                    {{ $dentist['name'] }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="status" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                            Tedavi Planı Durumu <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="status" name="status" required
+                                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                                            <option value="draft" {{ $treatmentPlan->status == 'draft' ? 'selected' : '' }}>📝 Taslak</option>
+                                            <option value="active" {{ $treatmentPlan->status == 'active' ? 'selected' : '' }}>📅 Aktif</option>
+                                        </select>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            Sadece taslak ve aktif durumları değiştirebilirsiniz. İptal ve tamamlanma işlemleri ayrı olarak yapılır.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="notes" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Plan Notları
+                                    </label>
+                                    <textarea id="notes" name="notes" rows="4"
+                                        class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                                        placeholder="Tedavi planı ile ilgili genel notlar...">{{ $treatmentPlan->notes }}</textarea>
+                                </div>
+
+                                <div class="flex items-center justify-end">
+                                    <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
+                                        Ayarları Kaydet
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
 
                     <!-- Treatment Plan Items Section -->
                     <div class="border-t border-gray-200/50 dark:border-gray-600/50 pt-8 mt-8">
@@ -261,7 +282,7 @@
                                     </svg>
                                     <div>
                                         <h4 class="text-sm font-medium text-red-800 dark:text-red-200">Tamamlanmamış tedavi plan öğeleri buradan iptal edilir.</h4>
-                                        <p class="text-sm text-red-700 dark:text-red-300">İptal butonu şu şekilde işlem yapar: Bu işlem geri alınamaz. Emin misiniz? (Randevu varsa, randevuyu iptal et, plan öğesini iptal et)</p>
+                                        <p class="text-sm text-red-700 dark:text-red-300">Bu işlem geri alınamaz. Emin misiniz? (Randevulu tedavi plan öğeleri randevuları ile birlikte iptal edilecektir)</p>
                                     </div>
                                 </div>
                             </div>
