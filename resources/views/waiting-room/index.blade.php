@@ -97,7 +97,7 @@
                                 @forelse($pendingAppointments->take(5) as $appointment)
                                     <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                         <div class="flex-1">
-                                            <p class="font-medium text-slate-900 dark:text-slate-100">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</p>
+                                            <p class="font-medium text-slate-900 dark:text-slate-100">{{ $appointment->patient->first_name??"--" }} {{ $appointment->patient->last_name??"---" }}</p>
                                             <p class="text-sm text-slate-600 dark:text-slate-400">
                                                 Randevu: {{ $appointment->start_at?->format('H:i') ?? '--' }} |
                                                 Hekim: {{ $appointment->dentist->name ?? '--' }}
@@ -155,7 +155,7 @@
                                 @forelse($checkedInEncounters->take(5) as $encounter)
                                     <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                         <div class="flex-1">
-                                            <p class="font-medium text-slate-900 dark:text-slate-100">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
+                                            <p class="font-medium text-slate-900 dark:text-slate-100">{{ $encounter->patient->first_name??"--" }} {{ $encounter->patient->last_name??"--" }}</p>
                                             <p class="text-sm text-slate-600 dark:text-slate-400">
                                                 Giriş: {{ $encounter->arrived_at?->format('H:i') ?? '--' }} |
                                                 Hekim: {{ $encounter->dentist->name ?? '--' }}
@@ -243,7 +243,7 @@
                                 @forelse($completedEncounters->take(5) as $encounter)
                                     <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                         <div class="flex-1">
-                                            <p class="font-medium text-slate-900 dark:text-slate-100">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
+                                            <p class="font-medium text-slate-900 dark:text-slate-100">{{ $encounter->patient->first_name??"--" }} {{ $encounter->patient->last_name??"---" }}</p>
                                             <p class="text-sm text-slate-600 dark:text-slate-400">
                                                 Bitiş: {{ $encounter->ended_at?->format('H:i') ?? '--' }} |
                                                 Hekim: {{ $encounter->dentist->name ?? '--' }}

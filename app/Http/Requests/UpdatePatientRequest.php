@@ -47,6 +47,7 @@ class UpdatePatientRequest extends FormRequest
             'tax_office' => ['nullable', 'string', 'max:255'],
             'medications_used' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
+            'general_notes' => ['nullable', 'string'],
 
             // Hazırlanan bu alanların sadece boolean (true/false) olmasını bekle.
             'has_private_insurance' => ['required', 'boolean'],

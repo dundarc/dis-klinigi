@@ -36,6 +36,7 @@ class Patient extends Model
         'address_text',
         'tax_office',
         'notes',
+        'general_notes',
         'emergency_contact_person',
         'emergency_contact_phone',
         'medications_used',

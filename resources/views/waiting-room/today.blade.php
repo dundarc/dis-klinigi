@@ -76,7 +76,7 @@
                                                 </svg>
                                             </div>
                                             <div>
-                                                <div class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</div>
+                                                <div class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $appointment->patient->first_name??"--" }} {{ $appointment->patient->last_name??"" }}</div>
                                                 <div class="text-xs text-slate-500 dark:text-slate-400">{{ $appointment->patient->phone ?? 'Telefon yok' }}</div>
                                             </div>
                                         </div>

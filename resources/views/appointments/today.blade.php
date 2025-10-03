@@ -33,7 +33,7 @@
                         @forelse ($todaysAppointments as $appointment)
                             <tr>
                                 <td class="px-6 py-4">{{ $appointment->start_at->format('H:i') }}</td>
-                                <td class="px-6 py-4">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</td>
+                                <td class="px-6 py-4">{{ $appointment->patient->first_name??"--" }} {{ $appointment->patient->last_name??"--" }}</td>
                                 <td class="px-6 py-4">{{ $appointment->dentist->name }}</td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium

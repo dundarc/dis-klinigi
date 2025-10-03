@@ -358,22 +358,24 @@ class TreatmentPlanService
             ]);
         }
 
-        // Create or assign appointment if item doesn't have one
+        // Assign appointment if item doesn't have one
         if (!$item->appointment_id) {
             if ($encounter->appointment_id) {
-                // Use the encounter's appointment
+                // Use existing encounter appointment
                 $item->update(['appointment_id' => $encounter->appointment_id]);
                 $item->appointment_id = $encounter->appointment_id; // Update the object
             } else {
-                // Create a new appointment
-                $appointment = Appointment::create([
-                    'patient_id' => $item->treatmentPlan->patient_id,
+                // Create appointment for walk-in encounter
+                $appointment = \App\Models\Appointment::create([
+                    'patient_id' => $encounter->patient_id,
                     'dentist_id' => $encounter->dentist_id,
                     'start_at' => $encounter->started_at ?? $encounter->arrived_at ?? now(),
                     'end_at' => ($encounter->started_at ?? $encounter->arrived_at ?? now())->addMinutes(30),
-                    'status' => AppointmentStatus::COMPLETED,
-                    'notes' => 'Otomatik olarak tedavi tamamlanmasından oluşturuldu.',
+                    'status' => \App\Enums\AppointmentStatus::COMPLETED,
+                    'notes' => 'Otomatik olarak tedavi plan öğesi tamamlanmasından oluşturuldu.',
                 ]);
+                $encounter->appointment_id = $appointment->id;
+                $encounter->save();
                 $item->update(['appointment_id' => $appointment->id]);
                 $item->appointment_id = $appointment->id; // Update the object
             }

@@ -17,7 +17,7 @@
                             </a>
                         </div>
                     </div>
-                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 text-sm">
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                         <div>
                             <p class="text-slate-500 dark:text-slate-400">Ana Telefon</p>
                             <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->phone_primary ?? 'Belirtilmemiş' }}</p>
@@ -33,6 +33,14 @@
                         <div>
                             <p class="text-slate-500 dark:text-slate-400">Adres</p>
                             <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->address_text ?? 'Belirtilmemiş' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 dark:text-slate-400">Acil Durum Kişisi</p>
+                            <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->emergency_contact_person ?? 'Belirtilmemiş' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 dark:text-slate-400">Acil Durum Telefonu</p>
+                            <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $patient->emergency_contact_phone ?? 'Belirtilmemiş' }}</p>
                         </div>
                         <div>
                             <p class="text-slate-500 dark:text-slate-400">Özel Sağlık Sigortası</p>
@@ -199,7 +207,7 @@
                 <!-- General Medical Notes -->
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mt-6">
                     <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Genel Tıbbi Notlar</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notlar</label>
                             <p class="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">{{ $patient->notes ?? '-' }}</p>
@@ -207,6 +215,10 @@
                         <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Kullandığı İlaçlar</label>
                             <p class="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">{{ $patient->medications_used ?? '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Genel Notlar</label>
+                            <p class="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">{{ $patient->general_notes ?? '-' }}</p>
                         </div>
                     </div>
                 </div>

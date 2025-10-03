@@ -9,8 +9,11 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Form -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                     <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Hasta Bilgileri</h3>
                 </div>
@@ -114,6 +117,11 @@
                                 <textarea id="notes" name="notes" rows="4" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('notes', $patient->notes) }}</textarea>
                                 <x-input-error :messages="$errors->get('notes')" class="mt-2" />
                             </div>
+                            <div>
+                                <label for="general_notes" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Genel Notlar</label>
+                                <textarea id="general_notes" name="general_notes" rows="4" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('general_notes', $patient->general_notes) }}</textarea>
+                                <x-input-error :messages="$errors->get('general_notes')" class="mt-2" />
+                            </div>
                         </div>
                     </div>
 
@@ -145,14 +153,60 @@
                         </button>
                     </div>
                 </form>
-                <div class="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
-                    <form method="POST" action="{{ route('patients.destroy', $patient) }}" onsubmit="return confirm('Bu hastayı silmek istediğinizden emin misiniz?');" class="inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
-                            Sil
-                        </button>
-                    </form>
+                    </div>
+                </div>
+
+                <!-- Help Sidebar -->
+                <div class="lg:col-span-1">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Kullanım Kılavuzu
+                        </h3>
+                        <div class="space-y-4 text-sm text-blue-800 dark:text-blue-200">
+                            <div>
+                                <h4 class="font-medium mb-2">Temel Bilgiler</h4>
+                                <p>Ad, soyad, T.C. kimlik numarası ve doğum tarihi zorunlu alanlardır. Bu bilgiler hasta kaydının temelini oluşturur.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">İletişim Bilgileri</h4>
+                                <p>Ana telefon numarası zorunludur. İkincil telefon ve e-posta adresi isteğe bağlıdır. Adres bilgisi tam olarak girilmelidir.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">Acil Durum Bilgileri</h4>
+                                <p>Acil durumda ulaşılacak kişinin adı ve telefon numarası kaydedilir. Bu bilgiler hayati önem taşır.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">Tıbbi Bilgiler</h4>
+                                <p>Kullanılan ilaçlar ve genel notlar alanları hastanın tıbbi geçmişini takip etmek için kullanılır.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">Özel Sağlık Sigortası</h4>
+                                <p>Hastanın özel sağlık sigortası olup olmadığı işaretlenir. Bu bilgi faturalandırma işlemlerinde kullanılır.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">Kaydetme</h4>
+                                <p>Bilgilerde değişiklik yaptığınızda "Kaydet" butonu aktif olur. Değişiklik yapmadan kaydetmeye çalışırsanız buton devre dışı kalır.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-medium mb-2">Dikkat</h4>
+                                <p>Silme işlemi geri alınamaz. Hasta silindiğinde tüm ilişkili veriler etkilenir.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6" x-data="{ confirmDelete: false }">
+                            <h4 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Silme İşlemi</h4>
+                            <div class="space-y-4">
+                                <div class="flex items-start space-x-3">
+                                    <p> Hasta silme işlemleri KVKK modülü üzerinden sağlanır. Lütfen hasta silme işlemleri işlemini KVKK modülünden çözün. Hasta silme işlemleri ADMIN (Yönetici) yetkileri ile yapılabilen bir işlemdir </p>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

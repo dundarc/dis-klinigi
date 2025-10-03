@@ -461,6 +461,27 @@ class WaitingRoomController extends Controller
                 $appliedTreatments = json_decode($request->applied_treatments, true) ?? [];
             }
 
+            // If encounter has no appointment and we're completing it, create an appointment
+            if (!$encounter->appointment_id && $validated['status'] === EncounterStatus::DONE->value) {
+                $appointment = \App\Models\Appointment::create([
+                    'patient_id' => $encounter->patient_id,
+                    'dentist_id' => $encounter->dentist_id,
+                    'start_at' => $encounter->started_at ?? $encounter->arrived_at ?? now(),
+                    'end_at' => ($encounter->started_at ?? $encounter->arrived_at ?? now())->addMinutes(30),
+                    'status' => \App\Enums\AppointmentStatus::COMPLETED,
+                    'notes' => 'Otomatik olarak ziyaret tamamlanmasından oluşturuldu.',
+                ]);
+                $encounter->appointment_id = $appointment->id;
+                $encounter->save();
+
+                // Assign the appointment to all linked treatment plan items that don't have one
+                foreach ($encounter->treatmentPlanItems as $item) {
+                    if (!$item->appointment_id) {
+                        $item->update(['appointment_id' => $appointment->id]);
+                    }
+                }
+            }
+
             // Process treatments
             if (!empty($appliedTreatments)) {
                 foreach ($appliedTreatments as $treatmentData) {
@@ -494,16 +515,14 @@ class WaitingRoomController extends Controller
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ]);
-
-                                // Mark treatment plan item as done if encounter is completed
-                                if ($validated['status'] === EncounterStatus::DONE->value) {
-                                    $planItem->changeStatus(
-                                        \App\Enums\TreatmentPlanItemStatus::DONE,
-                                        auth()->user(),
-                                        'Completed during encounter #' . $encounter->id,
-                                        ['encounter_id' => $encounter->id]
-                                    );
-                                }
+    
+                                // Mark treatment plan item as done
+                                $planItem->changeStatus(
+                                    \App\Enums\TreatmentPlanItemStatus::DONE,
+                                    auth()->user(),
+                                    'Completed during encounter #' . $encounter->id,
+                                    ['encounter_id' => $encounter->id]
+                                );
                             }
                         }
                     }
