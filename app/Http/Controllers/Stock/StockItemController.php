@@ -317,7 +317,7 @@ class StockItemController extends Controller
         if ($item->movements()->exists()) {
             $item->forceFill(['is_active' => false])->save();
 
-            return redirect()->route('stock.items.index')->with('info', 'Stok kalemi kullanimda oldu�undan pasif hale getirildi.');
+            return redirect()->route('stock.items.index')->with('info', 'Stok kalemi kullanimda olduğundan pasif hale getirildi.');
         }
 
         $item->delete();

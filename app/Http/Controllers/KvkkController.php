@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\KvkkAuditLog;
 use App\Models\Patient;
 use App\Models\Setting;
+use App\Models\EmailAutomationSetting;
 use App\Services\ConsentService;
 use App\Services\ExportBuilder;
 use App\Services\KvkkDeletionService;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -604,6 +606,24 @@ class KvkkController extends Controller
             ];
 
             $consent = \App\Services\Kvkk\ConsentService::register($patient, $data);
+
+            // Otomatik e-posta bildirimi gönder (eğer aktifse)
+            $automationSettings = EmailAutomationSetting::getSettings();
+            if ($automationSettings && $automationSettings->kvkk_consent_to_admin) {
+                try {
+                    EmailService::sendTemplate('kvkk_consent_notification', [
+                        'to' => auth()->user()->email, // Send to current admin user
+                        'data' => [
+                            'patient_name' => $patient->first_name . ' ' . $patient->last_name,
+                            'consent_date' => $consent->accepted_at->format('d.m.Y H:i'),
+                            'clinic_name' => Setting::where('key', 'clinic_name')->first()?->value ?? 'Klinik'
+                        ]
+                    ]);
+                } catch (\Exception $e) {
+                    // E-posta gönderimi başarısız olsa bile consent işlemi devam eder
+                    \Log::error('KVKK consent email failed: ' . $e->getMessage());
+                }
+            }
 
             if ($consentMethod === 'email_verification' && $patient->email) {
                 // Send email verification

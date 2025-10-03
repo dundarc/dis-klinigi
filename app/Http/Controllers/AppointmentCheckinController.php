@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use App\Models\EmailAutomationSetting;
+use App\Models\Setting;
+use App\Services\EmailService;
 use App\Enums\AppointmentStatus;
 use App\Enums\EncounterType;
 use App\Enums\EncounterStatus;
@@ -45,13 +48,33 @@ class AppointmentCheckinController extends Controller
         $appointment->update(['status' => AppointmentStatus::CHECKED_IN]);
 
         // 2. Yeni bir Ziyaret Kaydı (Encounter) oluştur.
-        $appointment->encounter()->create([
+        $encounter = $appointment->encounter()->create([
             'patient_id' => $appointment->patient_id,
             'dentist_id' => $appointment->dentist_id,
             'type' => EncounterType::SCHEDULED,
             'status' => EncounterStatus::WAITING,
             'arrived_at' => now(),
         ]);
+
+        // 3. Otomatik e-posta bildirimi gönder (eğer aktifse)
+        $automationSettings = EmailAutomationSetting::getSettings();
+        if ($automationSettings && $automationSettings->patient_checkin_to_dentist) {
+            try {
+                EmailService::sendTemplate('patient_checkin_notification', [
+                    'to' => $appointment->dentist->email,
+                    'to_name' => $appointment->dentist->name,
+                    'data' => [
+                        'patient_name' => $appointment->patient->first_name . ' ' . $appointment->patient->last_name,
+                        'dentist_name' => $appointment->dentist->name,
+                        'appointment_time' => $appointment->start_at->format('d.m.Y H:i'),
+                        'clinic_name' => Setting::where('key', 'clinic_name')->first()?->value ?? 'Klinik'
+                    ]
+                ]);
+            } catch (\Exception $e) {
+                // E-posta gönderimi başarısız olsa bile check-in işlemi devam eder
+                \Log::error('Patient check-in email failed: ' . $e->getMessage());
+            }
+        }
 
         return back()->with('success', "{$appointment->patient->first_name} için check-in yapıldı ve bekleme odasına eklendi.");
     }

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('to_email');
             $table->string('to_name')->nullable();
             $table->string('subject');
+            $table->longText('body_html')->nullable();
+            $table->longText('body_text')->nullable();
             $table->text('body_snippet');
             $table->enum('status', ['queued', 'sent', 'failed']);
             $table->text('error_message')->nullable();

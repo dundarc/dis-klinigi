@@ -21,16 +21,29 @@ class DynamicMailService
 
         // Override mail configuration
         Config::set('mail.default', $settings->mailer);
-        Config::set('mail.mailers.smtp', [
+
+        $smtpConfig = [
             'transport' => 'smtp',
             'host' => $settings->host,
             'port' => $settings->port,
-            'encryption' => $settings->encryption,
+            'encryption' => $settings->encryption ?: null,
             'username' => $settings->username,
             'password' => $settings->password,
             'timeout' => null,
             'auth_mode' => null,
-        ]);
+        ];
+
+        if ($settings->skip_ssl_verification) {
+            $smtpConfig['stream'] = [
+                'ssl' => [
+                    'allow_self_signed' => true,
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ],
+            ];
+        }
+
+        Config::set('mail.mailers.smtp', $smtpConfig);
         Config::set('mail.from', [
             'address' => $settings->from_address,
             'name' => $settings->from_name,

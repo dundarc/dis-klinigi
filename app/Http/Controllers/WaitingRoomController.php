@@ -18,6 +18,9 @@ use App\Http\Requests\StoreAppointmentRequest;
 use App\Services\TreatmentPlanAppointmentService;
 use App\Services\EncounterService;
 use App\Services\TreatmentPlanDateService;
+use App\Services\EmailService;
+use App\Models\EmailAutomationSetting;
+use App\Models\Setting;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -308,11 +311,32 @@ class WaitingRoomController extends Controller
     public function storeEmergency(StoreEmergencyRequest $request)
     {
         $validated = $request->validated();
-        Encounter::create($validated + [
+        $encounter = Encounter::create($validated + [
             'type' => 'emergency',
             'status' => EncounterStatus::WAITING,
             'arrived_at' => now(),
         ]);
+
+        // Otomatik e-posta bildirimi gönder (eğer aktifse)
+        $automationSettings = EmailAutomationSetting::getSettings();
+        if ($automationSettings && $automationSettings->emergency_patient_to_dentist) {
+            try {
+                EmailService::sendTemplate('emergency_patient_notification', [
+                    'to' => $encounter->dentist->email,
+                    'to_name' => $encounter->dentist->name,
+                    'data' => [
+                        'patient_name' => $encounter->patient->first_name . ' ' . $encounter->patient->last_name,
+                        'dentist_name' => $encounter->dentist->name,
+                        'registration_time' => $encounter->arrived_at->format('d.m.Y H:i'),
+                        'clinic_name' => Setting::where('key', 'clinic_name')->first()?->value ?? 'Klinik'
+                    ]
+                ]);
+            } catch (\Exception $e) {
+                // E-posta gönderimi başarısız olsa bile acil kayıt işlemi devam eder
+                \Log::error('Emergency patient email failed: ' . $e->getMessage());
+            }
+        }
+
         return redirect()->route('waiting-room.emergency')->with('success', 'Acil hasta kaydÄ± baÅŸarÄ±yla oluÅŸturuldu.');
     }
 

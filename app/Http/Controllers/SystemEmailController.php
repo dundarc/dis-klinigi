@@ -38,6 +38,7 @@ class SystemEmailController extends Controller
             'encryption' => 'required_if:mailer,smtp|string|in:tls,ssl',
             'from_address' => 'required|email',
             'from_name' => 'required|string|max:255',
+            'skip_ssl_verification' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -47,11 +48,13 @@ class SystemEmailController extends Controller
         }
 
         try {
-            EmailSetting::updateSettings($request->only([
+            $data = $request->only([
                 'mailer', 'host', 'port', 'username', 'password',
-                'encryption', 'from_address', 'from_name'
-            ]));
+                'encryption', 'from_address', 'from_name',
+            ]);
+            $data['skip_ssl_verification'] = $request->boolean('skip_ssl_verification');
 
+            EmailSetting::updateSettings($data);
             return redirect()->back()
                 ->with('success', 'E-posta ayarları başarıyla güncellendi.');
         } catch (\Exception $e) {

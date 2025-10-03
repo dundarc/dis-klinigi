@@ -23,6 +23,7 @@ use App\Http\Controllers\Stock\StockCurrentAccountController;
 use App\Http\Controllers\Stock\StockReportController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SystemTreatmentController;
+use App\Http\Controllers\SystemEmailController;
 use App\Http\Controllers\WaitingRoomController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Installation\InstallationController;
@@ -351,6 +352,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/configure', [\App\Http\Controllers\System\EmailController::class, 'index'])->name('index');
             Route::post('/configure', [\App\Http\Controllers\System\EmailController::class, 'update'])->name('update');
             Route::post('/test', [\App\Http\Controllers\System\EmailController::class, 'test'])->name('test');
+
+            // Otomatik E-posta Ayarları
+            Route::get('/automatic', [SystemEmailController::class, 'automatic'])->name('automatic');
+            Route::post('/automatic', [SystemEmailController::class, 'updateAutomatic'])->name('automatic.update');
+            Route::post('/automatic/test-patient-checkin', [SystemEmailController::class, 'testPatientCheckin'])->name('automatic.test-patient-checkin');
+            Route::post('/automatic/test-emergency-patient', [SystemEmailController::class, 'testEmergencyPatient'])->name('automatic.test-emergency-patient');
+            Route::post('/automatic/test-kvkk-consent', [SystemEmailController::class, 'testKvkkConsent'])->name('automatic.test-kvkk-consent');
 
             // Åablonlar
             Route::get('/templates', [\App\Http\Controllers\System\EmailTemplateController::class, 'index'])->name('templates.index');

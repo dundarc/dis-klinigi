@@ -16,12 +16,17 @@ class EmailSetting extends Model
         'username',
         'password',
         'encryption',
+        'skip_ssl_verification',
         'from_address',
         'from_name',
         'dkim_domain',
         'dkim_selector',
         'dkim_private_key',
         'spf_record',
+    ];
+
+    protected $casts = [
+        'skip_ssl_verification' => 'boolean',
     ];
 
     protected $hidden = [
@@ -43,12 +48,14 @@ class EmailSetting extends Model
     public static function updateSettings(array $data): self
     {
         $setting = static::find(1);
+
         if ($setting) {
             $setting->update($data);
+
             return $setting;
-        } else {
-            return static::create(array_merge($data, ['id' => 1]));
         }
+
+        return static::create(array_merge($data, ['id' => 1]));
     }
 
     /**
@@ -73,7 +80,7 @@ class EmailSetting extends Model
     /**
      * Set the DKIM private key (encrypted)
      */
-    public function setDkimPrivateKeyAttribute($value)
+    public function setDkimPrivateKeyAttribute($value): void
     {
         $this->attributes['dkim_private_key'] = $value ? encrypt($value) : null;
     }
@@ -81,7 +88,7 @@ class EmailSetting extends Model
     /**
      * Get the DKIM private key (decrypted)
      */
-    public function getDkimPrivateKeyAttribute($value)
+    public function getDkimPrivateKeyAttribute($value): ?string
     {
         return $value ? decrypt($value) : null;
     }

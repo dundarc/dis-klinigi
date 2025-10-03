@@ -6,7 +6,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ $todayLabel }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <x-secondary-button-link href="{{ route('calendar') }}">
+                <x-secondary-button-link href="{{ route('calendar.day') }}">
                     Ayl�k G�r�n�m
                 </x-secondary-button-link>
                 <x-secondary-button-link href="{{ route('waiting-room.emergency') }}">

@@ -73,6 +73,20 @@
                             </select>
                         </div>
 
+                        <div class="md:col-span-2">
+                            <label for="skip_ssl_verification" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                SSL Sertifika Doğrulamasını Atla
+                            </label>
+                            <div class="flex items-center gap-3">
+                                <input type="hidden" name="skip_ssl_verification" value="0">
+                                <input type="checkbox" id="skip_ssl_verification" name="skip_ssl_verification" value="1"
+                                       class="h-5 w-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600" {{ old('skip_ssl_verification', $settings->skip_ssl_verification ?? false) ? 'checked' : '' }}>
+                                <span class="text-sm text-slate-600 dark:text-slate-300">
+                                    Self-signed sertifika kullanan sunucularda gönderim için SSL doğrulamasını devre dışı bırakın.
+                                </span>
+                            </div>
+                        </div>
+                           
                         <!-- Username -->
                         <div>
                             <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

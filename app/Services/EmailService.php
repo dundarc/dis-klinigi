@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
 use Symfony\Component\Mailer\Transport\Smtp\Auth\LoginAuthenticator;
 use Symfony\Component\Mailer\Transport\Smtp\Auth\PlainAuthenticator;
 use Symfony\Component\Mailer\Transport\Smtp\Auth\CramMd5Authenticator;
@@ -26,7 +27,7 @@ class EmailService
      */
     public static function configureFromDb(): void
     {
-        $settings = EmailSetting::first();
+        $settings = EmailSetting::getSettings();
 
         if (!$settings) {
             throw new \Exception('Email settings not found');
@@ -39,7 +40,14 @@ class EmailService
             'mail.mailers.smtp.port' => $settings->port,
             'mail.mailers.smtp.username' => $settings->username,
             'mail.mailers.smtp.password' => $settings->password,
-            'mail.mailers.smtp.encryption' => $settings->encryption,
+            'mail.mailers.smtp.encryption' => $settings->encryption ?: null,
+            'mail.mailers.smtp.stream' => $settings->skip_ssl_verification ? [
+                'ssl' => [
+                    'allow_self_signed' => true,
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ],
+            ] : null,
             'mail.from.address' => $settings->from_address,
             'mail.from.name' => $settings->from_name,
         ]);
@@ -188,14 +196,48 @@ class EmailService
         ?string $text,
         array $attachments
     ): ?string {
-        $settings = EmailSetting::first();
+        $settings = EmailSetting::getSettings();
+
+        if (!$settings) {
+            throw new \Exception('Email settings not found');
+        }
 
         // Create transport
+        $encryption = strtolower((string) ($settings->encryption ?? ''));
+
+        $useTls = in_array($encryption, ['tls', 'ssl'], true);
+
+        $stream = null;
+        if ($settings->skip_ssl_verification) {
+            $stream = new SocketStream();
+            $stream->setStreamOptions([
+                'ssl' => [
+                    'allow_self_signed' => true,
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ],
+            ]);
+        }
+
         $transport = new EsmtpTransport(
             $settings->host,
             $settings->port,
-            $settings->encryption === 'tls'
+            $useTls,
+            null,
+            null,
+            $stream
         );
+
+        if ($encryption === 'ssl') {
+            $transport->setAutoTls(false);
+            $transport->setRequireTls(true);
+        } elseif ($encryption === 'tls') {
+            $transport->setAutoTls(true);
+            $transport->setRequireTls(true);
+        } else {
+            $transport->setAutoTls(false);
+            $transport->setRequireTls(false);
+        }
 
         if ($settings->username && $settings->password) {
             $transport->setUsername($settings->username);
