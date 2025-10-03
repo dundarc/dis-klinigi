@@ -16,6 +16,10 @@ class Patient extends Model
     use HasFactory, SoftDeletes;
 
     /**
+     * @property int $id
+     */
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>

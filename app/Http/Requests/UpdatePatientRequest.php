@@ -39,9 +39,15 @@ class UpdatePatientRequest extends FormRequest
             'birth_date' => ['required', 'date'],
             'gender' => ['required', new Enum(Gender::class)],
             'phone_primary' => ['required', 'string', 'max:20'],
+            'phone_secondary' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('patients')->ignore($patientId)],
             'address_text' => ['nullable', 'string'],
-            
+            'emergency_contact_person' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_phone' => ['nullable', 'string', 'max:20'],
+            'tax_office' => ['nullable', 'string', 'max:255'],
+            'medications_used' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+
             // Hazırlanan bu alanların sadece boolean (true/false) olmasını bekle.
             'has_private_insurance' => ['required', 'boolean'],
         ];

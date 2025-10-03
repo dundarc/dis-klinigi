@@ -49,7 +49,7 @@
                     <div class="prose prose-sm dark:prose-invert max-w-none">
                         <h4>6698 Sayılı Kişisel Verilerin Korunması Kanunu Kapsamında Aydınlatma Metni</h4>
 
-                        <p><strong>Veri Sorumlusu:</strong> [Klinik Adı] Diş Kliniği</p>
+                        <p><strong>Veri Sorumlusu:</strong> {{ $settings['clinic_name'] ?? 'Klinik Adı' }} Diş Kliniği</p>
 
                         <p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verilerinizin işlenmesine ilişkin olarak sizleri bilgilendirmek amacıyla bu aydınlatma metnini hazırladık.</p>
 
@@ -104,9 +104,9 @@
                         </ul>
 
                         <h5>6. İletişim</h5>
-                        <p>Yukarıda belirtilen haklarınızı kullanmak için [klinik iletişim bilgileri] adresinden bizimle iletişime geçebilirsiniz.</p>
+                        <p>Yukarıda belirtilen haklarınızı kullanmak için {{ $settings['clinic_phone'] ?? 'telefon' }}, {{ $settings['clinic_email'] ?? 'e-posta' }}, {{ $settings['clinic_address'] ?? 'adres' }} adresinden bizimle iletişime geçebilirsiniz.</p>
 
-                        <p>Bu aydınlatma metni [tarih] tarihinde güncellenmiştir.</p>
+                        <p>Bu aydınlatma metni {{ now()->format('d.m.Y') }} tarihinde güncellenmiştir.</p>
                     </div>
                 </div>
             </div>

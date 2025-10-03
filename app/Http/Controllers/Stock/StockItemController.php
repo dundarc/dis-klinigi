@@ -9,6 +9,7 @@ use App\Models\Stock\StockItem;
 use App\Services\Stock\StockMovementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -134,9 +135,134 @@ class StockItemController extends Controller
     {
         $this->authorize('accessStockManagement');
 
-        $movements = $item->movements()->with(['createdBy'])->latest()->paginate(20);
+        $movements = $item->movements()->with(['creator'])->latest()->paginate(20);
 
         return view('stock.items.show', compact('item', 'movements'));
+    }
+
+    public function addMovement(Request $request, StockItem $item)
+    {
+        $this->authorize('accessStockManagement');
+
+        $request->validate([
+            'direction' => 'required|in:in,out,adjustment',
+            'quantity' => 'required|numeric|min:0',
+            'note' => 'nullable|string|max:255',
+        ]);
+
+        $direction = $request->direction;
+        $quantity = (float) $request->quantity;
+
+        try {
+            if ($direction === 'in') {
+                $this->movementService->recordIncoming($item, $quantity, [
+                    'note' => $request->note ?: 'Manuel giriş',
+                    'created_by' => $request->user()->id,
+                ]);
+            } elseif ($direction === 'out') {
+                $this->movementService->recordOutgoing($item, $quantity, [
+                    'note' => $request->note ?: 'Manuel çıkış',
+                    'created_by' => $request->user()->id,
+                ]);
+            } elseif ($direction === 'adjustment') {
+                $this->movementService->recordAdjustment($item, $quantity, [
+                    'note' => $request->note ?: 'Stok düzeltmesi',
+                    'created_by' => $request->user()->id,
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Hareket başarıyla eklendi.',
+            'new_quantity' => $item->fresh()->quantity,
+        ]);
+    }
+
+    public function bulkMovement(Request $request)
+    {
+        $this->authorize('accessStockManagement');
+
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required|exists:stock_items,id',
+            'items.*.direction' => 'required|in:in,out,adjustment',
+            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.note' => 'nullable|string|max:255',
+        ]);
+
+        $results = [];
+        $errors = [];
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($request->items as $index => $itemData) {
+                try {
+                    $item = StockItem::findOrFail($itemData['item_id']);
+                    $direction = $itemData['direction'];
+                    $quantity = (float) $itemData['quantity'];
+
+                    if ($direction === 'in') {
+                        $movement = $this->movementService->recordIncoming($item, $quantity, [
+                            'note' => $itemData['note'] ?: 'Toplu giriş',
+                            'created_by' => $request->user()->id,
+                        ]);
+                    } elseif ($direction === 'out') {
+                        $movement = $this->movementService->recordOutgoing($item, $quantity, [
+                            'note' => $itemData['note'] ?: 'Toplu çıkış',
+                            'created_by' => $request->user()->id,
+                        ]);
+                    } elseif ($direction === 'adjustment') {
+                        $movement = $this->movementService->recordAdjustment($item, $quantity, [
+                            'note' => $itemData['note'] ?: 'Toplu düzeltme',
+                            'created_by' => $request->user()->id,
+                        ]);
+                    }
+
+                    $results[] = [
+                        'item' => $item->name,
+                        'direction' => $direction,
+                        'quantity' => $quantity,
+                        'new_stock' => $item->fresh()->quantity,
+                    ];
+                } catch (\Exception $e) {
+                    $errors[] = [
+                        'index' => $index,
+                        'item' => $itemData['item_id'],
+                        'error' => $e->getMessage(),
+                    ];
+                }
+            }
+
+            if (empty($errors)) {
+                DB::commit();
+                return response()->json([
+                    'success' => true,
+                    'message' => count($results) . ' hareket başarıyla işlendi.',
+                    'results' => $results,
+                ]);
+            } else {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bazı işlemler başarısız oldu.',
+                    'errors' => $errors,
+                    'processed' => count($results),
+                ], 422);
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'İşlem sırasında hata oluştu: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function edit(StockItem $item): View

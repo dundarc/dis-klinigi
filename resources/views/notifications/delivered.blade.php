@@ -36,7 +36,7 @@
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900 dark:text-gray-100">{{ $notification->user->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $notification->user->role->displayName() }}</div>
+                                            <div class="text-sm text-gray-500">{{ $notification->user->role->label() }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900 dark:text-gray-100">{{ $notification->title }}</div>

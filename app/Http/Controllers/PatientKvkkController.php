@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
+use App\Models\Setting;
 use App\Services\ConsentService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,7 +15,7 @@ class PatientKvkkController extends Controller
      */
     public function missingConsents(Request $request): View
     {
-        $this->authorize('viewAny', Patient::class);
+        $this->authorize('accessKvkkFeatures');
 
         $query = $request->get('q', '');
 
@@ -96,7 +97,9 @@ class PatientKvkkController extends Controller
             return redirect()->route('patients.kvkk.show', $patient)->with('info', 'Bu hastanın geçerli KVKK onamı zaten bulunmaktadır.');
         }
 
-        return view('patients.kvkk.consent', compact('patient'));
+        $settings = Setting::all()->pluck('value', 'key')->all();
+
+        return view('patients.kvkk.consent', compact('patient', 'settings'));
     }
 
     /**

@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -80,7 +80,7 @@
                 <!-- Left Column -->
                 <div class="space-y-6">
                     <!-- Check-in Bekleyen Hastalar -->
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="height: 384px;">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
                             <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                                 <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,11 +88,13 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Check-in Bekleyen Hastalar</h3>
-                            <a href="{{ route('appointments.today') }}" class="ml-auto text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">Tümünü Gör</a>
+                            @if($pendingAppointments->count() > 5)
+                                <a href="{{ route('appointments.today') }}" class="ml-auto text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">Tümünü Gör</a>
+                            @endif
                         </div>
-                        <div class="p-6">
+                        <div class="p-6 overflow-y-auto" style="height: 280px;">
                             <div class="space-y-4">
-                                @forelse($pendingAppointments as $appointment)
+                                @forelse($pendingAppointments->take(5) as $appointment)
                                     <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                         <div class="flex-1">
                                             <p class="font-medium text-slate-900 dark:text-slate-100">{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</p>
@@ -102,12 +104,21 @@
                                             </p>
                                         </div>
                                         @can('accessReceptionistFeatures', \App\Models\Appointment::class)
-                                            <form method="POST" action="{{ route('appointments.checkin', $appointment) }}" class="ml-4">
-                                                @csrf
-                                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                                    Check-in
-                                                </button>
-                                            </form>
+                                            <div class="ml-4 flex gap-2">
+                                                <form method="POST" action="{{ route('appointments.checkin', $appointment) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                        Check-in
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ route('appointments.no-show', $appointment) }}" class="inline" onsubmit="return confirm('Bu hastayı \'Gelmedi\' olarak işaretlemek istediğinizden emin misiniz?')">
+                                                    @csrf
+                                                    @method('POST')
+                                                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                        Gelmedi
+                                                    </button>
+                                                </form>
+                                            </div>
                                         @else
                                             <a href="{{ route('appointments.today') }}" class="ml-4 inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium rounded-lg transition-colors">
                                                 Detay
@@ -127,7 +138,7 @@
                     </div>
 
                     <!-- Check-in Yapmış Hastalar -->
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="height: 384px;">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
                             <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
                                 <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,11 +146,13 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Check-in Yapmış Hastalar</h3>
-                            <a href="{{ route('waiting-room.appointments') }}" class="ml-auto text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium">Tümünü Gör</a>
+                            @if($checkedInEncounters->count() > 5)
+                                <a href="{{ route('waiting-room.appointments') }}" class="ml-auto text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium">Tümünü Gör</a>
+                            @endif
                         </div>
-                        <div class="p-6">
+                        <div class="p-6 overflow-y-auto" style="height: 280px;">
                             <div class="space-y-4">
-                                @forelse($checkedInEncounters as $encounter)
+                                @forelse($checkedInEncounters->take(5) as $encounter)
                                     <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                         <div class="flex-1">
                                             <p class="font-medium text-slate-900 dark:text-slate-100">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
@@ -168,7 +181,7 @@
                 <!-- Right Column -->
                 <div class="space-y-6">
                     <!-- Acilde Sıra Bekleyenler -->
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="height: 384px;">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
                             <div class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
                                 <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,13 +189,18 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Acilde Sıra Bekleyenler</h3>
-                            <a href="{{ route('waiting-room.emergency.create') }}" class="ml-auto inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                Acil Kaydı Ekle
-                            </a>
+                            <div class="ml-auto flex gap-2">
+                                @if($emergencyEncounters->count() > 5)
+                                    <a href="{{ route('waiting-room.emergency') }}" class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium">Tümünü Gör</a>
+                                @endif
+                                <a href="{{ route('waiting-room.emergency.create') }}" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    Acil Kaydı Ekle
+                                </a>
+                            </div>
                         </div>
-                        <div class="p-6">
+                        <div class="p-6 overflow-y-auto" style="height: 280px;">
                             <div class="space-y-4">
-                                @forelse($emergencyEncounters as $encounter)
+                                @forelse($emergencyEncounters->take(5) as $encounter)
                                     <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                         <div class="flex-1">
                                             <p class="font-medium text-slate-900 dark:text-slate-100">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
@@ -208,7 +226,7 @@
                     </div>
 
                     <!-- Bugün Tamamlanan İşlemler -->
-                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" style="height: 384px;">
                         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
                             <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
                                 <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,11 +234,13 @@
                                 </svg>
                             </div>
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Bugün Tamamlanan İşlemler</h3>
-                            <a href="{{ route('waiting-room.completed') }}" class="ml-auto text-sm text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium">Tümünü Gör</a>
+                            @if($completedEncounters->count() > 5)
+                                <a href="{{ route('waiting-room.completed') }}" class="ml-auto text-sm text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium">Tümünü Gör</a>
+                            @endif
                         </div>
-                        <div class="p-6">
+                        <div class="p-6 overflow-y-auto" style="height: 280px;">
                             <div class="space-y-4">
-                                @forelse($completedEncounters as $encounter)
+                                @forelse($completedEncounters->take(5) as $encounter)
                                     <div class="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
                                         <div class="flex-1">
                                             <p class="font-medium text-slate-900 dark:text-slate-100">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>

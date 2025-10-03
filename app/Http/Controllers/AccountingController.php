@@ -111,7 +111,7 @@ class AccountingController extends Controller
         $patientsWithTreatments = Patient::whereHas('treatments', function ($query) {
             $query->where('status', 'done')->whereDoesntHave('invoiceItem');
         })->with(['treatments' => function ($query) {
-            $query->where('status', 'done')->whereDoesntHave('invoiceItem')->with(['treatment', 'dentist']);
+            $query->where('status', 'done')->whereDoesntHave('invoiceItem')->with(['treatment', 'dentist', 'treatmentPlanItem.treatmentPlan']);
         }])->get();
         return view('accounting.new', compact('patientsWithTreatments'));
     }
@@ -147,7 +147,7 @@ class AccountingController extends Controller
         ]);
 
         $patient = Patient::findOrFail($validated['patient_id']);
-        $treatments = PatientTreatment::with('treatment')->whereIn('id', $validated['treatment_ids'])->get();
+        $treatments = PatientTreatment::with(['treatment', 'treatmentPlanItem.treatmentPlan'])->whereIn('id', $validated['treatment_ids'])->get();
 
         $items = $treatments->map(function ($treatment) {
             return [
@@ -156,6 +156,7 @@ class AccountingController extends Controller
                 'unit_price' => $treatment->unit_price,
                 'vat_rate' => $treatment->vat,
                 'patient_treatment_id' => $treatment->id,
+                'treatment_plan_item_id' => $treatment->treatment_plan_item_id,
             ];
         });
 
@@ -199,7 +200,18 @@ class AccountingController extends Controller
                 ]);
 
                 foreach ($validated['items'] as $item) {
-                    $invoice->items()->create($item + ['line_total' => $item['quantity'] * $item['unit_price']]);
+                    $invoiceItem = $invoice->items()->create($item + ['line_total' => $item['quantity'] * $item['unit_price']]);
+
+                    // Update treatment plan item invoice status if applicable
+                    if (!empty($item['patient_treatment_id'])) {
+                        $patientTreatment = \App\Models\PatientTreatment::find($item['patient_treatment_id']);
+                        if ($patientTreatment && $patientTreatment->treatment_plan_item_id) {
+                            $treatmentPlanItem = \App\Models\TreatmentPlanItem::find($patientTreatment->treatment_plan_item_id);
+                            if ($treatmentPlanItem) {
+                                $treatmentPlanItem->update(['invoice_status' => 'invoiced']);
+                            }
+                        }
+                    }
                 }
                 return $invoice;
             });
@@ -346,17 +358,11 @@ class AccountingController extends Controller
             $validated = $request->validated();
             $status = $validated['status'];
 
-            $insuranceCoverage = max(0, $validated['insurance_coverage_amount'] ?? 0);
-            if ($insuranceCoverage > $invoice->grand_total) {
-                $insuranceCoverage = $invoice->grand_total;
-            }
-
             $updateData = [
                 'patient_id' => $validated['patient_id'],
                 'issue_date' => $validated['issue_date'],
                 'status' => $status,
                 'notes' => $validated['notes'] ?? null,
-                'insurance_coverage_amount' => $insuranceCoverage,
                 'payment_method' => null,
                 'paid_at' => null,
                 'due_date' => null,
@@ -462,11 +468,14 @@ class AccountingController extends Controller
     /**
      * Ã‡Ã¶p kutusundaki bir faturayÄ± geri yÃ¼kler.
      */
-    public function restore(Invoice $invoice)
+    public function restore($invoiceId)
     {
         $this->authorize('accessAccountingFeatures');
+
+        $invoice = Invoice::withTrashed()->findOrFail($invoiceId);
         $invoice->restore();
-        return redirect()->route('accounting.trash')->with('success', 'Fatura baÅŸarÄ±yla geri yÃ¼klendi.');
+
+        return redirect()->route('accounting.trash')->with('success', 'Fatura başarıyla geri yüklendi.');
     }
 
     /**
@@ -547,20 +556,30 @@ class AccountingController extends Controller
     /**
      * Bir faturayÄ± kalÄ±cÄ± olarak siler.
      */
-    public function forceDelete(Invoice $invoice)
+    public function forceDelete($invoiceId)
     {
         $this->authorize('accessAccountingFeatures');
 
-        // Check for related records
-        $hasItems = $invoice->items()->exists();
-        $hasPayments = $invoice->payments()->exists();
-
-        if ($hasItems || $hasPayments) {
-            return redirect()->back()->with('error', 'Bu fatura silinemez çünkü ilişkili kayıtları bulunmaktadır.');
-        }
+        $invoice = Invoice::withTrashed()->findOrFail($invoiceId);
 
         try {
             DB::transaction(function() use ($invoice) {
+                // Silinmeden önce tedavi planı öğelerini işaretle
+                foreach ($invoice->items as $item) {
+                    if ($item->patientTreatment && $item->patientTreatment->treatmentPlanItem) {
+                        $treatmentPlanItem = $item->patientTreatment->treatmentPlanItem;
+                        $treatmentPlanItem->update([
+                            'invoice_status' => 'deleted',
+                            'deleted_invoice_info' => json_encode([
+                                'invoice_no' => $invoice->invoice_no,
+                                'deleted_at' => now()->toISOString(),
+                                'total_amount' => $item->line_total,
+                                'description' => $item->description
+                            ])
+                        ]);
+                    }
+                }
+
                 $invoice->items()->delete();
                 $invoice->payments()->delete();
                 $invoice->forceDelete();
@@ -711,7 +730,7 @@ class AccountingController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'method' => 'required|string|in:cash,bank_transfer,credit_card,check',
+            'method' => 'required|string|in:cash,bank_transfer,credit_card,check,insurance',
             'paid_at' => 'required|date',
             'notes' => 'nullable|string|max:255',
         ]);
@@ -785,7 +804,7 @@ class AccountingController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'method' => 'required|in:cash,bank_transfer,credit_card,check',
+            'method' => 'required|in:cash,bank_transfer,credit_card,check,insurance',
             'paid_at' => 'required|date',
             'notes' => 'nullable|string|max:255',
         ]);
@@ -840,28 +859,5 @@ class AccountingController extends Controller
         return redirect()->route('accounting.invoices.payment', $invoice)->with('success', 'Ödeme başarıyla iptal edildi.');
     }
 
-    /**
-     * Sigorta karşılama tutarını günceller.
-     */
-    public function updateInsuranceCoverage(Request $request, Invoice $invoice)
-    {
-        $this->authorize('accessAccountingFeatures');
-
-        $validated = $request->validate([
-            'insurance_coverage_amount' => 'required|numeric|min:0|max:' . $invoice->grand_total,
-        ]);
-
-        $totalPaid = $invoice->payments->sum('amount');
-
-        if ($validated['insurance_coverage_amount'] > $totalPaid) {
-            return back()->withErrors([
-                'insurance_coverage_amount' => 'Sigorta karşılama tutarı yapılan ödemelerden fazla olamaz. Fazla ödemeleri iptal edin.'
-            ]);
-        }
-
-        $invoice->update($validated);
-
-        return redirect()->route('accounting.invoices.payment', $invoice)->with('success', 'Sigorta karşılama tutarı güncellendi.');
-    }
 
 }

@@ -64,7 +64,7 @@
                                         <span>Klinik Adı</span>
                                     </span>
                                 </label>
-                                <input id="clinic_name" name="clinic_name" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_name', $settings['clinic_name'] ?? '')" required autofocus placeholder="Klinik adını girin" />
+                                <input id="clinic_name" name="clinic_name" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_name', $settings['clinic_name'] ?? '') }}" required autofocus placeholder="Klinik adını girin" />
                                 @error('clinic_name')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@
                                         <span>Telefon Numarası</span>
                                     </span>
                                 </label>
-                                <input id="clinic_phone" name="clinic_phone" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_phone', $settings['clinic_phone'] ?? '')" placeholder="+90 555 123 45 67" />
+                                <input id="clinic_phone" name="clinic_phone" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_phone', $settings['clinic_phone'] ?? '') }}" placeholder="+90 555 123 45 67" />
                                 @error('clinic_phone')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +124,7 @@
                                         <span>E-posta Adresi</span>
                                     </span>
                                 </label>
-                                <input id="clinic_email" name="clinic_email" type="email" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_email', $settings['clinic_email'] ?? '')" placeholder="info@klinik.com" />
+                                <input id="clinic_email" name="clinic_email" type="email" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_email', $settings['clinic_email'] ?? '') }}" placeholder="info@klinik.com" />
                                 @error('clinic_email')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@
                                         <span>Web Sitesi</span>
                                     </span>
                                 </label>
-                                <input id="clinic_web" name="clinic_web" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_web', $settings['clinic_web'] ?? '')" placeholder="https://www.klinik.com" />
+                                <input id="clinic_web" name="clinic_web" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_web', $settings['clinic_web'] ?? '') }}" placeholder="https://www.klinik.com" />
                                 @error('clinic_web')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +186,7 @@
                                         <span>Adres</span>
                                     </span>
                                 </label>
-                                <input id="clinic_address" name="clinic_address" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_address', $settings['clinic_address'] ?? '')" placeholder="Cadde, Sokak, No" />
+                                <input id="clinic_address" name="clinic_address" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_address', $settings['clinic_address'] ?? '') }}" placeholder="Cadde, Sokak, No" />
                                 @error('clinic_address')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,7 +207,7 @@
                                         <span>Şehir</span>
                                     </span>
                                 </label>
-                                <input id="clinic_city" name="clinic_city" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_city', $settings['clinic_city'] ?? '')" placeholder="İstanbul" />
+                                <input id="clinic_city" name="clinic_city" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_city', $settings['clinic_city'] ?? '') }}" placeholder="İstanbul" />
                                 @error('clinic_city')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +228,7 @@
                                         <span>İlçe</span>
                                     </span>
                                 </label>
-                                <input id="clinic_district" name="clinic_district" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_district', $settings['clinic_district'] ?? '')" placeholder="Kadıköy" />
+                                <input id="clinic_district" name="clinic_district" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_district', $settings['clinic_district'] ?? '') }}" placeholder="Kadıköy" />
                                 @error('clinic_district')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,7 +267,7 @@
                                         <span>Vergi Dairesi</span>
                                     </span>
                                 </label>
-                                <input id="clinic_tax_office" name="clinic_tax_office" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_tax_office', $settings['clinic_tax_office'] ?? '')" placeholder="Kadıköy Vergi Dairesi" />
+                                <input id="clinic_tax_office" name="clinic_tax_office" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_tax_office', $settings['clinic_tax_office'] ?? '') }}" placeholder="Kadıköy Vergi Dairesi" />
                                 @error('clinic_tax_office')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +288,7 @@
                                         <span>Vergi Kimlik Numarası</span>
                                     </span>
                                 </label>
-                                <input id="clinic_tax_id" name="clinic_tax_id" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" :value="old('clinic_tax_id', $settings['clinic_tax_id'] ?? '')" placeholder="1234567890" />
+                                <input id="clinic_tax_id" name="clinic_tax_id" type="text" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200" value="{{ old('clinic_tax_id', $settings['clinic_tax_id'] ?? '') }}" placeholder="1234567890" />
                                 @error('clinic_tax_id')
                                     <p class="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

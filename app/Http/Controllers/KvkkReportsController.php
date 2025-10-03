@@ -14,7 +14,7 @@ class KvkkReportsController extends Controller
      */
     public function missingConsents(Request $request): View
     {
-        $this->authorize('viewReports', Patient::class);
+        $this->authorize('accessKvkkFeatures');
 
         $query = $request->get('q', '');
 

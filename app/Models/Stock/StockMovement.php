@@ -22,6 +22,7 @@ class StockMovement extends Model
         'note',
         'created_by',
         'movement_date',
+        'batch_id',
     ];
 
     protected $casts = [
@@ -116,6 +117,7 @@ class StockMovement extends Model
         return match ($this->reference_type) {
             StockPurchaseInvoice::class => 'Fatura: ' . ($this->reference->invoice_number ?? '#' . $this->reference->id),
             'App\Models\Stock\StockUsage' => 'Kullanım: #' . $this->reference->id,
+            'App\Http\Controllers\Stock\StockItemController' => 'Manuel İşlem',
             default => 'Diğer: ' . class_basename($this->reference_type)
         };
     }

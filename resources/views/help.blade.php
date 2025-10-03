@@ -16,10 +16,33 @@
                     </p>
                 </div>
 
+                <!-- Arama Çubuğu -->
+                <div class="mb-12">
+                    <div class="max-w-md mx-auto">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                id="help-search"
+                                class="block w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-600 rounded-lg leading-5 bg-white dark:bg-slate-700 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100"
+                                placeholder="Yardım konularında arama yapın..."
+                                aria-label="Yardım arama"
+                            >
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 text-center">
+                            Modül adı, açıklama veya anahtar kelimelerle arama yapabilirsiniz
+                        </p>
+                    </div>
+                </div>
+
             <!-- Ana Modüller Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16" id="help-cards">
                 <!-- Ana Sayfa -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -41,7 +64,7 @@
                 </div>
 
                 <!-- Hasta Yönetimi -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-green-300 dark:hover:border-green-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-green-300 dark:hover:border-green-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -63,7 +86,7 @@
                 </div>
 
                 <!-- Randevu Yönetimi -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/10 dark:to-violet-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -85,7 +108,7 @@
                 </div>
 
                 <!-- Tedavi Planları -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -107,7 +130,7 @@
                 </div>
 
                 <!-- Bekleme Odası -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-red-300 dark:hover:border-red-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-red-300 dark:hover:border-red-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/10 dark:to-rose-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -129,7 +152,7 @@
                 </div>
 
                 <!-- Muhasebe -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/10 dark:to-cyan-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -151,7 +174,7 @@
                 </div>
 
                 <!-- Stok Yönetimi -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/10 dark:to-blue-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -173,7 +196,7 @@
                 </div>
 
                 <!-- Raporlar -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-pink-300 dark:hover:border-pink-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-pink-300 dark:hover:border-pink-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/10 dark:to-rose-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -195,7 +218,7 @@
                 </div>
 
                 <!-- Bildirimler -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-yellow-300 dark:hover:border-yellow-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-yellow-300 dark:hover:border-yellow-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/10 dark:to-amber-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -217,7 +240,7 @@
                 </div>
 
                 <!-- KVKK Yönetimi -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/10 dark:to-blue-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -239,7 +262,7 @@
                 </div>
 
                 <!-- Sistem Yönetimi -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-gray-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/10 dark:to-slate-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -261,7 +284,7 @@
                 </div>
 
                 <!-- AI Asistanı -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/10 dark:to-green-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -283,7 +306,7 @@
                 </div>
 
                 <!-- Profil Yönetimi -->
-                <div class="group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div class="help-card group relative bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-600 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="absolute inset-0 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/10 dark:to-purple-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="relative z-10">
                         <div class="flex items-center mb-6">
@@ -362,4 +385,43 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('help-search');
+            const helpCards = document.querySelectorAll('.help-card');
+            const cardsContainer = document.getElementById('help-cards');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                helpCards.forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    const isVisible = text.includes(searchTerm);
+                    card.style.display = isVisible ? '' : 'none';
+                    if (isVisible) visibleCount++;
+                });
+
+                // Show/hide "no results" message
+                let noResultsMsg = document.getElementById('no-results');
+                if (!noResultsMsg) {
+                    noResultsMsg = document.createElement('div');
+                    noResultsMsg.id = 'no-results';
+                    noResultsMsg.className = 'text-center py-12';
+                    noResultsMsg.innerHTML = `
+                        <div class="text-slate-500 dark:text-slate-400">
+                            <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">Arama sonucu bulunamadı</h3>
+                            <p class="text-sm">Farklı anahtar kelimelerle tekrar deneyin.</p>
+                        </div>
+                    `;
+                    cardsContainer.appendChild(noResultsMsg);
+                }
+                noResultsMsg.style.display = visibleCount === 0 && searchTerm !== '' ? 'block' : 'none';
+            });
+        });
+    </script>
 </x-app-layout>

@@ -84,14 +84,14 @@
                         <h4 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Acil Durum ve Diğer Bilgiler</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="emergency_contact" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Acil Durum Kişisi</label>
-                                <input id="emergency_contact" name="emergency_contact" type="text" value="{{ old('emergency_contact', $patient->emergency_contact) }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                                <x-input-error :messages="$errors->get('emergency_contact')" class="mt-2" />
+                                <label for="emergency_contact_person" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Acil Durum Kişisi</label>
+                                <input id="emergency_contact_person" name="emergency_contact_person" type="text" value="{{ old('emergency_contact_person', $patient->emergency_contact_person) }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                <x-input-error :messages="$errors->get('emergency_contact_person')" class="mt-2" />
                             </div>
                             <div>
-                                <label for="emergency_phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Acil Durum Telefonu</label>
-                                <input id="emergency_phone" name="emergency_phone" type="text" value="{{ old('emergency_phone', $patient->emergency_phone) }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                                <x-input-error :messages="$errors->get('emergency_phone')" class="mt-2" />
+                                <label for="emergency_contact_phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Acil Durum Telefonu</label>
+                                <input id="emergency_contact_phone" name="emergency_contact_phone" type="text" value="{{ old('emergency_contact_phone', $patient->emergency_contact_phone) }}" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                <x-input-error :messages="$errors->get('emergency_contact_phone')" class="mt-2" />
                             </div>
                             <div>
                                 <label for="tax_office" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Vergi Dairesi</label>
@@ -140,18 +140,20 @@
                         <a href="{{ route('patients.show', $patient) }}" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
                             İptal
                         </a>
-                        <form method="POST" action="{{ route('patients.destroy', $patient) }}" onsubmit="return confirm('Bu hastayı silmek istediğinizden emin misiniz?');" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
-                                Sil
-                            </button>
-                        </form>
                         <button type="submit" :disabled="!hasChanges" :class="hasChanges ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-400 cursor-not-allowed'" class="px-6 py-2 text-white font-medium rounded-lg transition-colors">
                             Kaydet
                         </button>
                     </div>
                 </form>
+                <div class="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
+                    <form method="POST" action="{{ route('patients.destroy', $patient) }}" onsubmit="return confirm('Bu hastayı silmek istediğinizden emin misiniz?');" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
+                            Sil
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

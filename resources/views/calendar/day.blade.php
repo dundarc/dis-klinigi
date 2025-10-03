@@ -335,7 +335,7 @@
 
                                                 <a href="{{ route('calendar.show', $appointment) }}"
                                                    class="block p-4 rounded-lg border transition-all hover:shadow-md hover:scale-[1.02] {{ $statusColor }}"
-                                                   title="{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }} - {{ optional($appointment->treatment)->name ?? 'N/A' }}">
+                                                   title="{{ $appointment->patient ? $appointment->patient->first_name . ' ' . $appointment->patient->last_name : 'Hasta bilgisi yok' }} - {{ optional($appointment->treatment)->name ?? 'N/A' }}">
 
                                                     <div class="flex items-start justify-between mb-3">
                                                         <div class="flex items-center gap-3">
@@ -360,7 +360,7 @@
 
                                                     <div class="space-y-1">
                                                         <div class="text-sm font-medium text-slate-800 dark:text-slate-200">
-                                                            {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}
+                                                            {{ $appointment->patient ? $appointment->patient->first_name . ' ' . $appointment->patient->last_name : 'Hasta bilgisi yok' }}
                                                         </div>
                                                         <div class="text-xs text-slate-600 dark:text-slate-400">
                                                             {{ optional($appointment->treatment)->name ?? 'Tedavi belirtilmemiş' }}

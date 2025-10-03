@@ -89,7 +89,17 @@
                                                 <div class="ml-4 flex-grow">
                                                     <div class="flex items-center justify-between">
                                                         <div>
-                                                            <div class="font-medium text-slate-900 dark:text-slate-100">{{ $treatment->display_treatment_name }}</div>
+                                                            <div class="flex items-center gap-2 mb-1">
+                                                                <div class="font-medium text-slate-900 dark:text-slate-100">{{ $treatment->display_treatment_name }}</div>
+                                                                @if($treatment->treatmentPlanItem && $treatment->treatmentPlanItem->treatmentPlan)
+                                                                    <span class="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-900/30 px-2 py-1 text-xs font-medium text-purple-800 dark:text-purple-200">
+                                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                        </svg>
+                                                                        Tedavi Planı #{{ $treatment->treatmentPlanItem->treatmentPlan->id }}
+                                                                    </span>
+                                                                @endif
+                                                            </div>
                                                             <div class="text-sm text-slate-600 dark:text-slate-400">
                                                                 {{ $treatment->performed_at->format('d.m.Y H:i') }} • Dr. {{ $treatment->dentist->name }}
                                                             </div>

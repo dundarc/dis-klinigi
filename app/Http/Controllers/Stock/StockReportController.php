@@ -446,12 +446,45 @@ class StockReportController extends Controller
             ->whereBetween('invoice_date', [$startDate, $endDate])
             ->get();
 
+        // Calculate totals
+        $stockTotal = $stockExpenses->sum('total_amount');
+        $serviceTotal = $serviceExpenses->sum('amount');
+        $totalAmount = $stockTotal + $serviceTotal;
+
+        // Category breakdown for stock expenses
+        $stockCategoryBreakdown = $stockExpenses->groupBy('category.name')->map(function ($group) {
+            return [
+                'category' => $group->first()->category?->name ?? 'Kategori Yok',
+                'total' => $group->sum('total_amount'),
+                'count' => $group->count(),
+                'type' => 'stock'
+            ];
+        });
+
+        // Category breakdown for service expenses
+        $serviceCategoryBreakdown = $serviceExpenses->groupBy('service_type')->map(function ($group) {
+            return [
+                'category' => $group->first()->service_type ?? 'Hizmet',
+                'total' => $group->sum('amount'),
+                'count' => $group->count(),
+                'type' => 'service'
+            ];
+        });
+
+        $categoryBreakdown = $stockCategoryBreakdown->concat($serviceCategoryBreakdown);
+
         $pdf = Pdf::loadView('reports.stock.monthly-expenses-pdf', [
             'stockExpenses' => $stockExpenses,
             'serviceExpenses' => $serviceExpenses,
+            'stockTotal' => $stockTotal,
+            'serviceTotal' => $serviceTotal,
+            'totalAmount' => $totalAmount,
+            'categoryBreakdown' => $categoryBreakdown,
             'period' => [
-                'start' => $startDate->format('d.m.Y'),
-                'end' => $endDate->format('d.m.Y'),
+                'start' => $startDate->toDateString(),
+                'end' => $endDate->toDateString(),
+                'start_formatted' => $startDate->format('d.m.Y'),
+                'end_formatted' => $endDate->format('d.m.Y'),
             ],
             'generated_at' => now()->format('d.m.Y H:i'),
         ]);
@@ -480,8 +513,10 @@ class StockReportController extends Controller
             'stockExpenses' => $stockExpenses,
             'serviceExpenses' => $serviceExpenses,
             'period' => [
-                'start' => $startDate->format('d.m.Y'),
-                'end' => $endDate->format('d.m.Y'),
+                'start' => $startDate->toDateString(),
+                'end' => $endDate->toDateString(),
+                'start_formatted' => $startDate->format('d.m.Y'),
+                'end_formatted' => $endDate->format('d.m.Y'),
             ],
             'generated_at' => now()->format('d.m.Y H:i'),
         ]);

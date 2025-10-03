@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AppointmentStatus;
+use App\Enums\TreatmentPlanItemAppointmentAction;
+use App\Enums\TreatmentPlanItemStatus;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\TreatmentPlan;
 use App\Models\TreatmentPlanItem;
+use App\Models\TreatmentPlanItemAppointment;
 use App\Models\Stock\StockItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -310,15 +313,15 @@ class QuickActionsController extends Controller
                         TreatmentPlanItemAppointment::create([
                             'treatment_plan_item_id' => $item->id,
                             'appointment_id' => $appointment->id,
-                            'action' => 'linked',
+                            'action' => TreatmentPlanItemAppointmentAction::PLANNED,
                             'notes' => 'Treatment item linked to appointment',
                             'user_id' => auth()->id()
                         ]);
 
                         // Update item status if appointment is in progress or completed
-                        if ($appointment->status->value === 'in_service') {
+                        if ($appointment->status === AppointmentStatus::IN_SERVICE) {
                             $item->changeStatus(TreatmentPlanItemStatus::IN_PROGRESS, auth()->user(), 'Linked to in-service appointment');
-                        } elseif ($appointment->status->value === 'completed') {
+                        } elseif ($appointment->status === AppointmentStatus::COMPLETED) {
                             $item->changeStatus(TreatmentPlanItemStatus::DONE, auth()->user(), 'Linked to completed appointment');
                         }
                     }

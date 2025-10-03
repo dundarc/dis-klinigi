@@ -88,7 +88,7 @@
 <!-- Page 1 -->
 <div class="pdf-header">
     <h1>KVKK AYDINLATMA METNİ VE AÇIK RIZA BEYANI</h1>
-    <p><strong>Klinik Adı:</strong> [KLİNİK ADI]</p>
+    <p><strong>Klinik Adı:</strong> {{ $settings['clinic_name'] ?? 'KLİNİK ADI' }}</p>
     <p><strong>Hasta:</strong> {{ $consent->patient->first_name }} {{ $consent->patient->last_name }}</p>
     <p><strong>TC Kimlik:</strong> {{ $consent->patient->national_id }}</p>
     <p><strong>Onam Tarihi:</strong> {{ $consent->accepted_at?->format('d.m.Y H:i') ?: 'Beklemede' }}</p>
@@ -98,7 +98,7 @@
 
 <div class="consent-content">
     <h2>I. Veri Sorumlusu ve Temsilci</h2>
-    <p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verileriniz [KLİNİK ADI] tarafından veri sorumlusu sıfatıyla işlenmektedir.</p>
+    <p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, kişisel verileriniz {{ $settings['clinic_name'] ?? 'KLİNİK ADI' }} tarafından veri sorumlusu sıfatıyla işlenmektedir.</p>
 
     <h2>II. İşlenen Kişisel Veri Kategorileri</h2>
     <p>Kişisel verileriniz, sağlık hizmetlerinin sunulması kapsamında;</p>
@@ -162,7 +162,7 @@
         </ul>
         <p>haklarına sahipsiniz.</p>
 
-        <p>Başvurularınızı, kimliğinizi ispat edici belgeler ile birlikte kliniğimize yazılı olarak veya [KLİNİK E-POSTA ADRESİ] üzerinden iletebilirsiniz.</p>
+        <p>Başvurularınızı, kimliğinizi ispat edici belgeler ile birlikte kliniğimize yazılı olarak veya {{ $settings['clinic_email'] ?? 'KLİNİK E-POSTA ADRESİ' }} üzerinden iletebilirsiniz.</p>
     </div>
 
     <div class="consent-declaration">

@@ -44,6 +44,6 @@
         </div>
     </form>
 
-    <p style="color:white"><strong>YASAL UYARI: </strong> Eğer yetkili değilseniz giriş yapma denemesinde bulunmayın. Verileriniz izlenmekte ve kaydedilmektedir.</p>
+    <p style="color:red"><strong>YASAL UYARI: </strong> Eğer yetkili değilseniz giriş yapma denemesinde bulunmayın. Verileriniz izlenmekte ve kaydedilmektedir.</p>
 
 </x-guest-layout>

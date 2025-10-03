@@ -358,16 +358,35 @@ class TreatmentPlanService
             ]);
         }
 
-        // Create appointment history entry if applicable
-        if ($item->appointment_id) {
-            \App\Models\TreatmentPlanItemAppointment::create([
-                'treatment_plan_item_id' => $itemId,
-                'appointment_id' => $item->appointment_id,
-                'action' => TreatmentPlanItemAppointmentAction::COMPLETED,
-                'notes' => 'Treatment completed during encounter #' . $encounterId,
-                'user_id' => $user?->id,
-            ]);
+        // Create or assign appointment if item doesn't have one
+        if (!$item->appointment_id) {
+            if ($encounter->appointment_id) {
+                // Use the encounter's appointment
+                $item->update(['appointment_id' => $encounter->appointment_id]);
+                $item->appointment_id = $encounter->appointment_id; // Update the object
+            } else {
+                // Create a new appointment
+                $appointment = Appointment::create([
+                    'patient_id' => $item->treatmentPlan->patient_id,
+                    'dentist_id' => $encounter->dentist_id,
+                    'start_at' => $encounter->started_at ?? $encounter->arrived_at ?? now(),
+                    'end_at' => ($encounter->started_at ?? $encounter->arrived_at ?? now())->addMinutes(30),
+                    'status' => AppointmentStatus::COMPLETED,
+                    'notes' => 'Otomatik olarak tedavi tamamlanmasından oluşturuldu.',
+                ]);
+                $item->update(['appointment_id' => $appointment->id]);
+                $item->appointment_id = $appointment->id; // Update the object
+            }
         }
+
+        // Create appointment history entry
+        \App\Models\TreatmentPlanItemAppointment::create([
+            'treatment_plan_item_id' => $itemId,
+            'appointment_id' => $item->appointment_id,
+            'action' => TreatmentPlanItemAppointmentAction::COMPLETED,
+            'notes' => 'Treatment completed during encounter #' . $encounterId,
+            'user_id' => $user?->id,
+        ]);
 
         return true;
     }
@@ -764,25 +783,43 @@ class TreatmentPlanService
 
         $totalEstimated = $items->sum('estimated_price');
 
-        // Calculate actual invoiced amounts from pivot table
+        // Calculate actual invoiced and paid amounts
         $totalActual = 0;
+        $totalPaid = 0;
 
+        // First, handle Method 1: Invoices through PatientTreatment records (existing method)
         foreach ($items as $item) {
-            // Check if item has been invoiced via pivot
-            $invoicedPivot = $item->encounters()
-                ->wherePivotNotNull('invoiced_at')
-                ->first();
+            // Find all patient treatments for this treatment plan item
+            $patientTreatments = \App\Models\PatientTreatment::where('treatment_plan_item_id', $item->id)->get();
 
-            if ($invoicedPivot) {
-                $totalActual += $invoicedPivot->pivot->price;
+            // Find all invoice items for these patient treatments
+            $invoiceItemsFromTreatments = \App\Models\InvoiceItem::whereIn('patient_treatment_id', $patientTreatments->pluck('id'))
+                ->whereHas('invoice', function ($query) {
+                    $query->whereNull('deleted_at');
+                })
+                ->with('invoice.payments')
+                ->get();
+
+            foreach ($invoiceItemsFromTreatments as $invoiceItem) {
+                $totalActual += $invoiceItem->line_total;
+
+                // Calculate paid amount for this invoice item
+                $invoice = $invoiceItem->invoice;
+                if ($invoice) {
+                    $totalPaidForInvoice = $invoice->payments->sum('amount');
+                    $itemRatio = $invoiceItem->line_total / $invoice->grand_total;
+                    $totalPaid += $totalPaidForInvoice * $itemRatio;
+                }
             }
         }
+
 
         $activeItems = $items->whereNotIn('status', [\App\Enums\TreatmentPlanItemStatus::CANCELLED]);
 
         return [
             'total_estimated' => $totalEstimated,
             'total_actual' => $totalActual,
+            'total_paid' => min($totalPaid, $totalActual), // Don't exceed total invoiced amount
             'remaining' => $activeItems->sum('estimated_price') - $totalActual,
             'completion_percentage' => $totalEstimated > 0 ? round(($totalActual / $totalEstimated) * 100, 2) : 0,
         ];

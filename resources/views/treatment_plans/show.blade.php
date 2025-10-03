@@ -223,6 +223,7 @@
                                     <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tedavi</th>
                                     <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Diş No</th>
                                     <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durum</th>
+                                    <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fatura Durumu</th>
                                     <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Randevu Bilgileri</th>
                                     <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sorumlu Hekim</th>
                                     <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ücret</th>
@@ -259,6 +260,34 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4">
+                                            @if($item->invoice_status === 'deleted')
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-800 dark:text-red-200">
+                                                        Fatura Silindi
+                                                    </span>
+                                                    @if($item->canBeReInvoiced())
+                                                        <button onclick="alert('Yeniden faturalandırma özelliği yakında eklenecek')" class="inline-flex items-center px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors">
+                                                            Yeniden Faturalandır
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                                @if($item->deleted_invoice_info)
+                                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                                        {{ $item->deleted_invoice_info['invoice_no'] ?? 'Bilinmiyor' }}
+                                                        ({{ \Carbon\Carbon::parse($item->deleted_invoice_info['deleted_at'])->format('d.m.Y') }})
+                                                    </div>
+                                                @endif
+                                            @elseif($item->invoice_status === 'invoiced')
+                                                <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">
+                                                    Faturalandırıldı
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-200">
+                                                    Faturalandırılmamış
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4">
                                             @if($item->appointment)
                                                 <div class="text-sm">
                                                     <div class="font-medium text-slate-900 dark:text-slate-100">{{ $item->appointment->start_at->format('d.m.Y H:i') }}</div>
@@ -283,7 +312,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-12 text-center">
+                                        <td colspan="7" class="px-6 py-12 text-center">
                                             <svg class="mx-auto h-16 w-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                             </svg>
@@ -296,26 +325,46 @@
                         </table>
                     </div>
 
-                    @if($treatmentPlan->items->where('status', \App\Enums\TreatmentPlanItemStatus::DONE)->count() > 0)
-                    <div class="mt-6 flex justify-between items-center">
-                        <div class="text-sm text-slate-600 dark:text-slate-400">
-                        Faturalanacak kalemleri seçin (seçili değilse tüm tamamlanan kalemler faturalanır)
+                    {{-- Invoice Status Information --}}
+                    @php
+                        $completedItems = $treatmentPlan->items->where('status', \App\Enums\TreatmentPlanItemStatus::DONE);
+                        $invoicedItems = 0;
+                        $uninvoicedItems = 0;
+
+                        foreach ($completedItems as $item) {
+                            $hasInvoice = \App\Models\PatientTreatment::where('treatment_plan_item_id', $item->id)->exists() ||
+                                        \App\Models\InvoiceItem::where('patient_treatment_id', null)
+                                            ->where('description', 'like', '%' . ($item->treatment ? $item->treatment->name : '') . '%')
+                                            ->whereHas('invoice', function ($query) use ($treatmentPlan) {
+                                                $query->where('patient_id', $treatmentPlan->patient_id)
+                                                      ->whereNull('deleted_at');
+                                            })->exists();
+
+                            if ($hasInvoice) {
+                                $invoicedItems++;
+                            } else {
+                                $uninvoicedItems++;
+                            }
+                        }
+                    @endphp
+
+                    @if($completedItems->count() > 0)
+                    <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100">Faturalandırma Durumu</h4>
+                                <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                                    Tamamlanan işlemlerden {{ $invoicedItems }} tanesi faturalandırılmış,
+                                    {{ $uninvoicedItems }} tanesi faturalandırılmamış.
+                                </p>
+                            </div>
+                            @if($uninvoicedItems > 0)
+                            <div class="text-right">
+                                <p class="text-xs text-blue-600 dark:text-blue-400">Muhasebe modülünden</p>
+                                <p class="text-xs text-blue-600 dark:text-blue-400">fatura oluşturabilirsiniz</p>
+                            </div>
+                            @endif
                         </div>
-                        <form method="POST" action="{{ route('treatment-plans.generateInvoice', $treatmentPlan) }}" class="flex gap-2">
-                            @csrf
-                            @foreach($treatmentPlan->items->where('status', \App\Enums\TreatmentPlanItemStatus::DONE) as $item)
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="item_ids[]" value="{{ $item->id }}" class="rounded border-slate-300 dark:border-slate-600 text-purple-600 shadow-sm focus:border-purple-500 focus:ring-purple-500">
-                                    <span class="ml-1 text-xs text-slate-600 dark:text-slate-400">{{ $item->treatment->name }}</span>
-                                </label>
-                            @endforeach
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors text-sm">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                </svg>
-                                Fatura Oluştur
-                            </button>
-                        </form>
                     </div>
                     @endif
                 </div>

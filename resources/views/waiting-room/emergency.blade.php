@@ -55,7 +55,11 @@
                                     <div class="flex-1">
                                         <div class="flex items-center gap-3 mb-2">
                                             <h4 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                                                {{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}
+                                                @if($encounter->patient)
+                                                    {{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}
+                                                @else
+                                                    Hasta Bilgisi Yok
+                                                @endif
                                             </h4>
 
                                             <!-- Triage Badge -->
@@ -125,6 +129,21 @@
                         </div>
                     @endforelse
                 </div>
+
+                <!-- Pagination -->
+                @if($emergencyEncounters->hasPages())
+                    <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div class="text-sm text-slate-600 dark:text-slate-400">
+                                Siz hastaların {{ $emergencyEncounters->firstItem() }}-{{ $emergencyEncounters->lastItem() }} arasını görüyorsunuz
+                                (Toplam: {{ $emergencyEncounters->total() }} hasta)
+                            </div>
+                            <div class="flex justify-center">
+                                {{ $emergencyEncounters->links() }}
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

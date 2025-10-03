@@ -26,12 +26,25 @@
                 <div class="space-y-16">
                     <!-- Giriş -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">ℹ️</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">ℹ️</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Giriş</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Giriş</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-intro"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
+                        <div id="section-intro" class="help-content">
                         <div class="prose prose-slate dark:prose-invert max-w-none">
                             <p class="text-slate-700 dark:text-slate-300 mb-4 text-lg leading-relaxed">
                                 Ana sayfa (Dashboard), kliniğinizin günlük faaliyetlerini özetleyen merkezi kontrol panelidir.
@@ -50,15 +63,28 @@
 
                     <!-- Üst Kartlar -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">📊</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">📊</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Üst Kartlar Bölümü</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Üst Kartlar Bölümü</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-top-cards"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
-                            Sayfanın üst kısmında bulunan kartlar, günün en önemli özet bilgilerini gösterir.
-                        </p>
+                        <div id="section-top-cards" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Sayfanın üst kısmında bulunan kartlar, günün en önemli özet bilgilerini gösterir.
+                            </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <!-- Bugünkü Randevular -->
@@ -183,7 +209,9 @@
                                 </ul>
                             </div>
                         </div>
-                    </section>
+                    </div>
+                    </div>
+                </section>
 
                     <!-- Son İşlemler -->
                     <section>
@@ -379,4 +407,29 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('.help-toggle');
+
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const content = this.closest('section').querySelector('.help-content');
+                    const icon = this.querySelector('svg');
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+
+                    // Toggle content visibility
+                    if (isExpanded) {
+                        content.style.display = 'none';
+                        this.setAttribute('aria-expanded', 'false');
+                        icon.style.transform = 'rotate(180deg)';
+                    } else {
+                        content.style.display = 'block';
+                        this.setAttribute('aria-expanded', 'true');
+                        icon.style.transform = 'rotate(0deg)';
+                    }
+                });
+            });
+        });
+    </script>
 </x-app-layout>

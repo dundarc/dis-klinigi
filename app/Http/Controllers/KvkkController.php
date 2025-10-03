@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KvkkAuditLog;
 use App\Models\Patient;
+use App\Models\Setting;
 use App\Services\ConsentService;
 use App\Services\ExportBuilder;
 use App\Services\KvkkDeletionService;
@@ -21,7 +22,7 @@ class KvkkController extends Controller
      */
     public function index(Request $request): View
     {
-        $this->authorize('viewAny', Patient::class);
+        $this->authorize('accessKvkkFeatures');
 
         $query = $request->get('q', '');
         $patients = collect();
@@ -45,22 +46,26 @@ class KvkkController extends Controller
     }
 
     /**
-     * Live search for patients (AJAX endpoint)
+     * Live search for patients (AJAX endpoint) - returns all patients if no query
      */
     public function search(Request $request)
     {
-        $this->authorize('viewAny', Patient::class);
+        $this->authorize('accessKvkkFeatures');
 
         $query = $request->get('q', '');
         $patients = collect();
 
         if (strlen($query) >= 2) {
+            // Search with query
             $patients = Patient::where(function ($q) use ($query) {
                 $q->where('first_name', 'like', "%{$query}%")
                   ->orWhere('last_name', 'like', "%{$query}%")
                   ->orWhere('national_id', 'like', "%{$query}%")
                   ->orWhere('phone_primary', 'like', "%{$query}%");
-            })->with('consents')->take(20)->get();
+            })->with('consents')->get();
+        } elseif (strlen($query) === 0) {
+            // Return all patients when no query (for pagination)
+            $patients = Patient::with('consents')->get();
         }
 
         // Add consent status to each patient
@@ -323,30 +328,47 @@ class KvkkController extends Controller
     /**
      * Hard delete işlemi (sadece admin).
      */
-    public function hardDelete(Patient $patient): RedirectResponse
+    public function hardDelete($patientId): RedirectResponse
     {
-        $this->authorize('hardDelete', $patient);
-
         try {
-            KvkkDeletionService::hardDelete($patient, auth()->user());
+            $patient = Patient::withTrashed()->findOrFail($patientId);
+            $this->authorize('hardDelete', $patient);
+
+            \Log::info('Hard delete initiated', [
+                'patient_id' => $patientId,
+                'patient_found' => $patient ? 'yes' : 'no',
+                'user_id' => auth()->id()
+            ]);
+
+            $result = KvkkDeletionService::hardDelete($patient, auth()->user());
+
+            \Log::info('Hard delete completed', [
+                'patient_id' => $patientId,
+                'result' => $result
+            ]);
 
             return redirect()->route('kvkk.trash.index')
                 ->with('success', 'Hasta verileri kalıcı olarak silinmiştir.');
         } catch (\Exception $e) {
+            \Log::error('Hard delete failed', [
+                'patient_id' => $patientId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return redirect()->back()
-                ->with('error', 'İşlem sırasında bir hata oluştu.');
+                ->with('error', 'İşlem sırasında bir hata oluştu: ' . $e->getMessage());
         }
     }
 
     /**
-     * Restore index sayfası.
+     * Restore index sayfası - tüm soft delete edilmiş hastaları göster.
      */
     public function restoreIndex(): View
     {
         $this->authorize('restore', Patient::first() ?? new Patient());
 
         $deletedPatients = Patient::onlyTrashed()
-            ->where('deleted_via', 'kvkk')
             ->with(['consents', 'kvkkAuditLogs' => fn($q) => $q->latest()])
             ->paginate(20);
 
@@ -354,14 +376,23 @@ class KvkkController extends Controller
     }
 
     /**
-     * Restore işlemi (sadece admin).
+     * Restore işlemi (sadece admin) - tüm soft delete edilmiş hastalar için.
      */
-    public function restore(Patient $patient): RedirectResponse
+    public function restore($patientId): RedirectResponse
     {
+        $patient = Patient::withTrashed()->findOrFail($patientId);
         $this->authorize('restore', $patient);
 
         try {
-            KvkkDeletionService::restore($patient, auth()->user());
+            // Check if patient was deleted via KVKK process
+            if ($patient->deleted_via === 'kvkk') {
+                // Use KVKK service for proper restoration with related records
+                KvkkDeletionService::restore($patient, auth()->user());
+            } else {
+                // Simple restore for patients deleted through other means
+                $patient->restore();
+                $patient->update(['deleted_via' => null]);
+            }
 
             return redirect()->route('kvkk.trash.index')
                 ->with('success', 'Hasta verileri geri yüklenmiştir.');
@@ -464,7 +495,13 @@ class KvkkController extends Controller
      */
     private function generateTreatmentPlansPdf(Patient $patient, bool $masking): string
     {
-        $treatmentPlans = $patient->treatmentPlans;
+        $treatmentPlans = $patient->treatmentPlans()
+            ->with([
+                'items.treatment',
+                'items.appointment',
+                'dentist'
+            ])
+            ->get();
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('kvkk.export-treatment-plans', compact('patient', 'treatmentPlans', 'masking'));
         $pdf->setPaper('a4', 'portrait');
         return $pdf->output();
@@ -632,7 +669,9 @@ class KvkkController extends Controller
             abort(404, 'Consent not found');
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('kvkk.consent-pdf', compact('consent'));
+        $settings = Setting::all()->pluck('value', 'key')->all();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('kvkk.consent-pdf', compact('consent', 'settings'));
         $filename = 'kvkk-consent-' . $patient->id . '-' . $consent->id . '.pdf';
 
         return $pdf->download($filename);

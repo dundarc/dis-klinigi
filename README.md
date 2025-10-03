@@ -1,11 +1,11 @@
-# 🦷 Dental Clinic Management System
+﻿# ğŸ¦· Dental Clinic Management System
 
 This project is a **Dental Clinic Management System** built with **Laravel 11, PHP 8.2, MySQL 8, TailwindCSS, Alpine.js, and Vite**.  
 It provides modules for patient management, appointments, treatment plans, invoices, stock/medical supplies, e-archive invoice integration, and role-based access control.
 
 ---
 
-## 🚫 License & Usage Restrictions
+## ğŸš« License & Usage Restrictions
 
 This software is **NOT licensed for commercial use**.  
 - You may **not** use this codebase to provide services, sell products, or deploy for paying customers.  
@@ -18,7 +18,7 @@ All rights are reserved by the original author. Unauthorized use for commercial 
 
 ---
 
-## ⚙️ Features (Educational Only)
+## âš™ï¸ Features (Educational Only)
 
 - Patient management with appointments and encounters
 - Treatment plan creation and tracking
@@ -28,10 +28,16 @@ All rights are reserved by the original author. Unauthorized use for commercial 
 - PDF export for treatment and invoice details
 - Role-based access (Admin, Dentist, Assistant, Receptionist)
 - **Database-based email system** with templates, logging, and bounce handling
+- KVKK privacy compliance suite with digital consent creation, email verification, cancellation logs, data exports, and deletion workflows
+- Waiting room operations with real-time queue, emergency triage, encounter documentation, and prescription handling
+- Quick actions workspace for rapid appointment, patient, treatment plan, stock, and finance tasks plus global search shortcuts
+- Internal notification center for staff messaging with read/unread/completed tracking and delivery history
+- AI assistant console with configurable LLM API settings to support clinic staff
+- Smart inventory procurement with invoice OCR ingestion, supplier account reconciliation, installment schedules, and stock item suggestions
 
 ---
 
-## 📚 Requirements
+## ğŸ“š Requirements
 
 - PHP 8.2+  
 - Laravel 11  
@@ -39,22 +45,22 @@ All rights are reserved by the original author. Unauthorized use for commercial 
 - Node.js 18+ (for Vite & asset compilation)  
 
 ---
-⚠️ Disclaimer
+âš ï¸ Disclaimer
 
 This system is provided as-is without warranty of any kind.
 The author assumes no liability for damages or misuse.
 
-🚫 Do not use this system in production or for real patient data.
-🚫 Do not use commercially.
-🚫 Do not use as a base for further software development.
+ğŸš« Do not use this system in production or for real patient data.
+ğŸš« Do not use commercially.
+ğŸš« Do not use as a base for further software development.
 
 
-👤 Author
+ğŸ‘¤ Author
 
-Dündar Can ÖZTEKİN
+DÃ¼ndar Can Ã–ZTEKÄ°N
 All rights reserved.
 
-## 🛠️ Installation (For Learning Only)
+## ğŸ› ï¸ Installation (For Learning Only)
 
 ```bash
 # Clone repository
@@ -86,7 +92,7 @@ php artisan queue:work
 
 ---
 
-## 📧 Email System
+## ğŸ“§ Email System
 
 This system includes a comprehensive database-based email management system with the following features:
 
@@ -117,7 +123,7 @@ EmailFacade::sendTemplate('appointment_reminder', [
     'data' => [
         'patient_name' => 'John Doe',
         'appointment_date' => '2025-01-15 14:00',
-        'clinic_name' => 'Diş Kliniği',
+        'clinic_name' => 'DiÅŸ KliniÄŸi',
     ],
     'attachments' => [storage_path('app/invoice.pdf')],
 ]);
@@ -152,3 +158,4 @@ Configure webhook endpoint at `/system/email/webhooks/bounce` in your email prov
 
 ### Access
 Email management is available at `/system/email` with admin-only access.
+

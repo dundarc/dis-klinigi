@@ -101,6 +101,17 @@
                         </x-nav-link>
                     @endcan
 
+                    @can('accessKvkkFeatures')
+                        <x-nav-link :href="route('kvkk.index')" :active="request()->routeIs('kvkk.*')" class="group">
+                            <span class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                                <span>{{ __('KVKK') }}</span>
+                            </span>
+                        </x-nav-link>
+                    @endcan
+
                     @can('accessAccountingFeatures')
                         <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')" class="group">
                             <span class="flex items-center space-x-2">
@@ -275,12 +286,21 @@
                             </x-dropdown-link>
                         @endif
 
+                        <x-dropdown-link :href="route('help')">
+                            <span class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>{{ __('Yardım') }}</span>
+                            </span>
+                        </x-dropdown-link>
+
                         <x-dropdown-link :href="route('profile.edit')">
                             <span class="flex items-center space-x-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
-                                <span>{{ __('Profile') }}</span>
+                                <span>{{ __('Profil') }}</span>
                             </span>
                         </x-dropdown-link>
 
@@ -294,7 +314,7 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                     </svg>
-                                    <span>{{ __('Log Out') }}</span>
+                                    <span>{{ __('Çıkış Yap') }}</span>
                                 </span>
                             </x-dropdown-link>
                         </form>
@@ -332,6 +352,11 @@
             @can('viewAny', App\Models\Patient::class)
                 <x-responsive-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
                     {{ __('Hastalar') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('accessKvkkFeatures')
+                <x-responsive-nav-link :href="route('kvkk.index')" :active="request()->routeIs('kvkk.*')">
+                    {{ __('KVKK') }}
                 </x-responsive-nav-link>
             @endcan
             @can('accessReceptionistFeatures')

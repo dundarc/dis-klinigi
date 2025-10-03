@@ -77,10 +77,9 @@ class Invoice extends Model
     public function getPatientPayableAmountAttribute()
     {
         $totalPaid = $this->payments()->sum('amount');
-        $insuranceCoverage = $this->insurance_coverage_amount ?? 0;
         $discount = $this->discount_total ?? 0;
 
-        return max(0, $this->grand_total - $insuranceCoverage - $discount - $totalPaid);
+        return max(0, $this->grand_total - $discount - $totalPaid);
     }
 
     // Scopes

@@ -261,7 +261,7 @@
                                                                         <span class="ml-2 px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-xs">#{{ $planItem->tooth_number }}</span>
                                                                     @endif
                                                                     <span class="ml-2 px-2 py-1 bg-blue-200 dark:bg-blue-700 rounded text-xs text-blue-800 dark:text-blue-200">
-                                                                        📅 {{ $planItem->appointment->start_at->format('d.m.Y H:i') ?? 'Tarih Yok' }}
+                                                                        📅 {{ $planItem->appointment?->start_at?->format('d.m.Y H:i') ?? 'Tarih Yok' }}
                                                                     </span>
                                                                     @if($planItem->estimated_price)
                                                                         <span class="ml-2">{{ number_format($planItem->estimated_price, 2, ',', '.') }} ₺</span>
@@ -806,10 +806,10 @@
                             this.hasChanges = true;
                         }, { deep: true });
 
-                        // Otomatik kaydetme - her 10 saniyede bir
-                        setInterval(() => {
-                            this.autoSave();
-                        }, 10000);
+                        // Otomatik kaydetme devre dışı - kullanıcı manuel kaydetme yapsın
+                        // setInterval(() => {
+                        //     this.autoSave();
+                        // }, 10000);
 
                         console.log('Ziyaret işlemi yöneticisi başlatıldı');
                     },
@@ -828,8 +828,7 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                // Sayfayı yenile
-                                window.location.reload();
+                                alert(`${treatmentName} başarıyla tamamlandı ve uygulanacak tedavilere eklendi.`);
                             } else {
                                 alert('Bir hata oluştu: ' + (data.message || 'Bilinmeyen hata'));
                             }
@@ -854,8 +853,15 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                // Sayfayı yenile
-                                window.location.reload();
+                                // Tedaviyi uygulanacaklar listesine ekle
+                                this.appliedTreatments.push({
+                                    treatment_plan_item_id: planItemId,
+                                    treatment_name: treatmentName,
+                                    tooth_number: toothNumber,
+                                    unit_price: estimatedPrice,
+                                    is_scheduled: true
+                                });
+                                alert(`${treatmentName} başarıyla tamamlandı ve uygulanacak tedavilere eklendi.`);
                             } else {
                                 alert('Bir hata oluştu: ' + (data.message || 'Bilinmeyen hata'));
                             }
@@ -1077,66 +1083,66 @@
                         });
                     },
 
-                    // Otomatik kaydetme
-                    autoSave() {
-                        if (!this.hasChanges) return;
-
-                        // Tedavileri kaydet
-                        if (this.appliedTreatments.length > 0) {
-                            const formData = new FormData();
-                            this.appliedTreatments.forEach((treatment, index) => {
-                                Object.keys(treatment).forEach(key => {
-                                    if (treatment[key] !== null && treatment[key] !== undefined) {
-                                        formData.append(`treatments[${index}][${key}]`, treatment[key]);
-                                    }
-                                });
-                            });
-
-                            fetch(`/api/v1/encounters/${this.encounterId}/auto-save-treatments`, {
-                                method: 'POST',
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                },
-                                body: formData
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    console.log('Tedaviler otomatik kaydedildi');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Tedavi otomatik kaydetme hatası:', error);
-                            });
-                        }
-
-                        // Reçeteyi kaydet
-                        if (this.prescriptionText.trim()) {
-                            fetch(`/api/v1/encounters/${this.encounterId}/auto-save-prescription`, {
-                                method: 'POST',
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                },
-                                body: JSON.stringify({
-                                    content: this.prescriptionText
-                                })
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    console.log('Reçete otomatik kaydedildi');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Reçete otomatik kaydetme hatası:', error);
-                            });
-                        }
-
-                        this.hasChanges = false;
-                    },
+                    // Otomatik kaydetme devre dışı
+                    // autoSave() {
+                    //     if (!this.hasChanges) return;
+                    //
+                    //     // Tedavileri kaydet
+                    //     if (this.appliedTreatments.length > 0) {
+                    //         const formData = new FormData();
+                    //         this.appliedTreatments.forEach((treatment, index) => {
+                    //             Object.keys(treatment).forEach(key => {
+                    //                 if (treatment[key] !== null && treatment[key] !== undefined) {
+                    //                 formData.append(`treatments[${index}][${key}]`, treatment[key]);
+                    //             }
+                    //         });
+                    //     });
+                    //
+                    //         fetch(`/api/v1/encounters/${this.encounterId}/auto-save-treatments`, {
+                    //             method: 'POST',
+                    //             headers: {
+                    //                 'Accept': 'application/json',
+                    //                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    //             },
+                    //             body: formData
+                    //         })
+                    //         .then(response => response.json())
+                    //         .then(data => {
+                    //             if (data.success) {
+                    //                 console.log('Tedaviler otomatik kaydedildi');
+                    //             }
+                    //         })
+                    //         .catch(error => {
+                    //             console.error('Tedavi otomatik kaydetme hatası:', error);
+                    //         });
+                    //     }
+                    //
+                    //     // Reçeteyi kaydet
+                    //     if (this.prescriptionText.trim()) {
+                    //         fetch(`/api/v1/encounters/${this.encounterId}/auto-save-prescription`, {
+                    //             method: 'POST',
+                    //             headers: {
+                    //                 'Accept': 'application/json',
+                    //                 'Content-Type': 'application/json',
+                    //                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    //             },
+                    //             body: JSON.stringify({
+                    //                 content: this.prescriptionText
+                    //             })
+                    //         })
+                    //         .then(response => response.json())
+                    //         .then(data => {
+                    //             if (data.success) {
+                    //                 console.log('Reçete otomatik kaydedildi');
+                    //             }
+                    //         })
+                    //         .catch(error => {
+                    //             console.error('Reçete otomatik kaydetme hatası:', error);
+                    //         });
+                    //     }
+                    //
+                    //     this.hasChanges = false;
+                    // },
 
 
                 }

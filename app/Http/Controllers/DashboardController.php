@@ -113,8 +113,8 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($appointment) {
                 return [
-                    'patient_name' => $appointment->patient->first_name . ' ' . $appointment->patient->last_name,
-                    'doctor_name' => $appointment->dentist->name,
+                    'patient_name' => $appointment->patient ? ($appointment->patient->first_name . ' ' . $appointment->patient->last_name) : 'Hasta Bilgisi Yok',
+                    'doctor_name' => $appointment->dentist ? $appointment->dentist->name : 'Doktor Bilgisi Yok',
                     'time' => $appointment->start_at->format('d/m/Y H:i'),
                     'status' => $appointment->status->label(),
                     'status_color' => match($appointment->status->value) {
@@ -137,9 +137,9 @@ class DashboardController extends Controller
             ->map(function ($appointment) {
                 return [
                     'id' => $appointment->id,
-                    'patient_name' => $appointment->patient->first_name . ' ' . $appointment->patient->last_name,
-                    'patient_phone' => $appointment->patient->phone_primary ?: $appointment->patient->phone_secondary,
-                    'doctor_name' => $appointment->dentist->name,
+                    'patient_name' => $appointment->patient ? ($appointment->patient->first_name . ' ' . $appointment->patient->last_name) : 'Hasta Bilgisi Yok',
+                    'patient_phone' => $appointment->patient ? ($appointment->patient->phone_primary ?: $appointment->patient->phone_secondary) : 'N/A',
+                    'doctor_name' => $appointment->dentist ? $appointment->dentist->name : 'Doktor Bilgisi Yok',
                     'time' => $appointment->start_at->format('H:i'),
                     'status' => $appointment->status->label(),
                     'status_color' => match($appointment->status->value) {
@@ -177,7 +177,7 @@ class DashboardController extends Controller
                 'type' => 'appointment',
                 'icon' => '📅',
                 'title' => 'Yeni Randevu',
-                'description' => $appointment->patient->first_name . ' ' . $appointment->patient->last_name . ' - ' . $appointment->start_at->format('d/m/Y H:i'),
+                'description' => ($appointment->patient ? ($appointment->patient->first_name . ' ' . $appointment->patient->last_name) : 'Hasta Bilgisi Yok') . ' - ' . $appointment->start_at->format('d/m/Y H:i'),
                 'time' => $appointment->created_at->diffForHumans(),
                 'url' => route('calendar.show', $appointment->id),
                 'color' => 'text-blue-600'
@@ -190,7 +190,7 @@ class DashboardController extends Controller
                 'type' => 'treatment',
                 'icon' => '🦷',
                 'title' => 'Tedavi Tamamlandı',
-                'description' => $treatment->patient->first_name . ' ' . $treatment->patient->last_name . ' - ' . ($treatment->treatment->name ?? 'Tedavi'),
+                'description' => ($treatment->patient ? ($treatment->patient->first_name . ' ' . $treatment->patient->last_name) : 'Hasta Bilgisi Yok') . ' - ' . ($treatment->treatment->name ?? 'Tedavi'),
                 'time' => $treatment->created_at->diffForHumans(),
                 'url' => route('patients.show', $treatment->patient_id),
                 'color' => 'text-purple-600'
@@ -203,7 +203,7 @@ class DashboardController extends Controller
                 'type' => 'invoice',
                 'icon' => '💰',
                 'title' => 'Yeni Fatura',
-                'description' => $invoice->patient->first_name . ' ' . $invoice->patient->last_name . ' - ' . number_format($invoice->grand_total, 2, ',', '.') . ' ₺',
+                'description' => ($invoice->patient ? ($invoice->patient->first_name . ' ' . $invoice->patient->last_name) : 'Hasta Bilgisi Yok') . ' - ' . number_format($invoice->grand_total, 2, ',', '.') . ' ₺',
                 'time' => $invoice->created_at->diffForHumans(),
                 'url' => route('accounting.invoices.show', $invoice->id),
                 'color' => 'text-orange-600'

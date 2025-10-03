@@ -42,25 +42,17 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Admin override - admins can do everything
         Gate::before(function (User $user, string $ability) {
             return $user->isAdmin() ? true : null;
         });
 
+        // Define gates for permissions that need special logic
+        // Most permissions are now handled through UserRole enum
         Gate::define('accessAdminFeatures', fn (User $user) => $user->isAdmin());
-
         Gate::define('accessAccountingFeatures', fn (User $user) => $user->isAdmin() || $user->isAccountant());
-
-        Gate::define('accessReceptionistFeatures', fn (User $user) => $user->isAdmin() || $user->isReceptionist());
-
         Gate::define('accessStockManagement', fn (User $user) => $user->isAdmin() || $user->isAccountant());
-
-        Gate::define('recordStockUsage', fn (User $user) => $user->isAdmin()
-            || $user->isAccountant()
-            || $user->isDentist()
-            || $user->isAssistant());
-
-        Gate::define('viewStockReports', fn (User $user) => $user->isAdmin() || $user->isAccountant());
-
-        Gate::define('sendNotifications', fn (User $user) => $user->isAdmin() || $user->isDentist());
+        Gate::define('accessReceptionistFeatures', fn (User $user) => $user->role?->can('accessReceptionistFeatures') ?? false);
+        Gate::define('accessKvkkFeatures', fn (User $user) => $user->isAdmin() || $user->isReceptionist() || $user->isDentist());
     }
 }

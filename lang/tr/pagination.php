@@ -13,7 +13,17 @@ return [
     |
     */
 
-    'previous' => '&laquo; Previous',
-    'next' => 'Next &raquo;',
+    'previous' => '&laquo; Önceki',
+    'next' => 'Sonraki &raquo;',
+
+    'showing' => ':first ile :last arası :total sonuç gösteriliyor',
+    'showing_single' => '1 sonuç gösteriliyor',
+    'showing_range' => ':first - :last arası :total sonuç gösteriliyor',
+    'showing_all' => ':total sonuç gösteriliyor',
+
+    'empty' => 'Gösterilecek sonuç yok',
+    'of' => '/',
+    'to' => '-',
+    'results' => 'sonuç',
 
 ];

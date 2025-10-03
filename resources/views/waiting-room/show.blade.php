@@ -6,6 +6,14 @@
                 <p class="text-slate-600 dark:text-slate-400 mt-1">{{ $encounter->patient->first_name }} {{ $encounter->patient->last_name }}</p>
             </div>
             <div class="flex gap-2">
+                <a href="{{ route('encounters.pdf', $encounter) }}"
+                   target="_blank"
+                   class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    PDF İndir
+                </a>
                 <a href="{{ route('waiting-room.action', $encounter) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -101,7 +109,8 @@
                                         @endif
                                         @if($treatment->treatmentPlanItem)
                                         <div class="text-xs text-green-600 dark:text-green-400 mt-1">
-                                            Plan: {{ $treatment->treatmentPlanItem->treatmentPlan->title ?? 'Plan Bulunamadı' }}
+
+                                             <a href="{{ route('treatment-plans.show', $treatment->treatmentPlanItem->treatmentPlan->id) }}">Tedavi Planı: {{ $treatment->treatmentPlanItem->treatmentPlan->id ?? 'Plan Bulunamadı' }}</a>
                                         </div>
                                         @endif
                                     </div>
@@ -223,9 +232,19 @@
                         <div class="p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                             <div class="flex items-center justify-between mb-2">
                                 <div class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $prescription->dentist->name }}</div>
-                                <div class="text-sm text-slate-600 dark:text-slate-400">{{ $prescription->created_at->format('d.m.Y H:i') }}</div>
+                                <div class="flex items-center gap-2">
+                                    <div class="text-sm text-slate-600 dark:text-slate-400">{{ $prescription->created_at->format('d.m.Y H:i') }}</div>
+                                    <a href="{{ route('prescriptions.pdf', $prescription) }}"
+                                       target="_blank"
+                                       class="inline-flex items-center px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        PDF
+                                    </a>
+                                </div>
                             </div>
-                            <div class="text-slate-900 dark:text-slate-100">{{ $prescription->text }}</div>
+                            <div class="text-slate-900 dark:text-slate-100 whitespace-pre-line">{{ $prescription->text }}</div>
                         </div>
                         @endforeach
                     </div>

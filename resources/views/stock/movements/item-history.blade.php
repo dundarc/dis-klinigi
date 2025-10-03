@@ -308,13 +308,13 @@
                                             <div class="flex-shrink-0 h-8 w-8">
                                                 <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
                                                     <span class="text-xs font-medium text-gray-700">
-                                                        {{ substr($movement->createdBy->name ?? 'S', 0, 1) }}
+                                                        {{ substr($movement->creator->name ?? 'S', 0, 1) }}
                                                     </span>
                                                 </div>
                                             </div>
                                             <div class="ml-2">
                                                 <div class="text-sm font-medium text-gray-900">
-                                                    {{ $movement->createdBy->name ?? 'Sistem' }}
+                                                    {{ $movement->creator->name ?? 'Sistem' }}
                                                 </div>
                                             </div>
                                         </div>

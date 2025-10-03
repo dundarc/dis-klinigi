@@ -26,33 +26,60 @@
                 <div class="space-y-16">
                     <!-- Giriş -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">ℹ️</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">ℹ️</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Giriş</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Giriş</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-intro"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <div class="prose prose-slate dark:prose-invert max-w-none">
-                            <p class="text-slate-700 dark:text-slate-300 mb-4 text-lg leading-relaxed">
-                                Takvim sistemi, kliniğinizin randevu planlamasını ve zaman yönetimini sağlayan kapsamlı bir araçtır.
-                            </p>
-                            <p class="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
-                                Bu bölümde randevu oluşturabilir, düzenleyebilir, iptal edebilir ve takvim görünümünü yönetebilirsiniz.
-                            </p>
+                        <div id="section-calendar-intro" class="help-content">
+                            <div class="prose prose-slate dark:prose-invert max-w-none">
+                                <p class="text-slate-700 dark:text-slate-300 mb-4 text-lg leading-relaxed">
+                                    Takvim sistemi, kliniğinizin randevu planlamasını ve zaman yönetimini sağlayan kapsamlı bir araçtır.
+                                </p>
+                                <p class="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
+                                    Bu bölümde randevu oluşturabilir, düzenleyebilir, iptal edebilir ve takvim görünümünü yönetebilirsiniz.
+                                </p>
+                            </div>
                         </div>
                     </section>
 
                     <!-- Takvim Görünümleri -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">👁️</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">👁️</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Takvim Görünümleri</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Takvim Görünümleri</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-views"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
-                            Farklı zaman dilimlerinde takvimi görüntüleme.
-                        </p>
+                        <div id="section-calendar-views" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Farklı zaman dilimlerinde takvimi görüntüleme.
+                            </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div class="group relative bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 text-center">
@@ -98,15 +125,28 @@
 
                     <!-- Randevu Oluşturma -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">➕</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">➕</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Randevu Oluşturma</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Randevu Oluşturma</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-create"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
-                            Yeni randevu ekleme adımları.
-                        </p>
+                        <div id="section-calendar-create" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Yeni randevu ekleme adımları.
+                            </p>
 
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 hover:shadow-md transition-shadow duration-200">
@@ -187,15 +227,28 @@
 
                     <!-- Randevu Durumları -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">📊</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">📊</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Randevu Durumları</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Randevu Durumları</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-statuses"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
-                            Randevuların farklı aşamaları ve anlamları.
-                        </p>
+                        <div id="section-calendar-statuses" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Randevuların farklı aşamaları ve anlamları.
+                            </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div class="group relative bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
@@ -276,135 +329,381 @@
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </div>
+                </div>
+                </section>
+        
 
                     <!-- Randevu Düzenleme -->
-                    <section>
-                        <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Randevu Düzenleme</h2>
-                        <p class="text-slate-700 dark:text-slate-300 mb-6">
-                            Mevcut randevuları değiştirme.
-                        </p>
+                    <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">✏️</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Randevu Düzenleme</h2>
+                            </div>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-edit"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="section-calendar-edit" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Mevcut randevuları değiştirme.
+                            </p>
 
-                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Düzenleme İşlemleri</h3>
-                            <ul class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                                <li><strong>Tarih/Saat Değiştirme:</strong> Randevuyu farklı zamana taşıyın</li>
-                                <li><strong>Doktor Değiştirme:</strong> Farklı doktora aktarın</li>
-                                <li><strong>Tedavi Notu Ekleme:</strong> Ek bilgiler ekleyin</li>
-                                <li><strong>Durum Güncelleme:</strong> Randevu aşamasını değiştirin</li>
-                                <li><strong>Hasta Bilgilerini Güncelleme:</strong> İletişim bilgilerini düzenleyin</li>
-                            </ul>
+                            <div class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center mr-3">
+                                        <span class="text-white text-sm">⚙️</span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-amber-900 dark:text-amber-100">Düzenleme İşlemleri</h3>
+                                </div>
+                                <ul class="text-sm text-amber-800 dark:text-amber-200 space-y-3">
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Tarih/Saat Değiştirme:</strong> Randevuyu farklı zamana taşıyın</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Doktor Değiştirme:</strong> Farklı doktora aktarın</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Tedavi Notu Ekleme:</strong> Ek bilgiler ekleyin</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Durum Güncelleme:</strong> Randevu aşamasını değiştirin</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Hasta Bilgilerini Güncelleme:</strong> İletişim bilgilerini düzenleyin</span>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </section>
 
                     <!-- Randevu Arama ve Filtreleme -->
-                    <section>
-                        <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Arama ve Filtreleme</h2>
-                        <p class="text-slate-700 dark:text-slate-300 mb-6">
-                            Randevuları hızlı bulma.
-                        </p>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6">
-                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Arama Seçenekleri</h3>
-                                <ul class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                                    <li><strong>Hasta Adı:</strong> Hasta adına göre arama</li>
-                                    <li><strong>Doktor Adı:</strong> Doktor adına göre filtre</li>
-                                    <li><strong>Tarih Aralığı:</strong> Belirli tarihlerdeki randevular</li>
-                                    <li><strong>Durum:</strong> Randevu durumuna göre</li>
-                                    <li><strong>Telefon:</strong> Telefon numarasına göre</li>
-                                </ul>
+                    <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">🔍</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Arama ve Filtreleme</h2>
                             </div>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-search"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="section-calendar-search" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Randevuları hızlı bulma.
+                            </p>
 
-                            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6">
-                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Filtre Kombinasyonları</h3>
-                                <ul class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                                    <li><strong>Bugünkü Randevular:</strong> Sadece bugün için</li>
-                                    <li><strong>Gelecek Randevular:</strong> Önümüzdeki randevular</li>
-                                    <li><strong>Gecikmiş Randevular:</strong> Geçmiş randevular</li>
-                                    <li><strong>Acil Randevular:</strong> Öncelikli işlemler</li>
-                                    <li><strong>İptal Edilenler:</strong> İptal geçmişini gör</li>
-                                </ul>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center mr-3">
+                                            <span class="text-white text-sm">🔎</span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-cyan-900 dark:text-cyan-100">Arama Seçenekleri</h3>
+                                    </div>
+                                    <ul class="text-sm text-cyan-800 dark:text-cyan-200 space-y-3">
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-cyan-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Hasta Adı:</strong> Hasta adına göre arama</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-cyan-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Doktor Adı:</strong> Doktor adına göre filtre</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-cyan-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Tarih Aralığı:</strong> Belirli tarihlerdeki randevular</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-cyan-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Durum:</strong> Randevu durumuna göre</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-cyan-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Telefon:</strong> Telefon numarasına göre</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 border border-teal-200 dark:border-teal-800 rounded-xl p-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
+                                            <span class="text-white text-sm">🎛️</span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-teal-900 dark:text-teal-100">Filtre Kombinasyonları</h3>
+                                    </div>
+                                    <ul class="text-sm text-teal-800 dark:text-teal-200 space-y-3">
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-teal-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Bugünkü Randevular:</strong> Sadece bugün için</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-teal-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Gelecek Randevular:</strong> Önümüzdeki randevular</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-teal-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Gecikmiş Randevular:</strong> Geçmiş randevular</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-teal-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Acil Randevular:</strong> Öncelikli işlemler</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-teal-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>İptal Edilenler:</strong> İptal geçmişini gör</span>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                    </section>
+                        <!-- End of search and filtering grid -->
+                        
 
                     <!-- Randevu Hatırlatmaları -->
-                    <section>
-                        <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Randevu Hatırlatmaları</h2>
-                        <p class="text-slate-700 dark:text-slate-300 mb-6">
-                            Otomatik hatırlatma sistemi.
-                        </p>
+                    <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-rose-500 to-rose-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">🔔</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Randevu Hatırlatmaları</h2>
+                            </div>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-reminders"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="section-calendar-reminders" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Otomatik hatırlatma sistemi.
+                            </p>
 
-                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Hatırlatma Türleri</h3>
-                            <ul class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                                <li><strong>SMS Hatırlatma:</strong> Randevudan 1 gün önce</li>
-                                <li><strong>E-posta Hatırlatma:</strong> Randevu detayları ile</li>
-                                <li><strong>Telefon Hatırlatma:</strong> Manuel arama ile</li>
-                                <li><strong>Onay İsteği:</strong> Randevu onayı için</li>
-                                <li><strong>Değişiklik Bildirimi:</strong> Randevu değişikliğinde</li>
-                            </ul>
+                            <div class="bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/20 dark:to-rose-800/20 border border-rose-200 dark:border-rose-800 rounded-xl p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-8 h-8 bg-rose-500 rounded-lg flex items-center justify-center mr-3">
+                                        <span class="text-white text-sm">📢</span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-rose-900 dark:text-rose-100">Hatırlatma Türleri</h3>
+                                </div>
+                                <ul class="text-sm text-rose-800 dark:text-rose-200 space-y-3">
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-rose-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>SMS Hatırlatma:</strong> Randevudan 1 gün önce</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-rose-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>E-posta Hatırlatma:</strong> Randevu detayları ile</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-rose-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Telefon Hatırlatma:</strong> Manuel arama ile</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-rose-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Onay İsteği:</strong> Randevu onayı için</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-rose-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Değişiklik Bildirimi:</strong> Randevu değişikliğinde</span>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </section>
 
                     <!-- Takvim Ayarları -->
-                    <section>
-                        <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Takvim Ayarları</h2>
-                        <p class="text-slate-700 dark:text-slate-300 mb-6">
-                            Takvim görünümünü kişiselleştirme.
-                        </p>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6">
-                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Görünüm Ayarları</h3>
-                                <ul class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                                    <li><strong>Çalışma Saatleri:</strong> Kliniğin açık olduğu saatler</li>
-                                    <li><strong>Tatil Günleri:</strong> Kapalı olunan günler</li>
-                                    <li><strong>Randevu Süreleri:</strong> Varsayılan süreler</li>
-                                    <li><strong>Renk Kodlaması:</strong> Durumlara göre renkler</li>
-                                </ul>
+                    <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-slate-500 to-slate-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">⚙️</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Takvim Ayarları</h2>
                             </div>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-settings"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="section-calendar-settings" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Takvim görünümünü kişiselleştirme.
+                            </p>
 
-                            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6">
-                                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Doktor Takvimleri</h3>
-                                <ul class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                                    <li><strong>Çoklu Doktor:</strong> Farklı doktorların takvimleri</li>
-                                    <li><strong>Müsaitlik:</strong> Doktorların müsait saatleri</li>
-                                    <li><strong>İzin Günleri:</strong> Doktor izinleri</li>
-                                    <li><strong>Yerine Bakma:</strong> Vekalet sistemi</li>
-                                </ul>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/20 dark:to-slate-800/20 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-slate-500 rounded-lg flex items-center justify-center mr-3">
+                                            <span class="text-white text-sm">🎨</span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Görünüm Ayarları</h3>
+                                    </div>
+                                    <ul class="text-sm text-slate-800 dark:text-slate-200 space-y-3">
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-slate-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Çalışma Saatleri:</strong> Kliniğin açık olduğu saatler</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-slate-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Tatil Günleri:</strong> Kapalı olunan günler</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-slate-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Randevu Süreleri:</strong> Varsayılan süreler</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-slate-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Renk Kodlaması:</strong> Durumlara göre renkler</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+                                    <div class="flex items-center mb-4">
+                                        <div class="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center mr-3">
+                                            <span class="text-white text-sm">👨‍⚕️</span>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">Doktor Takvimleri</h3>
+                                    </div>
+                                    <ul class="text-sm text-gray-800 dark:text-gray-200 space-y-3">
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Çoklu Doktor:</strong> Farklı doktorların takvimleri</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Müsaitlik:</strong> Doktorların müsait saatleri</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>İzin Günleri:</strong> Doktor izinleri</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="w-2 h-2 bg-gray-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                            <span><strong>Yerine Bakma:</strong> Vekalet sistemi</span>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </section>
 
                     <!-- Raporlar ve İstatistikler -->
-                    <section>
-                        <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Raporlar ve İstatistikler</h2>
-                        <p class="text-slate-700 dark:text-slate-300 mb-6">
-                            Randevu istatistiklerini görüntüleme.
-                        </p>
+                    <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">📊</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Raporlar ve İstatistikler</h2>
+                            </div>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-reports"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="section-calendar-reports" class="help-content">
+                            <p class="text-slate-700 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                                Randevu istatistiklerini görüntüleme.
+                            </p>
 
-                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6">
-                            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Mevcut Raporlar</h3>
-                            <ul class="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-                                <li><strong>Günlük Randevu Raporu:</strong> Günün randevu özeti</li>
-                                <li><strong>Doktor Performans Raporu:</strong> Doktor bazlı istatistikler</li>
-                                <li><strong>Hasta Yoğunluk Raporu:</strong> Saatlik dağılım</li>
-                                <li><strong>İptal/Gelmedi Raporu:</strong> Randevu başarısı</li>
-                                <li><strong>Gelir Raporu:</strong> Randevu bazlı gelir</li>
-                            </ul>
+                            <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-6">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                                        <span class="text-white text-sm">📈</span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-emerald-900 dark:text-emerald-100">Mevcut Raporlar</h3>
+                                </div>
+                                <ul class="text-sm text-emerald-800 dark:text-emerald-200 space-y-3">
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Günlük Randevu Raporu:</strong> Günün randevu özeti</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Doktor Performans Raporu:</strong> Doktor bazlı istatistikler</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Hasta Yoğunluk Raporu:</strong> Saatlik dağılım</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>İptal/Gelmedi Raporu:</strong> Randevu başarısı</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="w-2 h-2 bg-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                        <span><strong>Gelir Raporu:</strong> Randevu bazlı gelir</span>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </section>
 
                     <!-- İpuçları -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">💡</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">💡</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Kullanım İpuçları</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Kullanım İpuçları</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-tips"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
+                        <div id="section-calendar-tips" class="help-content">
 
                         <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
                             <div class="flex items-center mb-4">
@@ -444,12 +743,25 @@
 
                     <!-- Sorun Giderme -->
                     <section class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <div class="flex items-center mb-6">
-                            <div class="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center mr-4">
-                                <span class="text-white text-xl">🔧</span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">🔧</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Sık Karşılaşılan Sorunlar</h2>
                             </div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">Sık Karşılaşılan Sorunlar</h2>
+                            <button
+                                class="help-toggle flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
+                                aria-expanded="true"
+                                aria-controls="section-calendar-troubleshooting"
+                                aria-label="Bölümü aç/kapat"
+                            >
+                                <svg class="w-4 h-4 text-slate-600 dark:text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
                         </div>
+                        <div id="section-calendar-troubleshooting" class="help-content">
 
                         <div class="space-y-6">
                             <div class="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
@@ -489,8 +801,9 @@
                     </section>
                 </div>
             </div>
+</div>
 
-            <!-- Footer -->
+<!-- Footer -->
             <div class="mt-12 border-t border-slate-200 dark:border-slate-700 pt-8">
                 <div class="flex flex-col md:flex-row justify-between items-center">
                     <div class="text-center md:text-left mb-4 md:mb-0">
@@ -513,4 +826,43 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const toggleButtons = document.querySelectorAll('.help-toggle');
+
+                toggleButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        try {
+                            const content = this.closest('section').querySelector('.help-content');
+                            const icon = this.querySelector('svg');
+
+                            if (!content || !icon) {
+                                console.warn('Help toggle: Required elements not found');
+                                return;
+                            }
+
+                            const isExpanded = this.getAttribute('aria-expanded') === 'true';
+
+                            // Toggle content visibility with smooth transition
+                            if (isExpanded) {
+                                content.style.display = 'none';
+                                this.setAttribute('aria-expanded', 'false');
+                                icon.style.transform = 'rotate(180deg)';
+                            } else {
+                                content.style.display = 'block';
+                                this.setAttribute('aria-expanded', 'true');
+                                icon.style.transform = 'rotate(0deg)';
+                            }
+                        } catch (error) {
+                            console.error('Error toggling help content:', error);
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error initializing help toggles:', error);
+            }
+        });
+    </script>
 </x-app-layout>

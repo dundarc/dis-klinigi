@@ -31,7 +31,6 @@ class UpdateInvoiceRequest extends FormRequest
             'payment_method' => ['nullable', 'string', 'max:50'],
             'due_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
-            'insurance_coverage_amount' => ['nullable', 'numeric', 'min:0'],
             'taksit_sayisi' => ['nullable', 'required_if:status,taksitlendirildi', 'integer', 'min:2'],
             'ilk_odeme_gunu' => ['nullable', 'required_if:status,taksitlendirildi', 'date'],
         ];

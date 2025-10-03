@@ -37,6 +37,101 @@
                 </div>
             @endif
 
+            {{-- KDV Management Section --}}
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-blue-900 dark:text-blue-100">KDV Oranı Yönetimi</h3>
+                            <p class="text-sm text-blue-700 dark:text-blue-300">Tedavi KDV oranlarını toplu veya tek tek güncelleyin</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Quick Set Medical KDV -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Tıbbi Hizmet KDV'si</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Türkiye'de tıbbi hizmetler için %10 KDV uygulanır</p>
+                        <form action="{{ route('system.treatments.set-medical-vat-rate') }}" method="POST" class="space-y-3">
+                            @csrf
+                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Tümünü %10 Yap
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Bulk KDV Update -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Toplu KDV Güncelleme</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Seçili tedaviler için aynı KDV oranı</p>
+                        <form action="{{ route('system.treatments.bulk-update-vat') }}" method="POST" class="space-y-3">
+                            @csrf
+                            <div>
+                                <label for="bulk_vat_rate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">KDV Oranı</label>
+                                <select id="bulk_vat_rate" name="vat_rate" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                    <option value="0">0% - KDV Muaf</option>
+                                    <option value="1">1% - Özel Oran</option>
+                                    <option value="8">8% - İndirimli Oran</option>
+                                    <option value="10" selected>10% - Tıbbi Hizmetler</option>
+                                    <option value="18">18% - Genel Oran</option>
+                                    <option value="20">20% - Özel Tüketim</option>
+                                </select>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button type="submit" name="update_selected" value="1" class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    Seçilileri Güncelle
+                                </button>
+                                <button type="submit" name="update_all" value="1" class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    Tümünü Güncelle
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- KDV Statistics -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">KDV İstatistikleri</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">%0 KDV:</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ $vatStats['0'] }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">%8 KDV:</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ $vatStats['8'] }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-100 font-semibold">%10 KDV:</span>
+                                <span class="font-bold text-green-600 dark:text-green-400">{{ $vatStats['10'] }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">%18 KDV:</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ $vatStats['18'] }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">%20 KDV:</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ $vatStats['20'] }}</span>
+                            </div>
+                            @if($otherVat > 0)
+                            <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-2">
+                                <span class="text-gray-600 dark:text-gray-400">Diğer:</span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ $otherVat }}</span>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Treatments Table --}}
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg sm:rounded-xl border border-gray-200 dark:border-gray-700">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -57,6 +152,12 @@
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
                             <tr>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <div class="flex items-center space-x-2">
+                                        <input type="checkbox" id="select-all" class="rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <label for="select-all" class="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer">Seç</label>
+                                    </div>
+                                </th>
                                 <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                                     <div class="flex items-center space-x-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,6 +217,9 @@
                                     $isDeleted = $treatment->trashed();
                                 @endphp
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <input type="checkbox" name="treatment_ids[]" value="{{ $treatment->id }}" class="treatment-checkbox rounded border-gray-300 dark:border-gray-600 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-8 w-8">
@@ -182,7 +286,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center">
+                                    <td colspan="8" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
                                             <svg class="w-12 h-12 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -295,6 +399,48 @@
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeDeleteModal();
+            }
+        });
+
+        // KDV Management JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.getElementById('select-all');
+            const treatmentCheckboxes = document.querySelectorAll('.treatment-checkbox');
+
+            // Select all functionality
+            selectAllCheckbox.addEventListener('change', function() {
+                treatmentCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+
+            // Update select all when individual checkboxes change
+            treatmentCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const checkedBoxes = document.querySelectorAll('.treatment-checkbox:checked');
+                    selectAllCheckbox.checked = checkedBoxes.length === treatmentCheckboxes.length;
+                    selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < treatmentCheckboxes.length;
+                });
+            });
+
+            // Handle bulk form submission
+            const bulkForm = document.querySelector('form[action*="bulk-update-vat"]');
+            if (bulkForm) {
+                bulkForm.addEventListener('submit', function(e) {
+                    const selectedTreatments = document.querySelectorAll('.treatment-checkbox:checked');
+                    const updateSelectedBtn = document.querySelector('button[name="update_selected"]');
+
+                    if (e.submitter === updateSelectedBtn && selectedTreatments.length === 0) {
+                        e.preventDefault();
+                        alert('Lütfen en az bir tedavi seçin.');
+                        return;
+                    }
+
+                    // For "update selected", ensure treatment_ids are included
+                    if (e.submitter === updateSelectedBtn) {
+                        // Form already has the checkboxes, they will be submitted
+                    }
+                });
             }
         });
     </script>

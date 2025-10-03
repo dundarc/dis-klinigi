@@ -35,12 +35,6 @@ class PatientController extends Controller
 
         $query = Patient::query();
 
-        if ($user->role === UserRole::DENTIST) {
-            $query->whereHas('appointments', function ($q) use ($user) {
-                $q->where('dentist_id', $user->id);
-            });
-        }
-
         $query->when($search, function ($q, $search) {
             $q->where(function ($subQuery) use ($search) {
                 $subQuery->where(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$search}%")
@@ -69,11 +63,6 @@ class PatientController extends Controller
 
         $patientsQuery = Patient::query()
             ->with('consents')
-            ->when($user->role === UserRole::DENTIST, function ($q) use ($user) {
-                $q->whereHas('appointments', function ($subQ) use ($user) {
-                    $subQ->where('dentist_id', $user->id);
-                });
-            })
             ->when($query, function ($q, $query) {
                 $q->where(function ($subQuery) use ($query) {
                     $subQuery->where(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', "%{$query}%")
@@ -121,6 +110,8 @@ class PatientController extends Controller
      */
     public function store(StorePatientRequest $request)
     {
+        $this->authorize('create', Patient::class);
+
         $validatedData = $request->validated();
         $patient = new Patient($validatedData);
         $patient->has_private_insurance = $request->boolean('has_private_insurance');

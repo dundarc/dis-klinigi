@@ -32,7 +32,6 @@ class UpdateInvoiceDetailsRequest extends FormRequest
             'paid_at' => ['nullable', 'required_if:status,paid', 'date'],
             'due_date' => ['nullable', 'required_if:status,vadeli', 'date'],
             'notes' => ['nullable', 'string'],
-            'insurance_coverage_amount' => ['nullable', 'numeric', 'min:0'],
             'taksit_sayisi' => ['nullable', 'required_if:status,taksitlendirildi', 'integer', 'min:2'],
             'ilk_odeme_gunu' => ['nullable', 'required_if:status,taksitlendirildi', 'date'],
             'partial_payment_amount' => ['nullable', 'required_if:status,partial', 'numeric', 'min:0.01'],

@@ -34,7 +34,7 @@ class InvoicePolicy
         if ($user->role === UserRole::ADMIN) {
             return true;
         }
-        return in_array($user->role, [UserRole::RECEPTIONIST, UserRole::DENTIST]);
+        return in_array($user->role, [UserRole::RECEPTIONIST, UserRole::DENTIST, UserRole::ACCOUNTANT]);
     }
 
     public function update(User $user, Invoice $invoice): bool

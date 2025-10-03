@@ -136,10 +136,15 @@
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $invoice->patient?->first_name }} {{ $invoice->patient?->last_name }}</td>
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $invoice->issue_date->format('d.m.Y') }}</td>
                                     <td class="px-6 py-4">
-                                        @if($invoice->status->value === 'paid')
+                                        @if($invoice->status && $invoice->status->value === 'paid')
                                             <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">Ödenmiş</span>
-                                        @elseif($invoice->status->value === 'pending')
-                                        <x-status-badge :status="$invoice->status" />
+                                        @elseif($invoice->status && $invoice->status->value === 'pending')
+                                            <x-status-badge :status="$invoice->status" />
+                                        @elseif($invoice->status)
+                                            <x-status-badge :status="$invoice->status" />
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-200">Bilinmiyor</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 text-slate-900 dark:text-slate-100 font-medium">{{ number_format($invoice->grand_total, 2, ',', '.') }} TL</td>
                                     <td class="px-6 py-4 text-right">

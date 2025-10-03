@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateTreatmentPlanRequest;
 use App\Models\Patient;
 use App\Services\PdfExportService;
 use App\Services\TreatmentPlanService;
+use App\Enums\TreatmentPlanItemStatus;
 use Illuminate\Http\Request;
 
 class TreatmentPlanController extends Controller
@@ -307,23 +308,6 @@ class TreatmentPlanController extends Controller
         return view('treatment-plans.pdf', compact('plan'));
     }
 
-    public function generateInvoice(Request $request, TreatmentPlan $treatmentPlan)
-    {
-        $request->validate([
-            'encounter_id' => 'required|exists:encounters,id',
-            'item_ids' => 'nullable|array',
-            'item_ids.*' => 'exists:treatment_plan_items,id'
-        ]);
-
-        $encounter = \App\Models\Encounter::find($request->encounter_id);
-        $invoice = $this->treatmentPlanService->generateInvoiceFromEncounterItems($encounter);
-
-        if ($invoice) {
-            return redirect()->route('invoices.show', $invoice)->with('success', 'Fatura başarıyla oluşturuldu.');
-        }
-
-        return back()->with('error', 'Faturalanacak tamamlanmış tedavi bulunamadı.');
-    }
 
     /**
      * Autosave the specified resource in storage.
@@ -393,24 +377,68 @@ class TreatmentPlanController extends Controller
      */
     public function costReport(TreatmentPlan $treatmentPlan)
     {
+        // Update invoice_status for items that have invoices but status not set
+        foreach ($treatmentPlan->items as $item) {
+            if ($item->invoice_status !== 'invoiced') {
+                $patientTreatments = \App\Models\PatientTreatment::where('treatment_plan_item_id', $item->id)->get();
+                $hasInvoice = \App\Models\InvoiceItem::whereIn('patient_treatment_id', $patientTreatments->pluck('id'))
+                    ->whereHas('invoice', function ($query) {
+                        $query->whereNull('deleted_at');
+                    })->exists();
+                if ($hasInvoice) {
+                    $item->update(['invoice_status' => 'invoiced']);
+                }
+            }
+
+            // Assign appointments to completed items that don't have one
+            if ($item->status === \App\Enums\TreatmentPlanItemStatus::DONE && !$item->appointment_id) {
+                $encounter = $item->encounters()->first();
+                if ($encounter) {
+                    if ($encounter->appointment_id) {
+                        $item->update(['appointment_id' => $encounter->appointment_id]);
+                    } else {
+                        // Create appointment for walk-in encounters
+                        $appointment = \App\Models\Appointment::create([
+                            'patient_id' => $item->treatmentPlan->patient_id,
+                            'dentist_id' => $encounter->dentist_id,
+                            'start_at' => $encounter->started_at ?? $encounter->arrived_at ?? now(),
+                            'end_at' => ($encounter->started_at ?? $encounter->arrived_at ?? now())->addMinutes(30),
+                            'status' => \App\Enums\AppointmentStatus::COMPLETED,
+                            'notes' => 'Otomatik olarak tedavi tamamlanmasından oluşturuldu.',
+                        ]);
+                        $item->update(['appointment_id' => $appointment->id]);
+                    }
+                }
+            }
+        }
+
         $treatmentPlan->load(['patient', 'dentist', 'items.treatment', 'items.histories.user']);
 
         $costSummary = $this->treatmentPlanService->getCostSummary($treatmentPlan);
 
         // Get detailed breakdown
-        $itemsBreakdown = $treatmentPlan->items->map(function ($item) {
+        $itemsBreakdown = $treatmentPlan->items->map(function ($item) use ($treatmentPlan) {
             $invoicedAmount = 0;
+            $paidAmount = 0;
 
-            // Find invoice items for this treatment plan item
-            $invoiceItems = \App\Models\InvoiceItem::where('description', 'like', '%' . $item->treatment->name . '%')
-                ->whereHas('invoice', function ($query) use ($item) {
-                    $query->where('patient_id', $item->treatmentPlan->patient_id);
+            // Method 1: Find invoices through PatientTreatment records (existing method)
+            $patientTreatments = \App\Models\PatientTreatment::where('treatment_plan_item_id', $item->id)->get();
+            $invoiceItemsFromTreatments = \App\Models\InvoiceItem::whereIn('patient_treatment_id', $patientTreatments->pluck('id'))
+                ->whereHas('invoice', function ($query) {
+                    $query->whereNull('deleted_at');
                 })
+                ->with('invoice.payments')
                 ->get();
 
-            foreach ($invoiceItems as $invoiceItem) {
-                if (str_contains($invoiceItem->description, $item->treatment->name)) {
-                    $invoicedAmount += $invoiceItem->line_total;
+            foreach ($invoiceItemsFromTreatments as $invoiceItem) {
+                $invoicedAmount += $invoiceItem->line_total;
+
+                // Calculate paid amount for this invoice item
+                $invoice = $invoiceItem->invoice;
+                if ($invoice) {
+                    $totalPaidForInvoice = $invoice->payments->sum('amount');
+                    $itemRatio = $invoiceItem->line_total / $invoice->grand_total;
+                    $paidAmount += $totalPaidForInvoice * $itemRatio;
                 }
             }
 
@@ -418,10 +446,12 @@ class TreatmentPlanController extends Controller
                 'item' => $item,
                 'estimated' => $item->estimated_price,
                 'invoiced' => $invoicedAmount,
+                'paid' => min($paidAmount, $invoicedAmount), // Don't exceed invoiced amount
                 'variance' => $invoicedAmount - $item->estimated_price,
                 'variance_percent' => $item->estimated_price > 0 ? round((($invoicedAmount - $item->estimated_price) / $item->estimated_price) * 100, 2) : 0,
             ];
         });
+
 
         return view('treatment_plans.cost-report', compact('treatmentPlan', 'costSummary', 'itemsBreakdown'));
     }

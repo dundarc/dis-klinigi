@@ -52,4 +52,11 @@ class EncounterPolicy
         // Encounter must have at least one treatment plan item to be marked as DONE
         return $encounter->treatmentPlanItems()->exists();
     }
+
+    public function createEmergency(User $user): bool
+    {
+        // Allow admins and dentists to create emergency encounters
+        return $user->role === \App\Enums\UserRole::ADMIN ||
+               $user->role === \App\Enums\UserRole::DENTIST;
+    }
 }

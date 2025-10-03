@@ -104,6 +104,21 @@
                         </div>
                     @endforelse
                 </div>
+
+                <!-- Pagination -->
+                @if($completedEncounters->hasPages())
+                    <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div class="text-sm text-slate-600 dark:text-slate-400">
+                                Siz hastaların {{ $completedEncounters->firstItem() }}-{{ $completedEncounters->lastItem() }} arasını görüyorsunuz
+                                (Toplam: {{ $completedEncounters->total() }} hasta)
+                            </div>
+                            <div class="flex justify-center">
+                                {{ $completedEncounters->links() }}
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

@@ -25,6 +25,8 @@ class TreatmentPlanItem extends Model
         'status',
         'completed_at',
         'cancelled_at',
+        'invoice_status',
+        'deleted_invoice_info',
     ];
 
     protected $casts = [
@@ -32,6 +34,7 @@ class TreatmentPlanItem extends Model
         'estimated_price' => 'decimal:2',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'deleted_invoice_info' => 'array',
     ];
 
     public function treatmentPlan(): BelongsTo
@@ -79,6 +82,48 @@ class TreatmentPlanItem extends Model
     public function isDone(): bool
     {
         return $this->status === TreatmentPlanItemStatus::DONE;
+    }
+
+    /**
+     * Get the invoice status display text
+     */
+    public function getInvoiceStatusDisplayAttribute(): string
+    {
+        return match($this->invoice_status) {
+            'pending' => 'Faturalandırılmamış',
+            'invoiced' => 'Faturalandırıldı',
+            'deleted' => 'Fatura Silindi - Yeniden Faturalandırılabilir',
+            default => 'Bilinmiyor'
+        };
+    }
+
+    /**
+     * Get the invoice status color class
+     */
+    public function getInvoiceStatusColorAttribute(): string
+    {
+        return match($this->invoice_status) {
+            'pending' => 'text-slate-600',
+            'invoiced' => 'text-green-600',
+            'deleted' => 'text-red-600',
+            default => 'text-slate-600'
+        };
+    }
+
+    /**
+     * Check if the item can be re-invoiced
+     */
+    public function canBeReInvoiced(): bool
+    {
+        return $this->invoice_status === 'deleted' && $this->status === TreatmentPlanItemStatus::DONE;
+    }
+
+    /**
+     * Get deleted invoice information
+     */
+    public function getDeletedInvoiceInfo(): ?array
+    {
+        return $this->deleted_invoice_info;
     }
 
     /**

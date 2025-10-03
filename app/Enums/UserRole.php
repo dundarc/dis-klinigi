@@ -45,6 +45,13 @@ enum UserRole: string
                 'sendNotifications',
                 'accessAccountingFeatures',
                 'manageSystemSettings',
+                // Eklenen eksik yetkiler
+                'accessReceptionistFeatures',
+                'recordStockUsage',
+                'viewStockReports',
+                'viewReports',
+                'hardDelete',
+                'createEmergency',
             ],
             self::DENTIST => [
                 'viewOwnPatients',
@@ -55,6 +62,11 @@ enum UserRole: string
                 'manageTreatmentPlans',
                 'prescribeMedications',
                 'uploadPatientFiles',
+                // Eklenen eksik yetkiler
+                'recordStockUsage',
+                'sendNotifications',
+                'createEmergency',
+                'accessReceptionistFeatures',
             ],
             self::RECEPTIONIST => [
                 'viewAllPatients',
@@ -64,6 +76,8 @@ enum UserRole: string
                 'accessWaitingRoom',
                 'sendNotifications',
                 'viewBasicReports',
+                // Eklenen eksik yetkiler
+                'accessReceptionistFeatures',
             ],
             self::ACCOUNTANT => [
                 'accessAccountingFeatures',
@@ -72,6 +86,10 @@ enum UserRole: string
                 'viewFinancialReports',
                 'manageStockPurchases',
                 'viewStockReports',
+                // Eklenen eksik yetkiler
+                'recordStockUsage',
+                'viewReports',
+                'hardDelete',
             ],
             self::ASSISTANT => [
                 'viewAssignedPatients',
@@ -80,6 +98,8 @@ enum UserRole: string
                 'uploadPatientFiles',
                 'accessWaitingRoom',
                 'viewBasicReports',
+                // Eklenen eksik yetkiler
+                'recordStockUsage',
             ],
         };
     }

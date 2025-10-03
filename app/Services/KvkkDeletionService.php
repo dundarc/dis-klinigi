@@ -57,13 +57,7 @@ class KvkkDeletionService
     public static function hardDelete(Patient $patient, User $actor): bool
     {
         return DB::transaction(function () use ($patient, $actor) {
-            // Force delete all related records first
-            self::forceDeleteRelatedRecords($patient);
-
-            // Force delete patient
-            $patient->forceDelete();
-
-            // Log the action
+            // Log the action BEFORE deletion (audit log has cascade delete constraint)
             KvkkAuditLog::create([
                 'patient_id' => $patient->id,
                 'user_id' => $actor->id,
@@ -76,8 +70,58 @@ class KvkkDeletionService
                 ],
             ]);
 
+            // Force delete all related records first (cascade deletes are not working)
+            self::forceDeleteRelatedRecords($patient);
+
+            // Force delete patient
+            $patient->forceDelete();
+
             return true;
         });
+    }
+
+    /**
+     * Force delete all related records.
+     *
+     * @param Patient $patient
+     * @return void
+     */
+    private static function forceDeleteRelatedRecords(Patient $patient): void
+    {
+        // Delete appointments
+        Appointment::where('patient_id', $patient->id)->forceDelete();
+
+        // Delete invoices and related items/payments
+        $invoices = Invoice::where('patient_id', $patient->id)->get();
+        foreach ($invoices as $invoice) {
+            $invoice->payments()->delete();
+            $invoice->items()->delete();
+            $invoice->delete();
+        }
+
+        // Delete treatment plans and related items
+        $treatmentPlans = TreatmentPlan::where('patient_id', $patient->id)->get();
+        foreach ($treatmentPlans as $plan) {
+            $plan->items()->delete();
+            $plan->delete();
+        }
+
+        // Delete files (also delete physical files)
+        $files = \App\Models\File::where('patient_id', $patient->id)->get();
+        foreach ($files as $file) {
+            // Delete the actual file from storage if it exists
+            $filePath = storage_path('app/' . $file->path);
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+            $file->forceDelete();
+        }
+
+        // Delete consents
+        $patient->consents()->forceDelete();
+
+        // Note: Audit logs are intentionally NOT deleted for compliance purposes
+        // They have cascade delete disabled to preserve the audit trail
     }
 
     /**
@@ -138,41 +182,6 @@ class KvkkDeletionService
             ->update(['deleted_via' => 'kvkk']);
     }
 
-    /**
-     * Force delete all related records.
-     *
-     * @param Patient $patient
-     * @return void
-     */
-    private static function forceDeleteRelatedRecords(Patient $patient): void
-    {
-        // Delete appointments
-        Appointment::where('patient_id', $patient->id)->forceDelete();
-
-        // Delete invoices and related items/payments
-        $invoices = Invoice::where('patient_id', $patient->id)->withTrashed()->get();
-        foreach ($invoices as $invoice) {
-            $invoice->payments()->forceDelete();
-            $invoice->items()->forceDelete();
-            $invoice->forceDelete();
-        }
-
-        // Delete treatment plans and related items
-        $treatmentPlans = TreatmentPlan::where('patient_id', $patient->id)->withTrashed()->get();
-        foreach ($treatmentPlans as $plan) {
-            $plan->items()->forceDelete();
-            $plan->forceDelete();
-        }
-
-        // Delete files
-        File::where('patient_id', $patient->id)->forceDelete();
-
-        // Delete consents
-        $patient->consents()->forceDelete();
-
-        // Delete audit logs
-        $patient->kvkkAuditLogs()->forceDelete();
-    }
 
     /**
      * Restore related records from soft delete.

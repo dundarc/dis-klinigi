@@ -37,8 +37,9 @@ class WaitingRoomController extends Controller
     {
         $doctorEncounters = collect();
         $user = auth()->user();
+        $isDentist = $user && $user->role === UserRole::DENTIST;
 
-        if ($user && $user->role === UserRole::DENTIST) {
+        if ($isDentist) {
             $doctorEncounters = Encounter::with(['patient:id,first_name,last_name', 'appointment:id,start_at'])
                 ->where('dentist_id', $user->id)
                 ->whereIn('status', [EncounterStatus::WAITING, EncounterStatus::IN_SERVICE])
@@ -51,33 +52,54 @@ class WaitingRoomController extends Controller
 
         $today = today();
 
-        $pendingAppointments = Appointment::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+        // Filter appointments by dentist if user is a dentist
+        $pendingAppointmentsQuery = Appointment::with(['patient:id,first_name,last_name', 'dentist:id,name'])
             ->whereDate('start_at', $today)
-            ->whereIn('status', [AppointmentStatus::SCHEDULED, AppointmentStatus::CONFIRMED])
-            ->orderBy('start_at')
-            ->get();
+            ->whereIn('status', [AppointmentStatus::SCHEDULED, AppointmentStatus::CONFIRMED]);
 
-        $checkedInEncounters = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+        if ($isDentist) {
+            $pendingAppointmentsQuery->where('dentist_id', $user->id);
+        }
+
+        $pendingAppointments = $pendingAppointmentsQuery->orderBy('start_at')->get();
+
+        // Filter checked-in encounters by dentist if user is a dentist
+        $checkedInEncountersQuery = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
             ->where('type', EncounterType::SCHEDULED)
             ->whereIn('status', [EncounterStatus::WAITING, EncounterStatus::IN_SERVICE])
-            ->whereDate('arrived_at', $today)
-            ->orderBy('arrived_at')
-            ->orderBy('created_at')
-            ->get();
+            ->whereDate('arrived_at', $today);
 
-        $emergencyEncounters = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+        if ($isDentist) {
+            $checkedInEncountersQuery->where('dentist_id', $user->id);
+        }
+
+        $checkedInEncounters = $checkedInEncountersQuery->orderBy('arrived_at')->orderBy('created_at')->get();
+
+        // Filter emergency encounters by dentist if user is a dentist
+        $emergencyEncountersQuery = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
             ->whereIn('type', [EncounterType::EMERGENCY, EncounterType::WALK_IN])
             ->where('status', EncounterStatus::WAITING)
-            ->whereDate('arrived_at', $today)
+            ->whereDate('arrived_at', $today);
+
+        if ($isDentist) {
+            $emergencyEncountersQuery->where('dentist_id', $user->id);
+        }
+
+        $emergencyEncounters = $emergencyEncountersQuery
             ->orderByRaw("CASE triage_level WHEN 'red' THEN 1 WHEN 'yellow' THEN 2 WHEN 'green' THEN 3 ELSE 4 END")
             ->orderBy('arrived_at')
             ->get();
 
-        $completedEncounters = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
+        // Filter completed encounters by dentist if user is a dentist
+        $completedEncountersQuery = Encounter::with(['patient:id,first_name,last_name', 'dentist:id,name'])
             ->where('status', EncounterStatus::DONE)
-            ->whereDate('ended_at', $today)
-            ->latest('ended_at')
-            ->get();
+            ->whereDate('ended_at', $today);
+
+        if ($isDentist) {
+            $completedEncountersQuery->where('dentist_id', $user->id);
+        }
+
+        $completedEncounters = $completedEncountersQuery->latest('ended_at')->get();
 
         return view('waiting-room.index', [
             'doctorEncounters' => $doctorEncounters,
@@ -93,14 +115,22 @@ class WaitingRoomController extends Controller
      */
     public function appointments()
     {
-        $waitingEncounters = Encounter::with(['patient', 'dentist', 'appointment'])
+        $user = auth()->user();
+        $isDentist = $user && $user->role === UserRole::DENTIST;
+
+        $waitingEncountersQuery = Encounter::with(['patient', 'dentist', 'appointment'])
             // DÃœZELTME: Sadece 'bekliyor' deÄŸil, 'iÅŸlemde' olanlarÄ± da dahil ederek
             // tamamlanmÄ±ÅŸ veya iptal edilmiÅŸ olanlarÄ± bu listeden Ã§Ä±karÄ±yoruz.
             ->whereIn('status', [EncounterStatus::WAITING, EncounterStatus::IN_SERVICE])
-            ->where('type', EncounterType::SCHEDULED)
-            ->orderBy('arrived_at', 'asc')
-            ->get();
-            
+            ->where('type', EncounterType::SCHEDULED);
+
+        // Filter by dentist if user is a dentist
+        if ($isDentist) {
+            $waitingEncountersQuery->where('dentist_id', $user->id);
+        }
+
+        $waitingEncounters = $waitingEncountersQuery->orderBy('arrived_at', 'asc')->paginate(10);
+
         return view('waiting-room.appointments', compact('waitingEncounters'));
     }
 
@@ -112,7 +142,16 @@ class WaitingRoomController extends Controller
         $this->authorize('create', Appointment::class);
 
         $patients = Patient::orderBy('first_name')->get(['id', 'first_name', 'last_name']);
-        $dentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get(['id', 'name']);
+
+        // Filter dentists based on user role - dentists can only see themselves
+        $user = auth()->user();
+        $dentistsQuery = User::where('role', UserRole::DENTIST)->orderBy('name');
+
+        if ($user->role === UserRole::DENTIST) {
+            $dentistsQuery->where('id', $user->id);
+        }
+
+        $dentists = $dentistsQuery->get(['id', 'name']);
 
         return view('waiting-room.appointments_create', compact('patients', 'dentists'));
     }
@@ -221,13 +260,23 @@ class WaitingRoomController extends Controller
      */
     public function emergency()
     {
-        $emergencyEncounters = Encounter::with(['patient', 'dentist'])
+        $user = auth()->user();
+        $isDentist = $user && $user->role === UserRole::DENTIST;
+
+        $emergencyEncountersQuery = Encounter::with(['patient', 'dentist'])
             ->where('status', EncounterStatus::WAITING)
-            ->whereIn('type', ['emergency', 'walk_in'])
+            ->whereIn('type', ['emergency', 'walk_in']);
+
+        // Filter by dentist if user is a dentist
+        if ($isDentist) {
+            $emergencyEncountersQuery->where('dentist_id', $user->id);
+        }
+
+        $emergencyEncounters = $emergencyEncountersQuery
             ->orderByRaw("CASE triage_level WHEN 'red' THEN 1 WHEN 'yellow' THEN 2 WHEN 'green' THEN 3 ELSE 4 END ASC")
             ->orderBy('arrived_at', 'asc')
-            ->get();
-            
+            ->paginate(10);
+
         return view('waiting-room.emergency', compact('emergencyEncounters'));
     }
     
@@ -238,7 +287,15 @@ class WaitingRoomController extends Controller
     {
         $this->authorize('createEmergency', Encounter::class);
 
-        $dentists = User::where('role', UserRole::DENTIST)->orderBy('name')->get(['id', 'name']);
+        // Filter dentists based on user role - dentists can only see themselves
+        $user = auth()->user();
+        $dentistsQuery = User::where('role', UserRole::DENTIST)->orderBy('name');
+
+        if ($user->role === UserRole::DENTIST) {
+            $dentistsQuery->where('id', $user->id);
+        }
+
+        $dentists = $dentistsQuery->get(['id', 'name']);
 
         return view('waiting-room.emergency_create', compact('dentists'));
     }
@@ -411,37 +468,42 @@ class WaitingRoomController extends Controller
                     if (!empty($treatmentData['treatment_plan_item_id'])) {
                         $planItem = \App\Models\TreatmentPlanItem::find($treatmentData['treatment_plan_item_id']);
                         if ($planItem) {
-                            // Create patient treatment record
-                            $patientTreatment = $encounter->treatments()->create([
-                                'patient_id' => $encounter->patient_id,
-                                'dentist_id' => $encounter->dentist_id,
-                                'treatment_id' => $planItem->treatment_id,
-                                'tooth_number' => $treatmentData['tooth_number'] ?? $planItem->tooth_number,
-                                'unit_price' => $treatmentData['unit_price'] ?? $planItem->estimated_price,
-                                'vat' => $planItem->treatment->default_vat ?? 20,
-                                'status' => \App\Enums\PatientTreatmentStatus::DONE,
-                                'performed_at' => now(),
-                                'notes' => 'Tedavi planı öğesinden oluşturuldu',
-                                'display_treatment_name' => $planItem->treatment ? $planItem->treatment->name : 'Unknown Treatment',
-                                'treatment_plan_item_id' => $planItem->id,
-                            ]);
+                            // Check if patient treatment already exists for this item
+                            $existingTreatment = $encounter->treatments()->where('treatment_plan_item_id', $planItem->id)->first();
 
-                            // Link treatment plan item to encounter
-                            $encounter->treatmentPlanItems()->attach($planItem->id, [
-                                'price' => $treatmentData['unit_price'] ?? $planItem->estimated_price,
-                                'notes' => 'Applied during encounter',
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
+                            if (!$existingTreatment) {
+                                // Create patient treatment record
+                                $patientTreatment = $encounter->treatments()->create([
+                                    'patient_id' => $encounter->patient_id,
+                                    'dentist_id' => $encounter->dentist_id,
+                                    'treatment_id' => $planItem->treatment_id,
+                                    'tooth_number' => $treatmentData['tooth_number'] ?? $planItem->tooth_number,
+                                    'unit_price' => $treatmentData['unit_price'] ?? $planItem->estimated_price,
+                                    'vat' => $planItem->treatment->default_vat ?? 20,
+                                    'status' => \App\Enums\PatientTreatmentStatus::DONE,
+                                    'performed_at' => now(),
+                                    'notes' => 'Tedavi planı öğesinden oluşturuldu',
+                                    'display_treatment_name' => $planItem->treatment ? $planItem->treatment->name : 'Unknown Treatment',
+                                    'treatment_plan_item_id' => $planItem->id,
+                                ]);
 
-                            // Mark treatment plan item as done if encounter is completed
-                            if ($validated['status'] === EncounterStatus::DONE->value) {
-                                $planItem->changeStatus(
-                                    \App\Enums\TreatmentPlanItemStatus::DONE,
-                                    auth()->user(),
-                                    'Completed during encounter #' . $encounter->id,
-                                    ['encounter_id' => $encounter->id]
-                                );
+                                // Link treatment plan item to encounter
+                                $encounter->treatmentPlanItems()->attach($planItem->id, [
+                                    'price' => $treatmentData['unit_price'] ?? $planItem->estimated_price,
+                                    'notes' => 'Applied during encounter',
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+
+                                // Mark treatment plan item as done if encounter is completed
+                                if ($validated['status'] === EncounterStatus::DONE->value) {
+                                    $planItem->changeStatus(
+                                        \App\Enums\TreatmentPlanItemStatus::DONE,
+                                        auth()->user(),
+                                        'Completed during encounter #' . $encounter->id,
+                                        ['encounter_id' => $encounter->id]
+                                    );
+                                }
                             }
                         }
                     }
@@ -473,6 +535,11 @@ class WaitingRoomController extends Controller
 
             DB::commit();
 
+            // Redirect to show page if action is complete, otherwise stay on action page
+            if ($request->action === 'complete') {
+                return redirect()->route('waiting-room.show', $encounter)->with('success', 'Ziyaret başarıyla tamamlandı.');
+            }
+
             return redirect()->back()->with('success', 'Ziyaret kaydi başarıyla güncellendi.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -492,12 +559,20 @@ class WaitingRoomController extends Controller
      */
     public function completed()
     {
-        $completedEncounters = Encounter::with(['patient', 'dentist'])
+        $user = auth()->user();
+        $isDentist = $user && $user->role === UserRole::DENTIST;
+
+        $completedEncountersQuery = Encounter::with(['patient', 'dentist'])
             ->where('status', EncounterStatus::DONE)
-            ->whereDate('ended_at', today())
-            ->latest('ended_at')
-            ->get();
-            
+            ->whereDate('ended_at', today());
+
+        // Filter by dentist if user is a dentist
+        if ($isDentist) {
+            $completedEncountersQuery->where('dentist_id', $user->id);
+        }
+
+        $completedEncounters = $completedEncountersQuery->latest('ended_at')->paginate(10);
+
         return view('waiting-room.completed', compact('completedEncounters'));
     }
 }

@@ -20,7 +20,7 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             {{-- Summary Cards --}}
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
@@ -49,6 +49,22 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Faturalanan</p>
                             <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ number_format($costSummary['total_actual'], 2, ',', '.') }} TL</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Ödenen</p>
+                            <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ number_format($costSummary['total_paid'], 2, ',', '.') }} TL</p>
                         </div>
                     </div>
                 </div>
@@ -101,6 +117,7 @@
                                     <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durum</th>
                                     <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tahmini Ücret</th>
                                     <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faturalanan</th>
+                                    <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ödenen</th>
                                     <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fark</th>
                                     <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fark %</th>
                                 </tr>
@@ -140,6 +157,9 @@
                                         </td>
                                         <td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-medium">
                                             {{ number_format($breakdown['invoiced'], 2, ',', '.') }} TL
+                                        </td>
+                                        <td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-medium">
+                                            {{ number_format($breakdown['paid'], 2, ',', '.') }} TL
                                         </td>
                                         <td class="px-6 py-4 text-right font-medium
                                             @if($breakdown['variance'] > 0) text-green-600 dark:text-green-400

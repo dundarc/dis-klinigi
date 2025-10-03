@@ -29,13 +29,47 @@
                     </div>
                     <div>
                         <p class="text-slate-500 dark:text-slate-400">Mevcut Stok</p>
-                        <p class="font-semibold text-slate-900 dark:text-slate-100">{{ number_format($item->quantity, 2) }} {{ $item->unit }}</p>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100" id="current-stock">{{ number_format($item->quantity, 2) }} {{ $item->unit }}</p>
                     </div>
                     <div>
                         <p class="text-slate-500 dark:text-slate-400">Kategori</p>
                         <p class="font-semibold text-slate-900 dark:text-slate-100">{{ $item->category?->name ?? '-' }}</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Hareket Ekle -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Hareket Ekle</h3>
+                <form id="addMovementForm" class="space-y-4">
+                    @csrf
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="direction" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Hareket Türü</label>
+                            <select id="direction" name="direction" class="block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="in">Giriş</option>
+                                <option value="out">Çıkış</option>
+                                <option value="adjustment">Düzeltme</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="quantity" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Miktar</label>
+                            <input type="number" id="quantity" name="quantity" step="0.01" min="0" class="block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label for="note" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Not</label>
+                            <input type="text" id="note" name="note" class="block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Hareket açıklaması">
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Hareket Ekle
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Hareket Geçmişi -->
@@ -60,37 +94,23 @@
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                     <td class="px-6 py-4 text-slate-900 dark:text-slate-100">{{ $movement->created_at->format('d.m.Y H:i') }}</td>
                                     <td class="px-6 py-4">
-                                        @if($movement->direction === 'in')
-                                            <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">Giriş</span>
-                                        @elseif($movement->direction === 'out')
-                                            <span class="inline-flex items-center rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-1 text-xs font-medium text-red-800 dark:text-red-200">Çıkış</span>
-                                        @else
-                                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">Düzeltme</span>
-                                        @endif
+                                        <span class="inline-flex items-center rounded-full {{ $movement->direction->bgClass() }} px-2.5 py-1 text-xs font-medium">
+                                            {{ $movement->direction->label() }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-slate-900 dark:text-slate-100 font-medium">
-                                        @if($movement->direction === 'in')
+                                        @if($movement->direction->value === 'in')
                                             <span class="text-green-600 dark:text-green-400">+{{ number_format($movement->quantity, 2) }}</span>
-                                        @elseif($movement->direction === 'out')
+                                        @elseif($movement->direction->value === 'out')
                                             <span class="text-red-600 dark:text-red-400">-{{ number_format($movement->quantity, 2) }}</span>
                                         @else
                                             <span class="text-blue-600 dark:text-blue-400">{{ number_format($movement->quantity, 2) }}</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300">
-                                        @if($movement->reference_type && $movement->reference_id)
-                                            @if($movement->reference_type === 'App\\Models\\Stock\\StockPurchaseInvoice')
-                                                <a href="{{ route('stock.purchases.show', $movement->reference_id) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Fatura #{{ $movement->reference_id }}</a>
-                                            @elseif($movement->reference_type === 'App\\Models\\Stock\\StockUsage')
-                                                <a href="{{ route('stock.usage.index') }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Kullanım #{{ $movement->reference_id }}</a>
-                                            @else
-                                                {{ class_basename($movement->reference_type) }} #{{ $movement->reference_id }}
-                                            @endif
-                                        @else
-                                            -
-                                        @endif
+                                        {{ $movement->reference_display }}
                                     </td>
-                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $movement->createdBy?->name ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $movement->creator?->name ?? '-' }}</td>
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $movement->note ?? '-' }}</td>
                                 </tr>
                             @empty
@@ -113,4 +133,91 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Movement form handling
+            const movementForm = document.getElementById('addMovementForm');
+            if (movementForm) {
+                movementForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    const originalText = submitButton.innerHTML;
+
+                    // Disable button and show loading
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Yükleniyor...';
+
+                    fetch(`{{ route('stock.items.add-movement', $item) }}`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update current stock display
+                            document.getElementById('current-stock').textContent = data.new_quantity + ' {{ $item->unit }}';
+
+                            // Reset form
+                            movementForm.reset();
+
+                            // Show success message
+                            showNotification('Hareket başarıyla eklendi.', 'success');
+
+                            // Reload the page to update movements list
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            showNotification(data.message || 'Bir hata oluştu.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showNotification('Bir hata oluştu.', 'error');
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalText;
+                    });
+                });
+            }
+
+            function showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+                    type === 'success' ? 'bg-green-500 text-white' :
+                    type === 'error' ? 'bg-red-500 text-white' :
+                    'bg-blue-500 text-white'
+                }`;
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${
+                                type === 'success' ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' :
+                                type === 'error' ? 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' :
+                                'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                            }"></path>
+                        </svg>
+                        <span>${message}</span>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        });
+    </script>
 </x-app-layout>

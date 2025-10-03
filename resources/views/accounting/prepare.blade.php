@@ -58,22 +58,38 @@
                     <div class="space-y-2">
                         <h4 class="font-semibold text-gray-900 dark:text-gray-100">Fatura Kalemleri</h4>
                         <template x-for="(item, index) in items" :key="index">
-                            <div class="flex items-end gap-2 p-2 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                            <div class="p-3 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                                 <input type="hidden" x-bind:name="`items[${index}][patient_treatment_id]`" x-bind:value="item.patient_treatment_id">
-                                <div class="flex-grow">
-                                    <x-input-label x-bind:for="`desc_${index}`" value="Açıklama"/>
-                                    <x-text-input x-bind:id="`desc_${index}`" type="text" x-bind:name="`items[${index}][description]`" class="w-full mt-1" x-model="item.description" />
+                                @if(isset($treatments) && $treatments->where('id', $item['patient_treatment_id'])->first()?->treatmentPlanItem?->treatmentPlan)
+                                    @php
+                                        $treatment = $treatments->where('id', $item['patient_treatment_id'])->first();
+                                        $treatmentPlan = $treatment->treatmentPlanItem->treatmentPlan;
+                                    @endphp
+                                    <div class="mb-2">
+                                        <span class="inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-900/30 px-2 py-1 text-xs font-medium text-purple-800 dark:text-purple-200">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            Tedavi Planı #{{ $treatmentPlan->id }}
+                                        </span>
+                                    </div>
+                                @endif
+                                <div class="flex items-end gap-2">
+                                    <div class="flex-grow">
+                                        <x-input-label x-bind:for="`desc_${index}`" value="Açıklama"/>
+                                        <x-text-input x-bind:id="`desc_${index}`" type="text" x-bind:name="`items[${index}][description]`" class="w-full mt-1" x-model="item.description" />
+                                    </div>
+                                    <div class="w-20">
+                                        <x-input-label x-bind:for="`quantity_${index}`" value="Adet"/>
+                                        <x-text-input x-bind:id="`quantity_${index}`" type="number" x-bind:name="`items[${index}][quantity]`" class="w-full mt-1" x-model.number="item.quantity" />
+                                    </div>
+                                    <div class="w-28">
+                                        <x-input-label x-bind:for="`price_${index}`" value="Birim Fiyat"/>
+                                        <x-text-input x-bind:id="`price_${index}`" type="number" step="0.01" x-bind:name="`items[${index}][unit_price]`" class="w-full mt-1" x-model.number="item.unit_price" />
+                                    </div>
+                                    <input type="hidden" x-bind:name="`items[${index}][vat_rate]`" x-bind:value="item.vat_rate ?? {{ config('accounting.vat_rate') * 100 }}">
+                                    <x-danger-button type="button" @click="items.splice(index, 1)">X</x-danger-button>
                                 </div>
-                                <div class="w-20">
-                                    <x-input-label x-bind:for="`quantity_${index}`" value="Adet"/>
-                                    <x-text-input x-bind:id="`quantity_${index}`" type="number" x-bind:name="`items[${index}][quantity]`" class="w-full mt-1" x-model.number="item.quantity" />
-                                </div>
-                                <div class="w-28">
-                                    <x-input-label x-bind:for="`price_${index}`" value="Birim Fiyat"/>
-                                    <x-text-input x-bind:id="`price_${index}`" type="number" step="0.01" x-bind:name="`items[${index}][unit_price]`" class="w-full mt-1" x-model.number="item.unit_price" />
-                                </div>
-                                <input type="hidden" x-bind:name="`items[${index}][vat_rate]`" x-bind:value="item.vat_rate ?? {{ config('accounting.vat_rate') * 100 }}">
-                                <x-danger-button type="button" @click="items.splice(index, 1)">X</x-danger-button>
                             </div>
                         </template>
                     </div>

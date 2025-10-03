@@ -30,8 +30,16 @@
             <x-input-error :messages="$errors->get('default_price')" class="mt-2" />
         </div>
         <div>
-            <x-input-label for="default_vat" value="KDV (%)" />
-            <x-text-input id="default_vat" name="default_vat" type="number" step="0.01" class="mt-1 block w-full" value="{{ old('default_vat', $treatment->default_vat ?? 20) }}" required />
+            <x-input-label for="default_vat" value="KDV Oranı (%)" />
+            <select id="default_vat" name="default_vat" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                <option value="0" {{ old('default_vat', $treatment->default_vat ?? 10) == 0 ? 'selected' : '' }}>0% - KDV Muaf</option>
+                <option value="1" {{ old('default_vat', $treatment->default_vat ?? 10) == 1 ? 'selected' : '' }}>1% - Özel Oran</option>
+                <option value="8" {{ old('default_vat', $treatment->default_vat ?? 10) == 8 ? 'selected' : '' }}>8% - İndirimli Oran</option>
+                <option value="10" {{ old('default_vat', $treatment->default_vat ?? 10) == 10 ? 'selected' : '' }}>10% - Tıbbi Hizmetler</option>
+                <option value="18" {{ old('default_vat', $treatment->default_vat ?? 10) == 18 ? 'selected' : '' }}>18% - Genel Oran</option>
+                <option value="20" {{ old('default_vat', $treatment->default_vat ?? 10) == 20 ? 'selected' : '' }}>20% - Özel Tüketim</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Türkiye'de tıbbi hizmetler için %10 KDV uygulanır</p>
             <x-input-error :messages="$errors->get('default_vat')" class="mt-2" />
         </div>
         <div>
