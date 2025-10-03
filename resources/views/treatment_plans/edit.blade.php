@@ -8,10 +8,10 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
-                        Tedavi Planını Düzenle
+                    <h2 class="text-3xl font-bold bg-gradient-to-r from-blue-900 to-indigo-600 dark:from-blue-100 dark:to-indigo-400 bg-clip-text text-transparent">
+                        Tedavi Planı Düzenleme
                     </h2>
-                    <p class="text-gray-600 dark:text-gray-400 mt-1 flex items-center space-x-2">
+                    <p class="text-blue-600 dark:text-blue-400 mt-1 flex items-center space-x-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
                         </svg>
@@ -32,30 +32,13 @@
     </x-slot>
 
     <div class="py-12">
-        <div
-            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
-            x-data="treatmentPlanForm({
-                treatmentPlan: {
-                    id: {{ $treatmentPlan->id }},
-                    patient_id: {{ $treatmentPlan->patient_id }},
-                    dentist_id: {{ $treatmentPlan->dentist_id ?? 'null' }},
-                    status: '{{ $treatmentPlan->status ?? 'draft' }}',
-                    notes: @js($treatmentPlan->notes ?? ''),
-                    total_estimated_cost: {{ $treatmentPlan->total_estimated_cost ?? 0 }}
-                },
-                items: @js($items),
-                treatments: @js($treatments),
-                patientId: {{ $treatmentPlan->patient_id }},
-                loading: false,
-                hasChanges: false,
-                deletedItems: []
-            })"
-            x-init="init()"
-        >
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <form method="POST" action="{{ route('treatment-plans.update', $treatmentPlan) }}" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-600/50 overflow-hidden backdrop-blur-sm">
+                @csrf
+                @method('PATCH')
 
-            <!-- Main Form Card -->
-            <div class="bg-gradient-to-r from-white via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-600/50 overflow-hidden backdrop-blur-sm">
-                <div class="px-8 py-6 border-b border-gray-200/50 dark:border-gray-600/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-gray-800 dark:to-gray-700">
+                <!-- Form Header -->
+                <div class="px-8 py-6 border-b border-gray-200/50 dark:border-gray-600/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20">
                     <div class="flex items-center space-x-4">
                         <div class="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,632 +46,497 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">Tedavi Planı Bilgileri</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Temel plan detaylarını düzenleyin</p>
+                            <h3 class="text-xl font-bold text-blue-900 dark:text-blue-100">Tedavi Planı Düzenleme</h3>
+                            <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">Tedavi planı bilgilerini güncelleyin</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Form -->
-                <form @submit.prevent="persistChanges" class="p-8 space-y-8">
-
-                <!-- Plan Header Fields -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="space-y-3">
-                        <label for="dentist_id" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            <span class="flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                                <span>Sorumlu Diş Hekimi</span>
-                                <span class="text-red-500">*</span>
-                            </span>
-                        </label>
-                        <select id="dentist_id" name="dentist_id"
-                            x-model="treatmentPlan.dentist_id" @change="hasChanges = true"
-                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                            <option value="">Hekim Seçiniz</option>
-                            @foreach($dentists as $dentist)
-                                <option value="{{ $dentist['id'] }}">{{ $dentist['name'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="space-y-3">
-                        <label for="status" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            <span class="flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <span>Tedavi Planı Durumu</span>
-                                <span class="text-red-500">*</span>
-                            </span>
-                        </label>
-                        <select id="status" name="status"
-                            x-model="treatmentPlan.status" @change="hasChanges = true"
-                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                            <option value="draft">📝 Taslak</option>
-                            <option value="active">📅 Aktif</option>
-                            <option value="completed">✅ Tamamlandı</option>
-                            <option value="cancelled">❌ İptal Edildi</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-3">
-                        <label for="notes" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            <span class="flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                                <span>Plan Notları</span>
-                            </span>
-                        </label>
-                        <textarea id="notes" name="notes" rows="4"
-                            x-model="treatmentPlan.notes" @input="hasChanges = true"
-                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
-                            placeholder="Tedavi planı ile ilgili genel notlar..."></textarea>
-                    </div>
-                </div>
-
-                <!-- Treatment Items Section -->
-                <div class="border-t border-gray-200/50 dark:border-gray-600/50 pt-8 mt-8">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center space-x-4">
-                            <div class="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Tedavi Kalemleri</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Tedavi planına kalemler ekleyin</p>
-                            </div>
-                        </div>
-                        <button type="button" @click="addItem" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            Yeni Kalem Ekle
-                        </button>
-                    </div>
-
-                    <!-- Items List -->
-                    <div class="space-y-4" x-show="items.length > 0">
-                        <template x-for="(item, index) in items" :key="index">
-                            <div class="bg-gradient-to-r from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/50 p-6 shadow-sm hover:shadow-md transition-all duration-300">
-                                <div class="flex items-center justify-between mb-4">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                                            <span class="text-white font-semibold text-sm" x-text="index + 1"></span>
-                                        </div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Tedavi Kalemi</span>
-                                        <span x-show="item.id" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                            Mevcut
-                                        </span>
-                                        <span x-show="!item.id" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                            Yeni
-                                        </span>
-                                    </div>
-                                    <button type="button" @click="removeItem(index)"
-                                        :disabled="item.status === 'done'"
-                                        :class="item.status === 'done' ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'"
-                                        class="inline-flex items-center px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-300 shadow-sm hover:shadow-md">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                        Kaldır
-                                    </button>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                    <div class="space-y-2">
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            <span class="flex items-center space-x-2">
-                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                                </svg>
-                                                <span>Tedavi</span>
-                                                <span x-show="!item.id" class="text-red-500">*</span>
-                                            </span>
-                                        </label>
-                                        <!-- For existing items, show treatment name as text -->
-                                        <div x-show="item.id" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-gray-100">
-                                            <span x-text="item.treatment_name"></span>
-                                        </div>
-                                        <!-- For new items, show select -->
-                                        <select x-show="!item.id" x-model="item.treatment_id" @change="updatePrice(index); hasChanges = true"
-                                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                                            <option value="">Tedavi Seçiniz</option>
-                                            <template x-for="treatment in treatments" :key="treatment.id">
-                                                <option :value="treatment.id.toString()" x-text="treatment.name"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-
-                                    <div class="space-y-2">
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            <span class="flex items-center space-x-2">
-                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                </svg>
-                                                <span>Diş No</span>
-                                            </span>
-                                        </label>
-                                        <input type="text" x-model="item.tooth_number" @input="hasChanges = true"
-                                            :disabled="item.status === 'done'"
-                                            :class="item.status === 'done' ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed opacity-60' : 'bg-white dark:bg-gray-700'"
-                                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                            placeholder="örn: 11, 12-13" />
-                                    </div>
-
-                                    <div class="space-y-2">
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            <span class="flex items-center space-x-2">
-                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <span>Randevu Tarihi</span>
-                                            </span>
-                                        </label>
-                                        <input type="datetime-local" x-model="item.appointment_date" @input="hasChanges = true"
-                                            :disabled="item.status === 'done'"
-                                            :class="item.status === 'done' ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed opacity-60' : 'bg-white dark:bg-gray-700'"
-                                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" />
-                                    </div>
-
-                                    <div class="space-y-2">
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            <span class="flex items-center space-x-2">
-                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                                </svg>
-                                                <span>Ücret (TL)</span>
-                                            </span>
-                                        </label>
-                                        <input type="number" step="0.01" min="0.01" x-model="item.estimated_price" @input="updateTotalCost(); hasChanges = true"
-                                            :disabled="item.status === 'done'"
-                                            :class="item.status === 'done' ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed opacity-60' : 'bg-white dark:bg-gray-700'"
-                                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" />
-                                    </div>
-
-                                    <div class="space-y-2">
-                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            <span class="flex items-center space-x-2">
-                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                <span>Durum</span>
-                                            </span>
-                                        </label>
-                                        <select x-model="item.status" @change="hasChanges = true"
-                                            :disabled="item.status === 'done'"
-                                            :class="item.status === 'done' ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed opacity-60' : 'bg-white dark:bg-gray-700'"
-                                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                                            <option value="planned">📅 Planlandı</option>
-                                            <option value="in_progress">⚡ Devam Ediyor</option>
-                                            <option value="done">✅ Tamamlandı</option>
-                                            <option value="cancelled">❌ İptal Edildi</option>
-                                            <option value="no_show">🚫 Gelmedi</option>
-                                            <option value="invoiced">💰 Faturalandı</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- DONE item warning -->
-                                <div x-show="item.status === 'done'" class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
-                                    <div class="flex items-center space-x-2">
-                                        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                        </svg>
-                                        <span class="text-sm font-medium text-amber-800 dark:text-amber-200">Tamamlanan öğe düzenlenemez</span>
-                                    </div>
-                                    <p class="text-xs text-amber-700 dark:text-amber-300 mt-1">Bu tedavi kalemi tamamlandığı için düzenleme yapılamaz.</p>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Empty State -->
-                    <div x-show="items.length === 0" class="text-center py-12">
-                        <div class="w-24 h-24 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Tedavi kalemi bulunmuyor</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">"Yeni Kalem Ekle" butonuna tıklayarak tedavi kalemleri ekleyebilirsiniz.</p>
-                    </div>
-                </div>
-
-                <!-- Save Status Messages -->
-                <div x-show="saveMessage" x-transition class="mb-6 p-4 rounded-lg border"
-                     :class="saveMessageType === 'success' ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-700 dark:text-green-200' :
-                            saveMessageType === 'error' ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200' :
-                            'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-200'">
-                    <div class="flex items-center">
-                        <svg x-show="saveMessageType === 'success'" class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <svg x-show="saveMessageType === 'error'" class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <svg x-show="saveMessageType === 'info'" class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span x-text="saveMessage"></span>
-                    </div>
-                </div>
-
-                <!-- Total Cost Display -->
-                <div x-show="items.length > 0" class="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 rounded-xl p-6 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
+                <!-- Form Content -->
+                <div class="px-8 py-6">
+                    <!-- Plan Settings Form -->
+                    <div class="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-700/50 rounded-xl p-6 mb-8">
+                        <div class="flex items-center space-x-4 mb-6">
                             <div class="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="text-lg font-bold text-blue-900 dark:text-blue-100">Tahmini Toplam Maliyet</h4>
-                                <p class="text-sm text-blue-700 dark:text-blue-300">Düzenlenebilir tedavilerin toplam ücreti</p>
+                                <h3 class="text-xl font-bold text-blue-900 dark:text-blue-100">Tedavi Planı Ayarları</h3>
+                                <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">Temel plan bilgilerini güncelleyin</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
-                                 x-text="formatCurrency(totalCost)"></div>
-                            <div class="text-sm text-blue-700 dark:text-blue-300 font-medium">TL</div>
+
+                        <form method="POST" action="{{ route('treatment-plans.update', $treatmentPlan) }}" class="space-y-6">
+                            @csrf
+                            @method('PATCH')
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="dentist_id" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Sorumlu Diş Hekimi <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="dentist_id" name="dentist_id" required
+                                        class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                                        <option value="">Hekim Seçiniz</option>
+                                        @foreach($dentists as $dentist)
+                                            <option value="{{ $dentist['id'] }}" {{ $treatmentPlan->dentist_id == $dentist['id'] ? 'selected' : '' }}>
+                                                {{ $dentist['name'] }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="status" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                        Tedavi Planı Durumu <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="status" name="status" required
+                                        class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                                        <option value="draft" {{ $treatmentPlan->status == 'draft' ? 'selected' : '' }}>📝 Taslak</option>
+                                        <option value="active" {{ $treatmentPlan->status == 'active' ? 'selected' : '' }}>📅 Aktif</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Sadece taslak ve aktif durumları değiştirebilirsiniz. İptal ve tamamlanma işlemleri ayrı olarak yapılır.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="notes" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    Plan Notları
+                                </label>
+                                <textarea id="notes" name="notes" rows="4"
+                                    class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                                    placeholder="Tedavi planı ile ilgili genel notlar...">{{ $treatmentPlan->notes }}</textarea>
+                            </div>
+
+                            <div class="flex items-center justify-end">
+                                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl">
+                                    Ayarları Kaydet
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Treatment Plan Items Section -->
+                    <div class="border-t border-gray-200/50 dark:border-gray-600/50 pt-8 mt-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-4">
+                                <div class="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Tedavi Kalemleri</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300">Tedavi planındaki öğeler ve durumları</p>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Items List -->
+                        <div class="space-y-4">
+                            @php
+                                $hasCancellableItems = false;
+                            @endphp
+
+                            @forelse($treatmentPlan->items as $item)
+                                <div class="bg-gradient-to-r from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/50 p-6 shadow-sm">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                                <span class="text-white font-semibold text-sm">{{ $loop->iteration }}</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $item->treatment->name ?? 'Tedavi Silinmiş' }}</span>
+                                                @if($item->tooth_number)
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400">(Diş {{ $item->tooth_number }})</span>
+                                                @endif
+                                            </div>
+                                            @if($item->status->value === 'done')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                    ✅ Tamamlandı
+                                                </span>
+                                            @elseif($item->status->value === 'cancelled')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                                    ❌ İptal Edildi
+                                                </span>
+                                            @elseif($item->status->value === 'in_progress')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                    ⚡ Devam Ediyor
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+                                                    📅 Planlandı
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if($item->status->value !== 'done' && $item->status->value !== 'cancelled')
+                                            @php
+                                                $hasCancellableItems = true;
+                                            @endphp
+                                            <button type="button"
+                                                onclick="confirmCancelItem({{ $item->id }}, '{{ addslashes($item->treatment->name ?? 'Tedavi') }}', {{ $item->tooth_number ?? 'null' }}, {{ $item->appointment ? 'true' : 'false' }})"
+                                                class="inline-flex items-center px-4 py-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium rounded-lg transition-all duration-300 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                                Öğeyi İptal Et
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                            <span class="font-medium text-gray-700 dark:text-gray-300">Randevu:</span>
+                                            @if($item->appointment)
+                                                <span class="text-gray-900 dark:text-white">{{ $item->appointment->start_at->format('d.m.Y H:i') }}</span>
+                                                @if($item->appointment->rescheduled_from)
+                                                    <span class="text-xs text-orange-600 dark:text-orange-400 block">
+                                                        (Önceden: {{ $item->appointment->rescheduled_from->format('d.m.Y H:i') }})
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="text-gray-500 dark:text-gray-400">Randevu Yok</span>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <span class="font-medium text-gray-700 dark:text-gray-300">Gerçekleşen Tarih:</span>
+                                            @if($item->actual_date)
+                                                <span class="text-gray-900 dark:text-white">{{ $item->actual_date->format('d.m.Y H:i') }}</span>
+                                            @else
+                                                <span class="text-gray-500 dark:text-gray-400">-</span>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <span class="font-medium text-gray-700 dark:text-gray-300">Ücret:</span>
+                                            <span class="text-gray-900 dark:text-white">{{ number_format($item->estimated_price, 2, ',', '.') }} TL</span>
+                                        </div>
+                                    </div>
+
+                                    @if($item->status->value === 'done')
+                                        <div class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                                            <div class="flex items-center space-x-2">
+                                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                <span class="text-sm font-medium text-green-800 dark:text-green-200">Bu öğe tamamlandığı için düzenlenemez veya iptal edilemez.</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="text-center py-12">
+                                    <div class="w-24 h-24 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Tedavi öğesi bulunmuyor</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Bu tedavi planında henüz öğe bulunmuyor.</p>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <!-- Cancellation Section -->
+                        @if(!$hasCancellableItems && $treatmentPlan->items->count() > 0)
+                            <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4a2 2 0 00-3.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">İptal edilecek bir işlem bulunamadı</h4>
+                                        <p class="text-sm text-yellow-700 dark:text-yellow-300">Tüm tedavi öğeleri tamamlanmış veya zaten iptal edilmiş durumda.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif($hasCancellableItems)
+                            <div class="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4a2 2 0 00-3.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-red-800 dark:text-red-200">Tamamlanmamış tedavi plan öğeleri buradan iptal edilir.</h4>
+                                        <p class="text-sm text-red-700 dark:text-red-300">İptal butonu şu şekilde işlem yapar: Bu işlem geri alınamaz. Emin misiniz? (Randevu varsa, randevuyu iptal et, plan öğesini iptal et)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Entire Plan Cancellation Section -->
+                    @php
+                        $completedCount = $treatmentPlan->items()->where('status', 'done')->count();
+                        $incompleteCount = $treatmentPlan->items()->whereNotIn('status', ['done', 'cancelled'])->count();
+                    @endphp
+
+                    @if($treatmentPlan->status->value !== 'cancelled' && $treatmentPlan->status->value !== 'cancelled_partial' && $incompleteCount > 0)
+                        <div class="border-t border-gray-200/50 dark:border-gray-600/50 pt-8 mt-8">
+                            <div class="bg-gradient-to-r from-red-50 via-red-100 to-red-50 dark:from-red-900/20 dark:via-red-900/30 dark:to-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-6">
+                                <div class="flex items-center space-x-4 mb-6">
+                                    <div class="p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-red-900 dark:text-red-100">Tedavi Planını İptal Et</h3>
+                                        <p class="text-sm text-red-700 dark:text-red-300 mt-1">Bu işlem geri alınamaz. Tüm tedavi planını iptal eder.</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-red-200 dark:border-red-700 mb-6">
+                                    <div class="flex items-center space-x-4 mb-4">
+                                        <div class="p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+                                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4a2 2 0 00-3.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-lg font-bold text-red-900 dark:text-red-100">Tüm Tedavi Planını İptal Et</h4>
+                                            <p class="text-sm text-red-700 dark:text-red-300">Tamamlanmamış işlemlerin randevuları iptal edilir. Tamamlanmış işlemler korunur.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-6">
+                                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                            <div class="flex items-center justify-between">
+                                                <span class="font-medium text-gray-700 dark:text-gray-300">Tamamlanmış İşlemler:</span>
+                                                <span class="text-lg font-bold text-green-600 dark:text-green-400">{{ $completedCount }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                            <div class="flex items-center justify-between">
+                                                <span class="font-medium text-gray-700 dark:text-gray-300">İptal Edilecek İşlemler:</span>
+                                                <span class="text-lg font-bold text-red-600 dark:text-red-400">{{ $incompleteCount }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
+                                        <div class="flex items-center space-x-3">
+                                            <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4a2 2 0 00-3.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                            </svg>
+                                            <div>
+                                                <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                                    @if($completedCount > 0)
+                                                        Tamamlanmış işlemler korunacak. Tedavi Plan Durumu: <strong>Kısmen İptal</strong>
+                                                    @else
+                                                        Tüm işlemler iptal edilecek. Tedavi Plan Durumu: <strong>İptal</strong>
+                                                    @endif
+                                                </p>
+                                                <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                                                    Randevulu işlemlerin randevuları otomatik olarak iptal edilecektir.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="button"
+                                        onclick="cancelEntirePlan()"
+                                        class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                        id="cancel-entire-plan-btn">
+                                        Tüm Tedavi Planını İptal Et
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif($treatmentPlan->status->value !== 'cancelled' && $treatmentPlan->status->value !== 'cancelled_partial' && $incompleteCount === 0 && $treatmentPlan->items->count() > 0)
+                        <div class="border-t border-gray-200/50 dark:border-gray-600/50 pt-8 mt-8">
+                            <div class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl p-6">
+                                <div class="flex items-center space-x-4 mb-4">
+                                    <div class="p-3 bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tedavi Planı Tamamlandı</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Tüm işlemler tamamlandığı için tedavi planı iptal edilemez.</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800 dark:text-green-200">
+                                                Tüm tedavi öğeleri tamamlanmış durumda. Tedavi planı başarıyla gerçekleştirildi.
+                                            </p>
+                                            <p class="text-xs text-green-700 dark:text-green-300 mt-1">
+                                                İptal işlemi için tamamlanmamış öğeler olması gerekir.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-end gap-4 pt-8 border-t border-gray-200/50 dark:border-gray-600/50 mt-8">
+                        <a href="{{ route('treatment-plans.show', $treatmentPlan) }}" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl transition-all duration-300 shadow-sm hover:shadow-md">
+                            İptal
+                        </a>
                     </div>
                 </div>
-
-                <!-- Action Buttons -->
-                <div class="flex items-center justify-end gap-4 pt-8 border-t border-gray-200/50 dark:border-gray-600/50">
-                    <a href="{{ route('treatment-plans.show', $treatmentPlan) }}" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl transition-all duration-300 shadow-sm hover:shadow-md">
-                        İptal
-                    </a>
-                    <button type="submit"
-                        :disabled="!hasChanges || saving"
-                        :class="(!hasChanges || saving) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl'"
-                        class="px-8 py-3 text-white font-medium rounded-xl transition-all duration-300 flex items-center">
-                        <svg x-show="saving" class="animate-spin -ml-1 mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span x-show="!hasChanges && !saving">Değişiklik Yok</span>
-                        <span x-show="hasChanges && !saving">Değişiklikleri Kaydet</span>
-                        <span x-show="saving">Kaydediliyor...</span>
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
-    <!-- Alpine.js Functions -->
+    <!-- Item Cancellation Modal -->
+    <div id="item-cancel-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4a2 2 0 00-3.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">
+                            Tedavi Öğesini İptal Et
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Bu işlem geri alınamaz. Tedavi öğesini iptal etmek istediğinizden emin misiniz?
+                            </p>
+                            <div id="item-cancel-details" class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <!-- Item details will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="cancelItemConfirmed()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    Evet, İptal Et
+                </button>
+                <button type="button" onclick="closeItemCancelModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    İptal
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        function treatmentPlanForm(config) {
-            return {
-                treatmentPlan: config.treatmentPlan,
-                items: config.items || [],
-                treatments: config.treatments || [],
-                patientId: config.patientId,
-                hasChanges: false,
-                deletedItems: [],
-                loading: config.loading ?? false,
-                saving: false,
-                saveMessage: '',
-                saveMessageType: '',
+        let currentItemId = null;
 
-                init() {
-                    // Deep watch for items array changes - reactivity sağlamak için
-                    this.$watch('items', (newItems, oldItems) => {
-                        this.hasChanges = true;
-                        this.updateTotalCost();
-                    }, { deep: true });
+        function confirmCancelItem(itemId, treatmentName, toothNumber, hasAppointment) {
+            currentItemId = itemId;
 
-                    // Watch for treatment plan changes
-                    this.$watch('treatmentPlan', (newVal, oldVal) => {
-                        this.hasChanges = true;
-                    }, { deep: true });
-
-                    // Watch for deleted items
-                    this.$watch('deletedItems', (newVal, oldVal) => {
-                        this.hasChanges = true;
-                    });
-
-                    // Initial total cost calculation
-                    this.updateTotalCost();
-                },
-
-                // Auto-save kaldırıldı - sadece manuel kaydetme
-
-
-                get totalCost() {
-                    // Computed property olarak toplam maliyeti hesapla - tamamlanan öğeler hariç
-                    return this.items
-                        .filter(item => item.status !== 'done') // Tamamlanan öğeleri hariç tut
-                        .reduce((t, i) => t + (parseFloat(i.estimated_price) || 0), 0);
-                },
-
-                updateTotalCost() {
-                    // Force reactivity update for total cost - treatmentPlan objesini güncelle
-                    // Tamamlanan öğeler hariç
-                    this.treatmentPlan = {
-                        ...this.treatmentPlan,
-                        total_estimated_cost: this.items
-                            .filter(item => item.status !== 'done')
-                            .reduce((total, item) => {
-                                return total + (parseFloat(item.estimated_price) || 0);
-                            }, 0)
-                    };
-                },
-
-                addItem() {
-                    // Tedavi seçilmeden kalem eklenemesin - validation kontrolü
-                    if (!this.treatmentPlan.dentist_id) {
-                        this.showMessage('Önce sorumlu diş hekimi seçmelisiniz.', 'error');
-                        alert('❌ Önce sorumlu diş hekimi seçmelisiniz.');
-                        return;
-                    }
-
-                    // Create new item with proper defaults - reactive olması için düzgün yapı
-                    const newItem = {
-                        id: null,
-                        treatment_id: '',
-                        treatment_name: '',
-                        tooth_number: '',
-                        appointment_date: '',
-                        estimated_price: 0.01, // Minimum validation değeri
-                        status: 'planned',
-                        treatment_plan_id: this.treatmentPlan.id
-                    };
-
-                    // Alpine.js reactivity için items array'ini yeniden ata
-                    this.items = [...this.items, newItem];
-                    this.hasChanges = true;
-
-                    // Toplam maliyeti güncelle
-                    this.updateTotalCost();
-                },
-
-                removeItem(index) {
-                    const item = this.items[index];
-
-                    // Validation checks - güvenlik kontrolleri
-                    if (item.status === 'done') {
-                        this.showMessage('Tamamlanmış tedavi kalemi silinemez.', 'error');
-                        alert('❌ Tamamlanmış tedavi kalemi silinemez.');
-                        return;
-                    }
-
-                    if (item.appointment_date && item.appointment_date.trim() !== '') {
-                        this.showMessage('Randevusu olan tedavi kalemi silinemez. Önce randevuyu iptal edin.', 'error');
-                        alert('❌ Randevusu olan tedavi kalemi silinemez. Önce randevuyu iptal edin.');
-                        return;
-                    }
-
-                    // Confirm deletion for existing items
-                    if (item.id && !confirm('Bu tedavi kalemini silmek istediğinizden emin misiniz?')) {
-                        return;
-                    }
-
-                    // Remove from items array - reactivity için splice kullan
-                    this.items.splice(index, 1);
-
-                    // If item has an ID (existing item), add to deletedItems
-                    if (item.id) {
-                        this.deletedItems.push(item.id);
-                    }
-
-                    this.hasChanges = true;
-                    // Toplam maliyeti güncelle
-                    this.updateTotalCost();
-                },
-
-                showMessage(message, type = 'info') {
-                    this.saveMessage = message;
-                    this.saveMessageType = type;
-
-                    // Clear message after appropriate time
-                    const timeout = type === 'error' ? 5000 : 3000;
-                    setTimeout(() => {
-                        this.saveMessage = '';
-                        this.saveMessageType = '';
-                    }, timeout);
-                },
-
-                updatePrice(index) {
-                    const treatmentId = this.items[index].treatment_id;
-                    const treatment = this.treatments.find(tr => tr.id.toString() === treatmentId);
-                    if (treatment) {
-                        // Update price if default_price exists - varsayılan fiyatı ayarla
-                        if (treatment.default_price && (!this.items[index].estimated_price || this.items[index].estimated_price == 0)) {
-                            this.items[index].estimated_price = parseFloat(treatment.default_price);
-                        }
-                        // Update treatment_name - tedavi adını güncelle
-                        this.items[index].treatment_name = treatment.name;
-
-                        // Reactivity için items array'ini güncelle
-                        this.items = [...this.items];
-                        this.hasChanges = true;
-                        this.updateTotalCost();
-                    }
-                },
-
-                formatCurrency(amount) {
-                    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(amount || 0);
-                },
-
-                async persistChanges() {
-                    if (!this.hasChanges || this.saving) return;
-
-                    this.saving = true;
-                    this.saveMessage = '';
-                    this.saveMessageType = '';
-
-                    try {
-                        // Validate required fields before sending - validation kontrolü
-                        if (!this.treatmentPlan.dentist_id) {
-                            const errorMsg = 'Sorumlu diş hekimi seçilmelidir.';
-                            alert('❌ ' + errorMsg);
-                            throw new Error(errorMsg);
-                        }
-
-                        // Eğer hiç değişiklik yoksa çık
-                        if (!this.hasChanges) {
-                            return;
-                        }
-
-                        // Items validation - sadece düzenlenebilir olan geçerli tedavi kalemleri için validation
-                        const validItems = this.items.filter(item => item.status !== 'done' && item.treatment_id && item.estimated_price > 0);
-                        for (const item of validItems) {
-                            if (!item.treatment_id) {
-                                const errorMsg = 'Tüm tedavi kalemleri için tedavi türü seçilmelidir.';
-                                alert('❌ ' + errorMsg);
-                                throw new Error(errorMsg);
-                            }
-                            if (!item.estimated_price || parseFloat(item.estimated_price) < 0.01) {
-                                const errorMsg = 'Tüm tedavi kalemleri için geçerli bir fiyat (minimum 0.01) girilmelidir.';
-                                alert('❌ ' + errorMsg);
-                                throw new Error(errorMsg);
-                            }
-                        }
-
-                        // Prepare form data for submission - tüm current state'i gönder
-                        const formData = new FormData();
-
-                        // Treatment plan verileri (her zaman gönder)
-                        formData.append('dentist_id', this.treatmentPlan.dentist_id);
-                        formData.append('status', this.treatmentPlan.status);
-                        formData.append('notes', this.treatmentPlan.notes || '');
-
-                        // Sadece düzenlenebilir olan geçerli items'ları gönder
-                        let validItemIndex = 0;
-                        this.items.forEach((item) => {
-                            // Tamamlanan öğeleri gönderme (zaten düzenlenemez)
-                            if (item.status === 'done') {
-                                return; // Bu öğeyi atla
-                            }
-
-                            // Sadece geçerli item'ları gönder (treatment_id ve estimated_price dolu olanlar)
-                            if (item.treatment_id && item.estimated_price > 0) {
-                                console.log('Gönderilen öğe:', {
-                                    id: item.id,
-                                    treatment_id: item.treatment_id,
-                                    appointment_date: item.appointment_date,
-                                    estimated_price: item.estimated_price,
-                                    status: item.status
-                                });
-
-                                if (item.id) {
-                                    // Existing item
-                                    formData.append(`items[${validItemIndex}][id]`, item.id);
-                                    formData.append(`items[${validItemIndex}][treatment_id]`, item.treatment_id);
-                                    formData.append(`items[${validItemIndex}][tooth_number]`, item.tooth_number || '');
-                                    formData.append(`items[${validItemIndex}][appointment_date]`, item.appointment_date || '');
-                                    formData.append(`items[${validItemIndex}][estimated_price]`, item.estimated_price || 0);
-                                    formData.append(`items[${validItemIndex}][status]`, item.status);
-                                } else {
-                                    // New item - debug log
-                                    console.log('Yeni öğe gönderiliyor:', {
-                                        treatment_id: item.treatment_id,
-                                        appointment_date: item.appointment_date,
-                                        estimated_price: item.estimated_price
-                                    });
-                                    formData.append(`new_items[${validItemIndex}][treatment_id]`, item.treatment_id);
-                                    formData.append(`new_items[${validItemIndex}][tooth_number]`, item.tooth_number || '');
-                                    formData.append(`new_items[${validItemIndex}][appointment_date]`, item.appointment_date || '');
-                                    formData.append(`new_items[${validItemIndex}][estimated_price]`, item.estimated_price || 0);
-                                    formData.append(`new_items[${validItemIndex}][status]`, item.status);
-                                }
-                                validItemIndex++;
-                            }
-                        });
-
-                        // Add deleted items
-                        this.deletedItems.forEach((itemId, index) => {
-                            formData.append(`deleted_items[${index}]`, itemId);
-                        });
-
-                        // Normal update endpoint kullan
-                        const response = await fetch(`/treatment-plans/${this.treatmentPlan.id}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'Accept': 'application/json',
-                                'X-HTTP-Method-Override': 'PATCH'
-                            },
-                            body: formData
-                        });
-
-                        if (!response.ok) {
-                            let errorMessage = 'Sunucu hatası oluştu.';
-                            try {
-                                const errorData = await response.json();
-                                errorMessage = errorData.message || errorMessage;
-                            } catch (e) {
-                                // If response is not JSON, use status text
-                                errorMessage = response.statusText || errorMessage;
-                            }
-                            throw new Error(errorMessage);
-                        }
-
-                        const result = await response.json();
-
-                        // Update local data with server response - server yanıtını işle
-                        if (result.updated_items) {
-                            this.items = result.updated_items.map(item => ({
-                                id: item.id,
-                                treatment_id: item.treatment_id,
-                                treatment_name: item.treatment_name || '',
-                                tooth_number: item.tooth_number || '',
-                                appointment_date: item.appointment_date || '',
-                                estimated_price: parseFloat(item.estimated_price) || 0,
-                                status: item.status,
-                                treatment_plan_id: this.treatmentPlan.id
-                            }));
-                        }
-
-                        if (result.total_cost !== undefined) {
-                            this.treatmentPlan.total_estimated_cost = result.total_cost;
-                        }
-
-                        if (result.plan_status) {
-                            this.treatmentPlan.status = result.plan_status;
-                        }
-
-                        // Clear changes - değişiklikleri temizle
-                        this.hasChanges = false;
-                        this.deletedItems = [];
-
-                        // Show success message and alert - başarı mesajı göster
-                        this.saveMessage = 'Değişiklikler başarıyla kaydedildi.';
-                        this.saveMessageType = 'success';
-                        alert('✅ Değişiklikler başarıyla kaydedildi!');
-
-                        // Clear message after 3 seconds
-                        setTimeout(() => {
-                            this.saveMessage = '';
-                            this.saveMessageType = '';
-                        }, 3000);
-
-                    } catch (error) {
-                        console.error('Save error:', error);
-                        this.saveMessage = error.message || 'Kaydetme sırasında bir hata oluştu.';
-                        this.saveMessageType = 'error';
-                        alert('❌ Hata: ' + (error.message || 'Kaydetme sırasında bir hata oluştu.'));
-
-                        // Clear error message after 5 seconds
-                        setTimeout(() => {
-                            this.saveMessage = '';
-                            this.saveMessageType = '';
-                        }, 5000);
-                    } finally {
-                        this.saving = false;
-                    }
-                },
-
-
+            let detailsHtml = `<div class="space-y-2">`;
+            detailsHtml += `<p class="text-sm font-medium text-gray-900 dark:text-white">${treatmentName}`;
+            if (toothNumber) {
+                detailsHtml += ` (Diş ${toothNumber})`;
             }
+            detailsHtml += `</p>`;
+
+            if (hasAppointment) {
+                detailsHtml += `<p class="text-sm text-orange-600 dark:text-orange-400">⚠️ Bu öğeye bağlı randevu varsa, randevu da iptal edilecektir.</p>`;
+            }
+
+            detailsHtml += `<p class="text-sm text-red-600 dark:text-red-400 font-medium">Bu işlem geri alınamaz!</p>`;
+            detailsHtml += `</div>`;
+
+            document.getElementById('item-cancel-details').innerHTML = detailsHtml;
+            document.getElementById('item-cancel-modal').classList.remove('hidden');
+        }
+
+        function closeItemCancelModal() {
+            document.getElementById('item-cancel-modal').classList.add('hidden');
+            currentItemId = null;
+        }
+
+        function cancelItemConfirmed() {
+            if (!currentItemId) return;
+
+            // Show loading state
+            const confirmBtn = document.querySelector('#item-cancel-modal button[onclick="cancelItemConfirmed()"]');
+            const originalText = confirmBtn.textContent;
+            confirmBtn.textContent = 'İptal Ediliyor...';
+            confirmBtn.disabled = true;
+
+            // Send AJAX request
+            fetch('{{ route("treatment-plans.cancel-items", $treatmentPlan) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    item_ids: [currentItemId]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert(data.message);
+                    // Reload page to show updated state
+                    window.location.reload();
+                } else {
+                    alert('Hata: ' + data.message);
+                    confirmBtn.textContent = originalText;
+                    confirmBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                confirmBtn.textContent = originalText;
+                confirmBtn.disabled = false;
+            });
+        }
+
+        function cancelEntirePlan() {
+            if (!confirm('Bu işlem geri alınamaz. Tüm tedavi planını iptal etmek istediğinizden emin misiniz?')) {
+                return;
+            }
+
+            // Show loading state
+            const cancelBtn = document.getElementById('cancel-entire-plan-btn');
+            const originalText = cancelBtn.textContent;
+            cancelBtn.textContent = 'İptal Ediliyor...';
+            cancelBtn.disabled = true;
+
+            // Send AJAX request
+            fetch('{{ route("treatment-plans.cancel-plan", $treatmentPlan) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert(data.message);
+                    // Reload page to show updated state
+                    window.location.reload();
+                } else {
+                    alert('Hata: ' + data.message);
+                    cancelBtn.textContent = originalText;
+                    cancelBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                cancelBtn.textContent = originalText;
+                cancelBtn.disabled = false;
+            });
         }
     </script>
+
 </x-app-layout>

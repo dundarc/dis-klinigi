@@ -774,6 +774,179 @@ class TreatmentPlanService
 
 
     /**
+     * Cancel entire treatment plan or specific items
+     */
+    public function cancelTreatmentPlan(TreatmentPlan $plan, array $itemIds = null, ?User $user = null): array
+    {
+        return DB::transaction(function () use ($plan, $itemIds, $user) {
+            $results = [
+                'cancelled_items' => [],
+                'cancelled_appointments' => [],
+                'plan_status_updated' => false,
+                'new_plan_status' => null,
+            ];
+
+            if ($itemIds === null) {
+                // Cancel entire plan
+                $results = $this->cancelEntirePlan($plan, $user);
+            } else {
+                // Cancel specific items
+                $results = $this->cancelSpecificItems($plan, $itemIds, $user);
+            }
+
+            return $results;
+        });
+    }
+
+    /**
+     * Cancel entire treatment plan
+     */
+    private function cancelEntirePlan(TreatmentPlan $plan, ?User $user): array
+    {
+        $results = [
+            'cancelled_items' => [],
+            'cancelled_appointments' => [],
+            'plan_status_updated' => false,
+            'new_plan_status' => null,
+        ];
+
+        $completedItemsCount = $plan->items()->where('status', TreatmentPlanItemStatus::DONE)->count();
+
+        if ($completedItemsCount > 0) {
+            // Partial cancellation - only cancel incomplete items
+            $incompleteItems = $plan->items()->where('status', '!=', TreatmentPlanItemStatus::DONE)->get();
+
+            foreach ($incompleteItems as $item) {
+                $itemResult = $this->cancelItem($item, $user, 'Treatment plan partially cancelled');
+                $results['cancelled_items'][] = $itemResult['item'];
+                $results['cancelled_appointments'] = array_merge($results['cancelled_appointments'], $itemResult['appointments']);
+            }
+
+            // Update plan status to cancelled (but mark as partial)
+            $plan->update(['status' => TreatmentPlanStatus::CANCELLED]);
+            $results['plan_status_updated'] = true;
+            $results['new_plan_status'] = 'cancelled_partial';
+
+            // Log partial cancellation
+            \App\Models\ActivityLog::create([
+                'user_id' => $user?->id,
+                'action' => 'treatment_plan_partial_cancel',
+                'model_type' => TreatmentPlan::class,
+                'model_id' => $plan->id,
+                'description' => "Treatment plan partially cancelled. {$completedItemsCount} completed items preserved.",
+                'old_values' => ['status' => $plan->getOriginal('status')],
+                'new_values' => ['status' => 'cancelled_partial'],
+                'ip_address' => request()->ip(),
+            ]);
+
+        } else {
+            // Full cancellation - cancel all items
+            foreach ($plan->items as $item) {
+                $itemResult = $this->cancelItem($item, $user, 'Treatment plan fully cancelled');
+                $results['cancelled_items'][] = $itemResult['item'];
+                $results['cancelled_appointments'] = array_merge($results['cancelled_appointments'], $itemResult['appointments']);
+            }
+
+            $plan->update(['status' => TreatmentPlanStatus::CANCELLED]);
+            $results['plan_status_updated'] = true;
+            $results['new_plan_status'] = 'cancelled';
+
+            // Log full cancellation
+            \App\Models\ActivityLog::create([
+                'user_id' => $user?->id,
+                'action' => 'treatment_plan_cancel',
+                'model_type' => TreatmentPlan::class,
+                'model_id' => $plan->id,
+                'description' => 'Treatment plan fully cancelled.',
+                'old_values' => ['status' => $plan->getOriginal('status')],
+                'new_values' => ['status' => 'cancelled'],
+                'ip_address' => request()->ip(),
+            ]);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Cancel specific treatment plan items
+     */
+    private function cancelSpecificItems(TreatmentPlan $plan, array $itemIds, ?User $user): array
+    {
+        $results = [
+            'cancelled_items' => [],
+            'cancelled_appointments' => [],
+            'plan_status_updated' => false,
+            'new_plan_status' => null,
+        ];
+
+        foreach ($itemIds as $itemId) {
+            $item = $plan->items()->find($itemId);
+            if (!$item) continue;
+
+            // Cannot cancel completed items
+            if ($item->status === TreatmentPlanItemStatus::DONE) {
+                continue;
+            }
+
+            $itemResult = $this->cancelItem($item, $user, 'Individual item cancelled');
+            $results['cancelled_items'][] = $itemResult['item'];
+            $results['cancelled_appointments'] = array_merge($results['cancelled_appointments'], $itemResult['appointments']);
+        }
+
+        // Check if all items are now cancelled
+        $activeItemsCount = $plan->items()->whereNotIn('status', [TreatmentPlanItemStatus::CANCELLED])->count();
+        if ($activeItemsCount === 0) {
+            $plan->update(['status' => TreatmentPlanStatus::CANCELLED]);
+            $results['plan_status_updated'] = true;
+            $results['new_plan_status'] = 'cancelled';
+        }
+
+        return $results;
+    }
+
+    /**
+     * Cancel a single treatment plan item
+     */
+    private function cancelItem(TreatmentPlanItem $item, ?User $user, string $reason): array
+    {
+        $cancelledAppointments = [];
+
+        // Cancel associated appointment if exists and is in future
+        if ($item->appointment && $item->appointment->start_at->isFuture()) {
+            $appointment = $item->appointment;
+            $appointment->update([
+                'status' => AppointmentStatus::CANCELLED,
+                'notes' => ($appointment->notes ? $appointment->notes . ' | ' : '') . 'Treatment plan item cancelled'
+            ]);
+            $cancelledAppointments[] = $appointment->id;
+
+            // Log appointment cancellation
+            \App\Models\ActivityLog::create([
+                'user_id' => $user?->id,
+                'action' => 'appointment_cancel',
+                'model_type' => Appointment::class,
+                'model_id' => $appointment->id,
+                'description' => "Appointment cancelled due to treatment plan item cancellation: {$reason}",
+                'old_values' => ['status' => $appointment->getOriginal('status')],
+                'new_values' => ['status' => 'cancelled'],
+                'ip_address' => request()->ip(),
+            ]);
+        }
+
+        // Cancel the item
+        $item->changeStatus(TreatmentPlanItemStatus::CANCELLED, $user, $reason);
+
+        return [
+            'item' => [
+                'id' => $item->id,
+                'treatment_name' => $item->treatment->name ?? 'Unknown',
+                'tooth_number' => $item->tooth_number,
+            ],
+            'appointments' => $cancelledAppointments,
+        ];
+    }
+
+    /**
      * Get cost summary for a treatment plan.
      *
      * @param TreatmentPlan $plan

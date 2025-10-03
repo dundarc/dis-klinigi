@@ -290,7 +290,25 @@
                                         <td class="px-6 py-4">
                                             @if($item->appointment)
                                                 <div class="text-sm">
-                                                    <div class="font-medium text-slate-900 dark:text-slate-100">{{ $item->appointment->start_at->format('d.m.Y H:i') }}</div>
+                                                    @php
+                                                        $dateInfo = app(\App\Services\TreatmentPlanDateService::class)->getDateDisplayInfo($item);
+                                                    @endphp
+                                                    <div class="font-medium text-slate-900 dark:text-slate-100">
+                                                        {{ $dateInfo['planned'] }}
+                                                        @if($dateInfo['is_rescheduled'])
+                                                            <span class="text-amber-600 dark:text-amber-400 text-xs ml-1">(güncellendi)</span>
+                                                        @endif
+                                                    </div>
+                                                    @if($dateInfo['actual'])
+                                                        <div class="text-green-600 dark:text-green-400 text-xs">
+                                                            Gerçekleşen: {{ $dateInfo['actual'] }}
+                                                            @if($dateInfo['is_early'])
+                                                                <span class="text-blue-600 dark:text-blue-400">(erken)</span>
+                                                            @elseif($dateInfo['is_late'])
+                                                                <span class="text-orange-600 dark:text-orange-400">(geç)</span>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                     @if($item->appointment->status->value === 'cancelled')
                                                         <div class="text-red-600 dark:text-red-400 text-xs">İptal edildi ({{ $item->appointment->updated_at->format('d.m.Y') }})</div>
                                                     @elseif($item->appointment->status->value === 'completed')

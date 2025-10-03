@@ -241,6 +241,11 @@ Route::middleware('auth')->group(function () {
     Route::post('treatment-plans/{treatmentPlan}/autosave', [\App\Http\Controllers\TreatmentPlanController::class, 'autosave'])->name('treatment-plans.autosave');
     Route::post('appointments/{appointment}/link-items', [\App\Http\Controllers\QuickActionsController::class, 'linkItemsToAppointment'])->name('appointments.link-items');
 
+    // Tedavi planı iptal işlemleri
+    Route::post('treatment-plans/{treatmentPlan}/cancel', [\App\Http\Controllers\TreatmentPlanController::class, 'cancel'])->name('treatment-plans.cancel');
+    Route::post('treatment-plans/{treatmentPlan}/cancel-items', [\App\Http\Controllers\TreatmentPlanController::class, 'cancelItems'])->name('treatment-plans.cancel-items');
+    Route::post('treatment-plans/{treatmentPlan}/cancel-plan', [\App\Http\Controllers\TreatmentPlanController::class, 'cancelEntirePlan'])->name('treatment-plans.cancel-plan');
+
     // API Routes - Treatment Plans
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('treatment-plans/{treatmentPlan}', function (\App\Models\TreatmentPlan $treatmentPlan) {
@@ -471,6 +476,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/{encounter}/show', [WaitingRoomController::class, 'show'])->name('show');
         Route::get('/{encounter}/action', [WaitingRoomController::class, 'action'])->name('action');
         Route::match(['post', 'put'], '/{encounter}/action', [WaitingRoomController::class, 'updateAction'])->name('action.update');
+        Route::post('/{encounter}/link-treatment-plan-item', [WaitingRoomController::class, 'linkTreatmentPlanItemToEncounter'])->name('link-treatment-plan-item');
+        Route::post('/{encounter}/link-scheduled-treatment-plan-item', [WaitingRoomController::class, 'linkScheduledTreatmentPlanItemToEncounter'])->name('link-scheduled-treatment-plan-item');
     });
 
     // KVKK RotalarÄ±

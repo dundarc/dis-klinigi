@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\TreatmentPlanItem;
 use App\Services\TreatmentPlanService;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TreatmentPlanItemController extends Controller
 {
+    use AuthorizesRequests;
+
     protected TreatmentPlanService $treatmentPlanService;
 
     public function __construct(TreatmentPlanService $treatmentPlanService)
@@ -18,6 +21,8 @@ class TreatmentPlanItemController extends Controller
 
     public function complete(TreatmentPlanItem $item)
     {
+        $this->authorize('complete', $item);
+
         try {
             // Find or create an encounter for this completion
             $encounter = $this->findRecentEncounterForItem($item);
@@ -54,6 +59,8 @@ class TreatmentPlanItemController extends Controller
 
     public function cancel(TreatmentPlanItem $item)
     {
+        $this->authorize('cancel', $item);
+
         try {
             // Remove from appointment if linked
             $appointmentId = $item->appointment_id;
@@ -104,6 +111,8 @@ class TreatmentPlanItemController extends Controller
 
     public function start(TreatmentPlanItem $item)
     {
+        $this->authorize('start', $item);
+
         try {
             $item->changeStatus(
                 \App\Enums\TreatmentPlanItemStatus::IN_PROGRESS,

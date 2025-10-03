@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateTreatmentPlanRequest;
 use App\Models\Patient;
 use App\Services\PdfExportService;
 use App\Services\TreatmentPlanService;
+use App\Services\TreatmentPlanDateService;
 use App\Enums\TreatmentPlanItemStatus;
 use Illuminate\Http\Request;
 
@@ -15,13 +16,16 @@ class TreatmentPlanController extends Controller
 {
     protected TreatmentPlanService $treatmentPlanService;
     protected PdfExportService $pdfExportService;
+    protected TreatmentPlanDateService $dateService;
 
     public function __construct(
         TreatmentPlanService $treatmentPlanService,
-        PdfExportService $pdfExportService
+        PdfExportService $pdfExportService,
+        TreatmentPlanDateService $dateService
     ) {
         $this->treatmentPlanService = $treatmentPlanService;
         $this->pdfExportService = $pdfExportService;
+        $this->dateService = $dateService;
     }
 
     /**
@@ -264,6 +268,183 @@ class TreatmentPlanController extends Controller
             }
             return back()->withErrors(['general' => 'Tedavi planı güncellenirken bir hata oluştu.']);
         }
+    }
+
+    /**
+     * Cancel entire treatment plan
+     */
+    public function cancel(TreatmentPlan $treatmentPlan, Request $request)
+    {
+        $request->validate([
+            'confirmation' => 'required|string|in:I_CONFIRM_CANCELLATION',
+        ]);
+
+        try {
+            $results = $this->treatmentPlanService->cancelTreatmentPlan($treatmentPlan, null, auth()->user());
+
+            $message = $this->generateCancellationMessage($results);
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Treatment plan cancellation failed', [
+                'plan_id' => $treatmentPlan->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Tedavi planı iptal işlemi başarısız oldu: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cancel specific treatment plan items
+     */
+    public function cancelItems(TreatmentPlan $treatmentPlan, Request $request)
+    {
+        $request->validate([
+            'item_ids' => 'required|array',
+            'item_ids.*' => 'integer|exists:treatment_plan_items,id',
+        ]);
+
+        try {
+            $results = $this->treatmentPlanService->cancelTreatmentPlan($treatmentPlan, $request->item_ids, auth()->user());
+
+            $message = $this->generateCancellationMessage($results);
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'results' => $results
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Treatment plan items cancellation failed', [
+                'plan_id' => $treatmentPlan->id,
+                'item_ids' => $request->item_ids,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Tedavi öğeleri iptal işlemi başarısız oldu: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel entire treatment plan (new method for plan-level cancellation)
+     */
+    public function cancelEntirePlan(TreatmentPlan $treatmentPlan, Request $request)
+    {
+        try {
+            // Check if plan is already cancelled
+            if ($treatmentPlan->status->value === 'cancelled' || $treatmentPlan->status->value === 'cancelled_partial') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tedavi planı zaten iptal edilmiş durumda.'
+                ], 400);
+            }
+
+            $completedCount = $treatmentPlan->items()->where('status', 'done')->count();
+            $totalCount = $treatmentPlan->items()->count();
+
+            // Determine new plan status
+            $newPlanStatus = $completedCount > 0 ? 'cancelled_partial' : 'cancelled';
+
+            DB::transaction(function () use ($treatmentPlan, $newPlanStatus) {
+                // Cancel all incomplete items and their appointments
+                $incompleteItems = $treatmentPlan->items()
+                    ->whereNotIn('status', ['done', 'cancelled'])
+                    ->get();
+
+                foreach ($incompleteItems as $item) {
+                    // Cancel appointment if exists
+                    if ($item->appointment) {
+                        $item->appointment->update([
+                            'status' => \App\Enums\AppointmentStatus::CANCELLED,
+                            'notes' => ($item->appointment->notes ? $item->appointment->notes . ' | ' : '') . 'Tedavi planı iptalinden dolayı randevu iptal edildi'
+                        ]);
+                    }
+
+                    // Cancel the item
+                    $item->changeStatus(
+                        \App\Enums\TreatmentPlanItemStatus::CANCELLED,
+                        auth()->user(),
+                        'Tedavi planı iptalinden dolayı öğe iptal edildi',
+                        ['plan_cancellation' => true]
+                    );
+                }
+
+                // Update plan status
+                $treatmentPlan->update(['status' => $newPlanStatus]);
+            });
+
+            // Generate message
+            $cancelledItemsCount = $treatmentPlan->items()->where('status', 'cancelled')->count();
+            $cancelledAppointmentsCount = $treatmentPlan->items()
+                ->where('status', 'cancelled')
+                ->whereHas('appointment', function ($query) {
+                    $query->where('status', \App\Enums\AppointmentStatus::CANCELLED);
+                })->count();
+
+            $message = '';
+            if ($cancelledItemsCount > 0) {
+                $message .= $cancelledItemsCount . ' tedavi öğesi iptal edildi';
+            }
+            if ($cancelledAppointmentsCount > 0) {
+                $message .= ($message ? ', ' : '') . $cancelledAppointmentsCount . ' randevu iptal edildi';
+            }
+
+            if ($newPlanStatus === 'cancelled_partial') {
+                $message .= ($message ? ', ' : '') . 'Tedavi Plan Durumu: Kısmen İptal';
+            } else {
+                $message .= ($message ? ', ' : '') . 'Tedavi Plan Durumu: İptal';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'new_status' => $newPlanStatus
+            ]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Treatment plan entire cancellation failed', [
+                'plan_id' => $treatmentPlan->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Tedavi planı iptal işlemi başarısız oldu: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate cancellation message from results
+     */
+    private function generateCancellationMessage(array $results): string
+    {
+        $messages = [];
+
+        if (!empty($results['cancelled_items'])) {
+            $messages[] = count($results['cancelled_items']) . ' tedavi öğesi iptal edildi';
+        }
+
+        if (!empty($results['cancelled_appointments'])) {
+            $messages[] = count($results['cancelled_appointments']) . ' randevu iptal edildi';
+        }
+
+        if ($results['plan_status_updated']) {
+            if ($results['new_plan_status'] === 'cancelled_partial') {
+                $messages[] = 'Tedavi planı kısmen iptal edildi (tamamlanan işlemler korundu)';
+            } elseif ($results['new_plan_status'] === 'cancelled') {
+                $messages[] = 'Tedavi planı tamamen iptal edildi';
+            }
+        }
+
+        return implode(', ', $messages) . '.';
     }
 
     /**

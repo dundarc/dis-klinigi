@@ -17,6 +17,7 @@ use App\Http\Requests\StoreEmergencyRequest;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Services\TreatmentPlanAppointmentService;
 use App\Services\EncounterService;
+use App\Services\TreatmentPlanDateService;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -27,7 +28,8 @@ class WaitingRoomController extends Controller
 
     public function __construct(
         private readonly TreatmentPlanAppointmentService $treatmentPlanService,
-        private readonly EncounterService $encounterService
+        private readonly EncounterService $encounterService,
+        private readonly TreatmentPlanDateService $dateService
     ) {
     }
 
@@ -421,9 +423,54 @@ class WaitingRoomController extends Controller
             'user_agent' => $request->userAgent(),
             'csrf_token' => $request->header('X-CSRF-TOKEN'),
             'referer' => $request->header('referer'),
+            'auto_complete_item_id' => $request->input('auto_complete_item_id'),
         ]);
 
         $this->authorize('update', $encounter);
+
+        // Auto-complete treatment plan item if specified
+        if ($request->filled('auto_complete_item_id')) {
+            $autoCompleteItemId = $request->input('auto_complete_item_id');
+            $treatmentPlanItem = \App\Models\TreatmentPlanItem::find($autoCompleteItemId);
+
+            if ($treatmentPlanItem) {
+                // Yetkilendirme kontrolü
+                $this->authorize('complete', $treatmentPlanItem);
+
+                // Treatment plan item'ı complete et ve actual_date'i güncelle
+                $treatmentPlanItem->update([
+                    'actual_date' => $encounter->started_at ?? $encounter->arrived_at ?? now(),
+                ]);
+
+                $treatmentPlanItem->changeStatus(
+                    \App\Enums\TreatmentPlanItemStatus::DONE,
+                    auth()->user(),
+                    'Otomatik olarak ziyaret tamamlanmasından işaretlendi',
+                    ['encounter_id' => $encounter->id, 'auto_completed' => true]
+                );
+
+                // ActivityLog kaydı
+                \App\Models\ActivityLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'treatment_plan_item_auto_completed',
+                    'model_type' => 'App\Models\TreatmentPlanItem',
+                    'model_id' => $treatmentPlanItem->id,
+                    'description' => "Tedavi plan öğesi otomatik olarak tamamlandı: " . ($treatmentPlanItem->treatment ? $treatmentPlanItem->treatment->name : 'Tedavi Silinmiş'),
+                    'old_values' => [
+                        'status' => $treatmentPlanItem->getOriginal('status'),
+                        'actual_date' => $treatmentPlanItem->getOriginal('actual_date'),
+                    ],
+                    'new_values' => [
+                        'status' => \App\Enums\TreatmentPlanItemStatus::DONE->value,
+                        'actual_date' => $treatmentPlanItem->actual_date,
+                        'encounter_id' => $encounter->id,
+                        'auto_completed' => true,
+                    ],
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+        }
 
         $validated = $request->validate([
             'status' => ['nullable', new Enum(EncounterStatus::class)],
@@ -443,6 +490,9 @@ class WaitingRoomController extends Controller
                 if ($encounter->appointment_id) {
                     $encounter->appointment->update(['status' => AppointmentStatus::COMPLETED]);
                 }
+
+                // Sync dates when encounter is completed
+                $this->dateService->syncDatesOnEncounterCompletion($encounter);
             } elseif (!$request->has('status') || empty($request->status)) {
                 $validated['status'] = $encounter->status->value; // Keep current status
             }
@@ -461,26 +511,7 @@ class WaitingRoomController extends Controller
                 $appliedTreatments = json_decode($request->applied_treatments, true) ?? [];
             }
 
-            // If encounter has no appointment and we're completing it, create an appointment
-            if (!$encounter->appointment_id && $validated['status'] === EncounterStatus::DONE->value) {
-                $appointment = \App\Models\Appointment::create([
-                    'patient_id' => $encounter->patient_id,
-                    'dentist_id' => $encounter->dentist_id,
-                    'start_at' => $encounter->started_at ?? $encounter->arrived_at ?? now(),
-                    'end_at' => ($encounter->started_at ?? $encounter->arrived_at ?? now())->addMinutes(30),
-                    'status' => \App\Enums\AppointmentStatus::COMPLETED,
-                    'notes' => 'Otomatik olarak ziyaret tamamlanmasından oluşturuldu.',
-                ]);
-                $encounter->appointment_id = $appointment->id;
-                $encounter->save();
-
-                // Assign the appointment to all linked treatment plan items that don't have one
-                foreach ($encounter->treatmentPlanItems as $item) {
-                    if (!$item->appointment_id) {
-                        $item->update(['appointment_id' => $appointment->id]);
-                    }
-                }
-            }
+            // Date synchronization is handled by TreatmentPlanDateService
 
             // Process treatments
             if (!empty($appliedTreatments)) {
@@ -554,7 +585,16 @@ class WaitingRoomController extends Controller
 
             DB::commit();
 
-            // Redirect to show page if action is complete, otherwise stay on action page
+            // AJAX request ise JSON response döndür
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $request->action === 'complete' ? 'Ziyaret başarıyla tamamlandı.' : 'Ziyaret kaydi başarıyla güncellendi.',
+                    'redirect_url' => $request->action === 'complete' ? route('waiting-room.show', $encounter) : null,
+                ]);
+            }
+
+            // Normal request ise redirect yap
             if ($request->action === 'complete') {
                 return redirect()->route('waiting-room.show', $encounter)->with('success', 'Ziyaret başarıyla tamamlandı.');
             }
@@ -571,6 +611,166 @@ class WaitingRoomController extends Controller
 
             return redirect()->back()->with('error', 'Güncelleme başarısız oldu: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Randevusuz tedavi plan öğesini ziyarete bağlar (AJAX endpoint)
+     */
+    public function linkTreatmentPlanItemToEncounter(Request $request, Encounter $encounter)
+    {
+        $request->validate([
+            'treatment_plan_item_id' => 'required|exists:treatment_plan_items,id',
+        ]);
+
+        $treatmentPlanItemId = $request->treatment_plan_item_id;
+        $treatmentPlanItem = \App\Models\TreatmentPlanItem::findOrFail($treatmentPlanItemId);
+
+        // Yetki kontrolü - Policy kullanarak kontrol et
+        $this->authorize('update', $encounter);
+
+        // Tedavi plan öğesi zaten bu encounter'a bağlı mı kontrol et
+        $existingLink = $encounter->treatmentPlanItems()->where('treatment_plan_item_id', $treatmentPlanItemId)->exists();
+        if ($existingLink) {
+            return response()->json(['success' => false, 'message' => 'Bu tedavi öğesi zaten bu ziyarete bağlı.']);
+        }
+
+        DB::transaction(function () use ($encounter, $treatmentPlanItem) {
+            // Appointment oluştur veya güncelle
+            $appointment = $this->dateService->createOrUpdateAppointmentForWalkIn($encounter, $encounter->started_at ?? $encounter->arrived_at ?? now());
+
+            // Treatment plan item'ı appointment'a bağla
+            $treatmentPlanItem->update(['appointment_id' => $appointment->id]);
+
+            // Treatment plan item'ı encounter'a bağla
+            $encounter->treatmentPlanItems()->attach($treatmentPlanItem->id, [
+                'price' => $treatmentPlanItem->estimated_price,
+                'notes' => 'Ziyaret ile ilişkilendirildi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // ActivityLog kaydı
+            \App\Models\ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'treatment_plan_item_linked_to_encounter',
+                'model_type' => 'App\Models\TreatmentPlanItem',
+                'model_id' => $treatmentPlanItem->id,
+                'description' => "Tedavi plan öğesi randevusuz işlem ile ziyarete bağlandı: " . ($treatmentPlanItem->treatment ? $treatmentPlanItem->treatment->name : 'Tedavi Silinmiş'),
+                'old_values' => [
+                    'appointment_id' => $treatmentPlanItem->getOriginal('appointment_id'),
+                ],
+                'new_values' => [
+                    'appointment_id' => $appointment->id,
+                    'encounter_id' => $encounter->id,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tedavi plan öğesi başarıyla ziyarete bağlandı.',
+            'redirect' => route('waiting-room.action', $encounter) // Sayfa yenileme için
+        ]);
+    }
+
+    /**
+     * Randevulu tedavi plan öğesini mevcut ziyarete bağlar (erken uygulama için)
+     */
+    public function linkScheduledTreatmentPlanItemToEncounter(Request $request, Encounter $encounter)
+    {
+        $request->validate([
+            'treatment_plan_item_id' => 'required|exists:treatment_plan_items,id',
+        ]);
+
+        $treatmentPlanItemId = $request->treatment_plan_item_id;
+        $treatmentPlanItem = \App\Models\TreatmentPlanItem::findOrFail($treatmentPlanItemId);
+
+        // Yetki kontrolü - Policy kullanarak kontrol et
+        $this->authorize('update', $encounter);
+
+        // Tedavi plan öğesi zaten bu encounter'a bağlı mı kontrol et
+        $existingLink = $encounter->treatmentPlanItems()->where('treatment_plan_item_id', $treatmentPlanItemId)->exists();
+        if ($existingLink) {
+            return response()->json(['success' => false, 'message' => 'Bu tedavi öğesi zaten bu ziyarete bağlı.']);
+        }
+
+        // Tedavi plan öğesinin randevusu var mı kontrol et
+        if (!$treatmentPlanItem->appointment) {
+            return response()->json(['success' => false, 'message' => 'Bu tedavi öğesinin randevusu bulunamadı.']);
+        }
+
+        DB::transaction(function () use ($encounter, $treatmentPlanItem) {
+            $oldAppointment = $treatmentPlanItem->appointment;
+            $oldAppointmentId = $treatmentPlanItem->appointment_id;
+
+            // Eski randevuyu iptal et
+            $oldAppointment->update([
+                'status' => \App\Enums\AppointmentStatus::CANCELLED,
+                'notes' => ($oldAppointment->notes ? $oldAppointment->notes . ' | ' : '') . 'Erken tedavi uygulandı - otomatik iptal edildi'
+            ]);
+
+            // Treatment plan item'ı güncelle
+            $treatmentPlanItem->update([
+                'appointment_id' => $encounter->appointment_id, // Mevcut encounter'ın appointment'ına bağla
+                'actual_date' => $encounter->started_at ?? $encounter->arrived_at ?? now(), // Gerçek uygulama tarihi
+            ]);
+
+            // Treatment plan item'ı encounter'a bağla
+            $encounter->treatmentPlanItems()->attach($treatmentPlanItem->id, [
+                'price' => $treatmentPlanItem->estimated_price,
+                'notes' => 'Erken tedavi uygulandı - randevu iptal edildi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // ActivityLog kayıtları
+            // Eski randevu için
+            \App\Models\ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'appointment_cancelled_early_treatment',
+                'model_type' => 'App\Models\Appointment',
+                'model_id' => $oldAppointment->id,
+                'description' => "Randevu erken tedavi nedeniyle iptal edildi: " . ($treatmentPlanItem->treatment ? $treatmentPlanItem->treatment->name : 'Tedavi Silinmiş'),
+                'old_values' => [
+                    'status' => $oldAppointment->getOriginal('status'),
+                ],
+                'new_values' => [
+                    'status' => \App\Enums\AppointmentStatus::CANCELLED->value,
+                    'cancelled_reason' => 'Erken tedavi uygulandı',
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            // Treatment plan item için
+            \App\Models\ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'treatment_plan_item_early_applied',
+                'model_type' => 'App\Models\TreatmentPlanItem',
+                'model_id' => $treatmentPlanItem->id,
+                'description' => "Tedavi plan öğesi erken uygulandı: " . ($treatmentPlanItem->treatment ? $treatmentPlanItem->treatment->name : 'Tedavi Silinmiş'),
+                'old_values' => [
+                    'appointment_id' => $oldAppointmentId,
+                    'actual_date' => $treatmentPlanItem->getOriginal('actual_date'),
+                ],
+                'new_values' => [
+                    'appointment_id' => $encounter->appointment_id,
+                    'actual_date' => $treatmentPlanItem->actual_date,
+                    'encounter_id' => $encounter->id,
+                    'applied_early' => true,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tedavi plan öğesi erken uygulandı ve randevu iptal edildi.',
+            'redirect' => route('waiting-room.action', $encounter) // Sayfa yenileme için
+        ]);
     }
 
     /**

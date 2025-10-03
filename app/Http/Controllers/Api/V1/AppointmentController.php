@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
+use App\Services\TreatmentPlanDateService;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Http\Resources\Api\V1\AppointmentResource;
@@ -16,10 +17,14 @@ class AppointmentController extends Controller
     use AuthorizesRequests;
 
     protected $appointmentService;
+    protected $dateService;
 
-    public function __construct(AppointmentService $appointmentService)
-    {
+    public function __construct(
+        AppointmentService $appointmentService,
+        TreatmentPlanDateService $dateService
+    ) {
         $this->appointmentService = $appointmentService;
+        $this->dateService = $dateService;
     }
 
     public function index(Request $request)

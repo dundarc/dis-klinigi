@@ -15,12 +15,13 @@ class ActivityLog extends Model
     protected $fillable = [
         'user_id',
         'action',
-        'model',
+        'model_type',
         'model_id',
-        'ip',
-        'user_agent',
+        'description',
         'old_values',
         'new_values',
+        'ip_address',
+        'user_agent',
     ];
 
     protected function casts(): array

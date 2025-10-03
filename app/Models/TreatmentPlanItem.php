@@ -25,6 +25,7 @@ class TreatmentPlanItem extends Model
         'status',
         'completed_at',
         'cancelled_at',
+        'actual_date',
         'invoice_status',
         'deleted_invoice_info',
     ];
@@ -34,6 +35,7 @@ class TreatmentPlanItem extends Model
         'estimated_price' => 'decimal:2',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'actual_date' => 'datetime',
         'deleted_invoice_info' => 'array',
     ];
 

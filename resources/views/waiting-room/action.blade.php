@@ -179,12 +179,18 @@
                                                         </button>
                                                         <!-- Tamamla butonu - Yeşil -->
                                                         <button type="button"
-                                                                @click="completeTreatmentPlanItem({{ $item->id }}, '{{ addslashes($item->treatment->name ?? '') }}', '{{ $item->tooth_number ?? '' }}', {{ $item->estimated_price ?? 0 }})"
-                                                                class="inline-flex items-center px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors">
-                                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                @click="completeTreatmentPlanItemAutoSave({{ $item->id }}, '{{ addslashes($item->treatment->name ?? '') }}', '{{ $item->tooth_number ?? '' }}', {{ $item->estimated_price ?? 0 }})"
+                                                                :disabled="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $item->id }}) || isProcessing"
+                                                                :class="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $item->id }}) || isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'"
+                                                                class="inline-flex items-center px-2 py-1 text-white text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                                            <svg x-show="!isProcessing" class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                             </svg>
-                                                            Tamamla
+                                                            <svg x-show="isProcessing" class="animate-spin w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span x-text="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $item->id }}) ? 'Tamamlandı' : (isProcessing ? 'İşleniyor...' : 'Tamamla')"></span>
                                                         </button>
                                                     </div>
                                                 @else
@@ -271,16 +277,20 @@
                                                         </div>
                                                     </div>
                                                     <div class="flex gap-2">
-                                                        <!-- Bu randevuya ekle butonu - Gri -->
+                                                        <!-- Bu tedavi ile ilişkilendir butonu - Turuncu (erken uygulama için) -->
                                                         <button type="button"
-                                                                @click="addScheduledTreatmentToVisit({{ $planItem->id }}, '{{ addslashes($planItem->treatment->name ?? '') }}', '{{ $planItem->tooth_number ?? '' }}', {{ $planItem->estimated_price ?? 0 }})"
-                                                                :disabled="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }})"
-                                                                :class="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-600 hover:bg-gray-700'"
+                                                                @click="linkScheduledTreatmentPlanItemToEncounter({{ $planItem->id }}, '{{ addslashes($planItem->treatment->name ?? '') }}')"
+                                                                :disabled="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) || isProcessing"
+                                                                :class="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) || isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
                                                                 class="inline-flex items-center px-3 py-1 text-white text-sm font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                            <svg x-show="!isProcessing" class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                                             </svg>
-                                                            <span x-text="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) ? 'Eklendi' : 'Bu Randevuya Ekle'"></span>
+                                                            <svg x-show="isProcessing" class="animate-spin w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span x-text="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) ? 'İlişkilendirildi' : (isProcessing ? 'İşleniyor...' : 'Bu Tedavi İle İlişkilendir')"></span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -327,14 +337,18 @@
                                                     <div class="flex gap-2">
                                                         <!-- Bu randevuya ekle butonu - Gri -->
                                                         <button type="button"
-                                                                @click="addUnscheduledTreatmentToVisit({{ $planItem->id }}, '{{ addslashes($planItem->treatment->name ?? '') }}', '{{ $planItem->tooth_number ?? '' }}', {{ $planItem->estimated_price ?? 0 }})"
-                                                                :disabled="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }})"
-                                                                :class="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-600 hover:bg-gray-700'"
+                                                                @click="linkTreatmentPlanItemToEncounter({{ $planItem->id }}, '{{ addslashes($planItem->treatment->name ?? '') }}')"
+                                                                :disabled="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) || isProcessing"
+                                                                :class="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) || isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
                                                                 class="inline-flex items-center px-3 py-1 text-white text-sm font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                            <svg x-show="!isProcessing" class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
                                                             </svg>
-                                                            <span x-text="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) ? 'Eklendi' : 'Bu Randevuya Ekle'"></span>
+                                                            <svg x-show="isProcessing" class="animate-spin w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span x-text="appliedTreatments.some(t => t.treatment_plan_item_id === {{ $planItem->id }}) ? 'Bağlandı' : (isProcessing ? 'İşleniyor...' : 'Bu Ziyaret İle İlişkilendir')"></span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -765,6 +779,7 @@
                     fileUploading: false,
                     fileUploaded: false,
                     hasChanges: false, // Değişiklik takibi
+                    isProcessing: false, // AJAX işlemleri için
 
                     // Form submit öncesi veri hazırlama
                     prepareFormData() {
@@ -839,7 +854,114 @@
                         });
                     },
 
-                    // Tedavi planı öğesini tamamla
+                    // Tedavi planı öğesini tamamla (mevcut verileri otomatik kaydet)
+                    completeTreatmentPlanItemAutoSave(planItemId, treatmentName, toothNumber, estimatedPrice) {
+                        if (this.appliedTreatments.some(treatment => treatment.treatment_plan_item_id === planItemId)) {
+                            alert('Bu tedavi öğesi zaten uygulanacaklar listesine eklenmiş!');
+                            return;
+                        }
+
+                        if (!confirm(`${treatmentName} işlemini tamamlandı olarak işaretlemek istediğinizden emin misiniz?`)) return;
+
+                        this.isProcessing = true;
+
+                        // Tedaviyi uygulanacaklar listesine ekle
+                        this.appliedTreatments.push({
+                            treatment_plan_item_id: planItemId,
+                            treatment_name: treatmentName,
+                            tooth_number: toothNumber,
+                            unit_price: estimatedPrice,
+                            is_scheduled: true
+                        });
+
+                        // Sadece treatment plan item'ı complete et (mevcut verileri otomatik kaydet)
+                        fetch(`/api/v1/treatment-plan-items/${planItemId}/complete`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Başarılı - sayfa yenileniyor
+                                window.location.reload();
+                            } else {
+                                alert('Treatment plan item tamamlanırken hata oluştu: ' + (data.message || 'Bilinmeyen hata'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Hata:', error);
+                            alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                        })
+                        .finally(() => {
+                            this.isProcessing = false;
+                        });
+                    },
+
+                    // Formu tamamla işlemi ile birlikte submit et
+                    submitFormWithComplete(planItemId, treatmentName) {
+                        // Applied treatments verisini gizli input'a koy
+                        const input = document.getElementById('applied-treatments-input');
+                        if (input) {
+                            input.value = JSON.stringify(this.appliedTreatments);
+                        }
+
+                        // Form verilerini topla
+                        const formData = new FormData(document.getElementById('visit-action-form'));
+
+                        // Özel action parametresi ekle (tamamla için)
+                        formData.append('action', 'complete');
+                        formData.append('auto_complete_item_id', planItemId);
+
+                        // AJAX ile formu gönder
+                        fetch(`/waiting-room/${this.encounterId}/action`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                            body: formData
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                // HTML redirect response ise (302), başarılı olarak kabul et ve yönlendir
+                                if (response.status === 302) {
+                                    window.location.href = `/waiting-room/${this.encounterId}/show`;
+                                    return;
+                                }
+                                // Diğer hatalar için JSON parse et
+                                return response.text().then(text => {
+                                    try {
+                                        return Promise.reject(JSON.parse(text));
+                                    } catch {
+                                        return Promise.reject({ message: text || 'Sunucu hatası' });
+                                    }
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Sessizce başarılı olursa response'daki redirect_url'e yönlendir
+                                const redirectUrl = data.redirect_url || `/waiting-room/${this.encounterId}/show`;
+                                window.location.href = redirectUrl;
+                            } else {
+                                alert('İşlem tamamlanırken hata oluştu: ' + (data.message || 'Bilinmeyen hata'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Form submit hatası:', error);
+                            const message = error?.message || 'Form gönderilirken bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.';
+                            alert(message);
+                        })
+                        .finally(() => {
+                            this.isProcessing = false;
+                        });
+                    },
+
+                    // Tedavi planı öğesini tamamla (eski fonksiyon - sayfa yenileyen)
                     completeTreatmentPlanItem(planItemId, treatmentName, toothNumber, estimatedPrice) {
                         if (!confirm(`${treatmentName} işlemini tamamlandı olarak işaretlemek istediğinizden emin misiniz?`)) return;
 
@@ -862,6 +984,8 @@
                                     is_scheduled: true
                                 });
                                 alert(`${treatmentName} başarıyla tamamlandı ve uygulanacak tedavilere eklendi.`);
+                                // Sayfa yenile
+                                window.location.reload();
                             } else {
                                 alert('Bir hata oluştu: ' + (data.message || 'Bilinmeyen hata'));
                             }
@@ -898,7 +1022,56 @@
                         });
                     },
 
-                    // Randevulu tedavi öğesini ziyarete ekle
+                    // Randevulu tedavi öğesini ziyarete bağla (erken uygulama için)
+                    linkScheduledTreatmentPlanItemToEncounter(planItemId, treatmentName) {
+                        if (this.appliedTreatments.some(treatment => treatment.treatment_plan_item_id === planItemId)) {
+                            alert('Bu tedavi öğesi zaten bu ziyarete bağlı!');
+                            return;
+                        }
+
+                        if (!confirm(`${treatmentName} randevulu işlemini erken uygulamak istediğinizden emin misiniz? Mevcut randevu iptal edilecektir.`)) {
+                            return;
+                        }
+
+                        this.isProcessing = true;
+
+                        fetch(`/waiting-room/${this.encounterId}/link-scheduled-treatment-plan-item`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                            body: JSON.stringify({
+                                treatment_plan_item_id: planItemId
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => Promise.reject(data));
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                alert(`${treatmentName} erken uygulandı ve randevu iptal edildi. Sayfa yenileniyor...`);
+                                // Sayfa yenileme
+                                window.location.reload();
+                            } else {
+                                alert('Hata: ' + (data.message || 'Bilinmeyen hata'));
+                            }
+                        })
+                        .catch(error => {
+                            const message = error?.message || 'Tedavi öğesi erken uygulanırken bir hata oluştu.';
+                            alert(message);
+                            console.error('Erken uygulama hatası:', error);
+                        })
+                        .finally(() => {
+                            this.isProcessing = false;
+                        });
+                    },
+
+                    // Randevulu tedavi öğesini ziyarete ekle (eski fonksiyon - artık kullanılmıyor)
                     addScheduledTreatmentToVisit(planItemId, treatmentName, toothNumber, estimatedPrice) {
                         if (this.appliedTreatments.some(treatment => treatment.treatment_plan_item_id === planItemId)) {
                             alert('Bu tedavi öğesi zaten uygulanacaklar listesine eklenmiş!');
@@ -925,7 +1098,56 @@
                         alert(`${treatmentName} tedavisi uygulanacaklar listesine eklendi.`);
                     },
 
-                    // Randevusuz tedavi öğesini ziyarete ekle
+                    // Randevusuz tedavi öğesini ziyarete bağla (AJAX ile gerçek işlem)
+                    linkTreatmentPlanItemToEncounter(planItemId, treatmentName) {
+                        if (this.appliedTreatments.some(treatment => treatment.treatment_plan_item_id === planItemId)) {
+                            alert('Bu tedavi öğesi zaten bu ziyarete bağlı!');
+                            return;
+                        }
+
+                        if (!confirm(`${treatmentName} öğesini bu ziyarete bağlamak istediğinizden emin misiniz?`)) {
+                            return;
+                        }
+
+                        this.isProcessing = true;
+
+                        fetch(`/waiting-room/${this.encounterId}/link-treatment-plan-item`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                            body: JSON.stringify({
+                                treatment_plan_item_id: planItemId
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => Promise.reject(data));
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                alert(`${treatmentName} başarıyla ziyarete bağlandı. Sayfa yenileniyor...`);
+                                // Sayfa yenileme
+                                window.location.reload();
+                            } else {
+                                alert('Hata: ' + (data.message || 'Bilinmeyen hata'));
+                            }
+                        })
+                        .catch(error => {
+                            const message = error?.message || 'Tedavi öğesi bağlanırken bir hata oluştu.';
+                            alert(message);
+                            console.error('Bağlama hatası:', error);
+                        })
+                        .finally(() => {
+                            this.isProcessing = false;
+                        });
+                    },
+
+                    // Randevusuz tedavi öğesini ziyarete ekle (eski fonksiyon - artık kullanılmıyor)
                     addUnscheduledTreatmentToVisit(planItemId, treatmentName, toothNumber, estimatedPrice) {
                         if (this.appliedTreatments.some(treatment => treatment.treatment_plan_item_id === planItemId)) {
                             alert('Bu tedavi öğesi zaten uygulanacaklar listesine eklenmiş!');

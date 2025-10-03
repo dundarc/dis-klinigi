@@ -11,7 +11,7 @@ class Appointment extends Model
 
     protected $fillable = [
         'patient_id', 'dentist_id', 'treatment_plan_id', 'start_at', 'end_at', 'status', 'room',
-        'notes', 'queue_number', 'checked_in_at', 'called_at',
+        'notes', 'queue_number', 'checked_in_at', 'called_at', 'rescheduled_from',
     ];
 
     protected function casts(): array
@@ -21,6 +21,7 @@ class Appointment extends Model
             'end_at' => 'datetime',
             'checked_in_at' => 'datetime',
             'called_at' => 'datetime',
+            'rescheduled_from' => 'datetime',
             'status' => AppointmentStatus::class,
         ];
     }
