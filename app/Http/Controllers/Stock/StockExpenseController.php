@@ -60,7 +60,7 @@ class StockExpenseController extends Controller
 
         return view('stock.expenses.create', [
             'categories' => StockExpenseCategory::orderBy('name')->get(),
-            'suppliers' => StockSupplier::orderBy('name')->get(),
+            'suppliers' => StockSupplier::services()->orderBy('name')->get(),
         ]);
     }
 
@@ -106,7 +106,7 @@ class StockExpenseController extends Controller
         return view('stock.expenses.edit', [
             'expense' => $expense,
             'categories' => StockExpenseCategory::orderBy('name')->get(),
-            'suppliers' => StockSupplier::orderBy('name')->get(),
+            'suppliers' => StockSupplier::services()->orderBy('name')->get(),
         ]);
     }
 
@@ -114,9 +114,36 @@ class StockExpenseController extends Controller
     {
         $this->authorize('accessStockManagement');
 
-        $expense->update($this->validateExpense($request));
+        $validated = $request->validate([
+            'category_id' => ['nullable', 'exists:stock_expense_categories,id'],
+            'supplier_id' => ['nullable', 'exists:stock_suppliers,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'expense_date' => ['nullable', 'date'],
+            'amount' => ['required', 'numeric', 'gte:0'],
+            'vat_rate' => ['nullable', 'numeric', 'gte:0'],
+            'payment_status' => ['required', Rule::in(['pending', 'partial', 'paid', 'overdue'])],
+            'payment_method' => ['nullable', 'string', 'max:50'],
+            'due_date' => ['nullable', 'date'],
+            'paid_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        // Recalculate totals
+        $validated['vat_amount'] = ($validated['amount'] * ($validated['vat_rate'] ?? 0) / 100);
+        $validated['total_amount'] = $validated['amount'] + $validated['vat_amount'];
+
+        $expense->update($validated);
 
         return redirect()->route('stock.expenses.index')->with('success', 'Gider kaydi guncellendi.');
+    }
+
+    public function show(StockExpense $expense): View
+    {
+        $this->authorize('accessStockManagement');
+
+        return view('stock.expenses.show', [
+            'expense' => $expense->load(['category', 'supplier', 'payments']),
+        ]);
     }
 
     public function destroy(StockExpense $expense): RedirectResponse
@@ -213,5 +240,18 @@ class StockExpenseController extends Controller
             'allow_negative' => false,
             'is_active' => true,
         ]);
+    }
+
+    public function updateDueDate(Request $request, StockExpense $expense): RedirectResponse
+    {
+        $this->authorize('accessStockManagement');
+
+        $validated = $request->validate([
+            'due_date' => ['nullable', 'date'],
+        ]);
+
+        $expense->update($validated);
+
+        return redirect()->back()->with('success', 'Vade tarihi güncellendi.');
     }
 }

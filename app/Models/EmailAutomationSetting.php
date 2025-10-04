@@ -24,9 +24,13 @@ class EmailAutomationSetting extends Model
     /**
      * Get the first automation setting record (singleton pattern)
      */
-    public static function getSettings(): ?self
+    public static function getSettings(): self
     {
-        return static::first();
+        return static::first() ?? new static([
+            'patient_checkin_to_dentist' => false,
+            'emergency_patient_to_dentist' => false,
+            'kvkk_consent_to_admin' => false,
+        ]);
     }
 
     /**

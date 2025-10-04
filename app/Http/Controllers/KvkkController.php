@@ -5,11 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\KvkkAuditLog;
 use App\Models\Patient;
 use App\Models\Setting;
-use App\Models\EmailAutomationSetting;
 use App\Services\ConsentService;
 use App\Services\ExportBuilder;
 use App\Services\KvkkDeletionService;
-use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -572,6 +570,12 @@ class KvkkController extends Controller
     {
         $this->authorize('manageConsents', $patient);
 
+        \Log::info('KVKK storeConsent called', [
+            'patient_id' => $patient->id,
+            'user_id' => auth()->id(),
+            'request_data' => $request->all()
+        ]);
+
         $request->validate([
             'consent_method' => 'required|in:wet_signature,email_verification',
             'version' => 'required|string',
@@ -605,25 +609,11 @@ class KvkkController extends Controller
                 ],
             ];
 
+            \Log::info('About to register consent', ['data' => $data]);
+
             $consent = \App\Services\Kvkk\ConsentService::register($patient, $data);
 
-            // Otomatik e-posta bildirimi gönder (eğer aktifse)
-            $automationSettings = EmailAutomationSetting::getSettings();
-            if ($automationSettings && $automationSettings->kvkk_consent_to_admin) {
-                try {
-                    EmailService::sendTemplate('kvkk_consent_notification', [
-                        'to' => auth()->user()->email, // Send to current admin user
-                        'data' => [
-                            'patient_name' => $patient->first_name . ' ' . $patient->last_name,
-                            'consent_date' => $consent->accepted_at->format('d.m.Y H:i'),
-                            'clinic_name' => Setting::where('key', 'clinic_name')->first()?->value ?? 'Klinik'
-                        ]
-                    ]);
-                } catch (\Exception $e) {
-                    // E-posta gönderimi başarısız olsa bile consent işlemi devam eder
-                    \Log::error('KVKK consent email failed: ' . $e->getMessage());
-                }
-            }
+            \Log::info('Consent registered successfully', ['consent_id' => $consent->id]);
 
             if ($consentMethod === 'email_verification' && $patient->email) {
                 // Send email verification
@@ -633,6 +623,10 @@ class KvkkController extends Controller
 
             return redirect()->route('kvkk.consent-success', $patient)->with('success', 'KVKK onamı başarıyla oluşturuldu.');
         } catch (\Exception $e) {
+            \Log::error('Consent creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()->with('error', 'Onam oluşturulurken hata oluştu: ' . $e->getMessage())->withInput();
         }
     }

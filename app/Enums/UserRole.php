@@ -81,6 +81,7 @@ enum UserRole: string
             ],
             self::ACCOUNTANT => [
                 'accessAccountingFeatures',
+                'accessStockManagement',
                 'viewAllInvoices',
                 'managePayments',
                 'viewFinancialReports',

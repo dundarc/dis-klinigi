@@ -46,8 +46,39 @@ class StockExpense extends Model
         return $this->belongsTo(StockSupplier::class, 'supplier_id');
     }
 
+    public function payments()
+    {
+        return $this->hasMany(StockExpensePayment::class, 'expense_id');
+    }
+
     public function accountMovements()
     {
         return $this->morphMany(StockAccountMovement::class, 'reference');
+    }
+
+    public function getTotalPaidAttribute(): float
+    {
+        return $this->payments->sum('amount');
+    }
+
+    public function getRemainingAmountAttribute(): float
+    {
+        return $this->total_amount - $this->total_paid;
+    }
+
+    public function updatePaymentStatus(): void
+    {
+        $totalPaid = $this->total_paid;
+        $totalAmount = $this->total_amount;
+
+        if ($totalPaid == 0) {
+            $this->payment_status = 'pending';
+        } elseif ($totalPaid >= $totalAmount) {
+            $this->payment_status = 'paid';
+        } else {
+            $this->payment_status = 'partial';
+        }
+
+        $this->save();
     }
 }

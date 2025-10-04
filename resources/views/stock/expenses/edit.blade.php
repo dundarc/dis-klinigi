@@ -85,10 +85,10 @@
                             <label for="payment_method" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Ödeme Yöntemi</label>
                             <select id="payment_method" name="payment_method" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Ödeme Yöntemi Seçin</option>
-                                <option value="nakit" @selected(old('payment_method', $expense->payment_method) == 'nakit')>Nakit</option>
-                                <option value="havale" @selected(old('payment_method', $expense->payment_method) == 'havale')>Havale</option>
-                                <option value="kredi_karti" @selected(old('payment_method', $expense->payment_method) == 'kredi_karti')>Kredi Kartı</option>
-                                <option value="cek" @selected(old('payment_method', $expense->payment_method) == 'cek')>Çek</option>
+                                <option value="cash" @selected(old('payment_method', $expense->payment_method?->value) == 'cash')>Nakit</option>
+                                <option value="bank_transfer" @selected(old('payment_method', $expense->payment_method?->value) == 'bank_transfer')>Havale</option>
+                                <option value="credit_card" @selected(old('payment_method', $expense->payment_method?->value) == 'credit_card')>Kredi Kartı</option>
+                                <option value="check" @selected(old('payment_method', $expense->payment_method?->value) == 'check')>Çek</option>
                             </select>
                             <x-input-error :messages="$errors->get('payment_method')" class="mt-2" />
                         </div>

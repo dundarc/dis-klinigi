@@ -12,6 +12,9 @@ class SendEmailJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+    public array $backoff = [60, 300, 900]; // 1min, 5min, 15min
+
     public int $emailLogId;
     public array $attachments;
 
@@ -33,7 +36,7 @@ class SendEmailJob implements ShouldQueue
 
         if (!$log) {
             Log::error("EmailLog not found: {$this->emailLogId}");
-            return;
+            throw new \Exception("EmailLog not found: {$this->emailLogId}");
         }
 
         try {

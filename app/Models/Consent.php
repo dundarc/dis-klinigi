@@ -19,6 +19,9 @@ class Consent extends Model
      */
     protected $fillable = [
         'patient_id',
+        'type',
+        'title',
+        'content',
         'version',
         'status',
         'consent_method',

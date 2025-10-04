@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('email_logs', function (Blueprint $table) {
-            $table->longText('body_html')->nullable()->after('subject');
-            $table->longText('body_text')->nullable()->after('body_html');
+            $columns = Schema::getColumnListing('email_logs');
+            if (!in_array('body_html', $columns)) {
+                $table->longText('body_html')->nullable()->after('subject');
+            }
+            if (!in_array('body_text', $columns)) {
+                $table->longText('body_text')->nullable()->after('body_html');
+            }
         });
     }
 

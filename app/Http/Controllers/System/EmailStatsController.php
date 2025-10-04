@@ -42,7 +42,8 @@ class EmailStatsController extends Controller
 
         $successRate = $totalSent + $totalFailed > 0 ? round(($totalSent / ($totalSent + $totalFailed)) * 100, 2) : 0;
 
-        $lastSentAt = EmailLog::where('status', 'sent')->max('sent_at');
+        $lastSentAtRaw = EmailLog::where('status', 'sent')->max('sent_at');
+        $lastSentAt = $lastSentAtRaw ? Carbon::parse($lastSentAtRaw) : null;
 
         return [
             'daily_stats' => $dailyStats,

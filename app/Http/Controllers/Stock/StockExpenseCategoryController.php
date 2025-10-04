@@ -43,13 +43,16 @@ class StockExpenseCategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:stock_expense_categories,name',
+            'description' => 'nullable|string|max:500',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
 
         StockExpenseCategory::create($validated);
 
-        return redirect()->route('stock.expense-categories.index')
+        $redirectTo = $request->input('return_to') ?: route('stock.expense-categories.index');
+
+        return redirect($redirectTo)
             ->with('success', 'Gider kategorisi başarıyla oluşturuldu.');
     }
 

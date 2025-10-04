@@ -12,6 +12,7 @@ class StockExpenseCategory extends Model
     protected $fillable = [
         'name',
         'slug',
+        'description',
     ];
 
     public function expenses()

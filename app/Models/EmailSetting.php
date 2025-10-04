@@ -39,7 +39,41 @@ class EmailSetting extends Model
      */
     public static function getSettings(): ?self
     {
-        return static::first();
+        $settings = static::first();
+
+        if ($settings) {
+            // Sanitize email addresses to prevent RFC violations
+            $settings->from_address = self::sanitizeEmailAddress($settings->from_address);
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Sanitize email address to ensure RFC compliance
+     */
+    private static function sanitizeEmailAddress(?string $email): string
+    {
+        if (!$email) {
+            return 'noreply@example.com';
+        }
+
+        // Basic email validation
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $email;
+        }
+
+        // If invalid, try to extract email from a "Name <email>" format
+        if (preg_match('/<([^>]+)>/', $email, $matches)) {
+            $extracted = trim($matches[1]);
+            if (filter_var($extracted, FILTER_VALIDATE_EMAIL)) {
+                return $extracted;
+            }
+        }
+
+        // Fallback to a safe default
+        $domain = parse_url(config('app.url'), PHP_URL_HOST) ?? 'localhost';
+        return "noreply@{$domain}";
     }
 
     /**
@@ -47,6 +81,11 @@ class EmailSetting extends Model
      */
     public static function updateSettings(array $data): self
     {
+        // Sanitize email address before saving
+        if (isset($data['from_address'])) {
+            $data['from_address'] = self::sanitizeEmailAddress($data['from_address']);
+        }
+
         $setting = static::find(1);
 
         if ($setting) {
@@ -56,6 +95,26 @@ class EmailSetting extends Model
         }
 
         return static::create(array_merge($data, ['id' => 1]));
+    }
+
+    /**
+     * Clean up invalid email addresses in existing records
+     */
+    public static function cleanupInvalidEmails(): int
+    {
+        $count = 0;
+
+        static::all()->each(function ($setting) use (&$count) {
+            $original = $setting->from_address;
+            $cleaned = self::sanitizeEmailAddress($original);
+
+            if ($original !== $cleaned) {
+                $setting->update(['from_address' => $cleaned]);
+                $count++;
+            }
+        });
+
+        return $count;
     }
 
     /**

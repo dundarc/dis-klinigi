@@ -26,6 +26,11 @@ class EmailLog extends Model
         'mailer_alias',
     ];
 
+    const STATUS_QUEUED = 'queued';
+    const STATUS_SENT = 'sent';
+    const STATUS_FAILED = 'failed';
+    const STATUS_BLOCKED = 'blocked';
+
     protected $casts = [
         'sent_at' => 'datetime',
         'queued_at' => 'datetime',

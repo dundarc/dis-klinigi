@@ -12,11 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('consents', function (Blueprint $table) {
-            $table->string('consent_method')->nullable()->after('status');
-            $table->string('verification_token')->nullable()->after('consent_method');
-            $table->timestamp('email_sent_at')->nullable()->after('verification_token');
-            $table->timestamp('email_verified_at')->nullable()->after('email_sent_at');
-            $table->string('signature_path')->nullable()->after('hash');
+            $columns = Schema::getColumnListing('consents');
+            if (!in_array('consent_method', $columns)) {
+                $table->string('consent_method')->nullable()->after('status');
+            }
+            if (!in_array('verification_token', $columns)) {
+                $table->string('verification_token')->nullable()->after('consent_method');
+            }
+            if (!in_array('email_sent_at', $columns)) {
+                $table->timestamp('email_sent_at')->nullable()->after('verification_token');
+            }
+            if (!in_array('email_verified_at', $columns)) {
+                $table->timestamp('email_verified_at')->nullable()->after('email_sent_at');
+            }
+            if (!in_array('signature_path', $columns)) {
+                $table->string('signature_path')->nullable();
+            }
         });
     }
 

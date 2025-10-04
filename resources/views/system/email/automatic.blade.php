@@ -19,11 +19,30 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
+            <!-- Test Email Configuration -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Test E-posta Yapılandırması</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-4">Test e-postalarının gönderileceği adresi belirtin</p>
+
+                <div class="max-w-md">
+                    <label for="test_email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Test E-posta Adresi
+                    </label>
+                    <input type="email" id="test_email" name="test_email"
+                           value="{{ old('test_email', auth()->user()->email ?? '') }}"
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="test@example.com" required>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Test e-postaları bu adrese gönderilecektir
+                    </p>
+                </div>
+            </div>
+
             <!-- Automatic Email Settings Form -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6">Otomatik E-posta Ayarları</h3>
 
-                <form action="{{ route('system.email.automatic.update') }}" method="POST" class="space-y-6">
+                <form action="{{ route('system.email.automatic.update') }}" method="POST" class="space-y-6" id="settingsForm">
                     @csrf
 
                     <!-- Patient Check-in to Dentist -->
@@ -138,7 +157,7 @@
                 <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Bilgilendirme</h4>
                 <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                     <li>• Test butonları ile ayarlarınızın doğru çalıştığını kontrol edebilirsiniz</li>
-                    <li>• Test e-postaları giriş yapmış olan kullanıcıya gönderilir</li>
+                    <li>• Test e-postaları yukarıda belirttiğiniz adrese gönderilir</li>
                     <li>• Otomatik e-postalar sadece ayar aktif edildiğinde gönderilir</li>
                     <li>• E-posta şablonları ayrı olarak yönetilir ve özelleştirilebilir</li>
                 </ul>
@@ -173,12 +192,31 @@
                     this.disabled = true;
                     this.innerHTML = '<svg class="w-4 h-4 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Gönderiliyor...';
 
+                    const testEmail = document.getElementById('test_email').value;
+
+                    if (!testEmail) {
+                        const resultDiv = document.getElementById('testResult');
+                        const errorDiv = document.getElementById('testError');
+                        const errorMessage = document.getElementById('errorMessage');
+
+                        resultDiv.classList.remove('hidden');
+                        document.getElementById('testSuccess').classList.add('hidden');
+                        errorDiv.classList.remove('hidden');
+                        errorMessage.textContent = 'Lütfen test e-posta adresini giriniz.';
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                        return;
+                    }
+
                     fetch(routeName, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        }
+                        },
+                        body: JSON.stringify({
+                            test_email: testEmail
+                        })
                     })
                     .then(response => response.json())
                     .then(data => {

@@ -60,8 +60,16 @@ class StockMovementController extends Controller
 
         $criticalItems = $this->movementService->getCriticalStockItems();
         $statistics = $this->movementService->getStockStatistics();
+        $categories = \App\Models\Stock\StockCategory::orderBy('name')->get();
 
-        return view('stock.movements.critical', compact('criticalItems', 'statistics'));
+        // Calculate total value of critical items (assuming we have unit prices, but for now just count)
+        $totalValue = $criticalItems->sum(function ($item) {
+            // This is a placeholder - you might want to calculate based on unit price * quantity
+            // For now, just return the count or a default value
+            return 0; // Replace with actual calculation when you have pricing
+        });
+
+        return view('stock.movements.critical', compact('criticalItems', 'statistics', 'totalValue', 'categories'));
     }
 
     /**

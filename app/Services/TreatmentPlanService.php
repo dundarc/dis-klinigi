@@ -997,7 +997,7 @@ class TreatmentPlanService
             'total_estimated' => $totalEstimated,
             'total_actual' => $totalActual,
             'total_paid' => min($totalPaid, $totalActual), // Don't exceed total invoiced amount
-            'remaining' => $activeItems->sum('estimated_price') - $totalActual,
+            'remaining' => $totalActual - $totalPaid, // Amount still owed
             'completion_percentage' => $totalEstimated > 0 ? round(($totalActual / $totalEstimated) * 100, 2) : 0,
         ];
     }

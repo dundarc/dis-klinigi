@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateTreatmentRequest;
 use App\Models\Treatment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Http\Request;
 
 class SystemTreatmentController extends Controller
 {

@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('consents', function (Blueprint $table) {
-            $table->string('signature_path')->nullable()->after('hash');
+            $columns = Schema::getColumnListing('consents');
+            if (!in_array('signature_path', $columns)) {
+                $table->string('signature_path')->nullable();
+            }
         });
     }
 

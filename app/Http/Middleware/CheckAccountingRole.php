@@ -22,7 +22,7 @@ class CheckAccountingRole
         }
 
         $user = Auth::user();
-        if ($user->role !== UserRole::Admin && $user->role !== UserRole::Accountant) {
+        if ($user->role !== UserRole::ADMIN && $user->role !== UserRole::ACCOUNTANT) {
             // You can customize this redirect path, e.g., to a 'unauthorized' page
             return redirect('/')->with('error', 'Bu sayfaya erişim yetkiniz bulunmamaktadır.');
         }

@@ -62,7 +62,7 @@
                 </form>
 
                 <div x-show="showCategoryForm" x-transition class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 p-4">
-                    <form method="POST" action="{{ route('stock.categories.store') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <form method="POST" action="{{ route('stock.expense-categories.store') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         @csrf
                         <input type="hidden" name="return_to" value="{{ url()->current() }}">
                         <div class="sm:col-span-1">
@@ -91,6 +91,7 @@
                                 <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kategori</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tutar</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tarih</th>
+                                <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ödeme Durumu</th>
                                 <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Açıklama</th>
                                 <th class="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">İşlemler</th>
                             </tr>
@@ -104,9 +105,25 @@
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $expense->category?->name ?? '-' }}</td>
                                     <td class="px-6 py-4 text-slate-900 dark:text-slate-100 font-medium">{{ number_format($expense->total_amount, 2, ',', '.') }} TL</td>
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300">{{ $expense->expense_date?->format('d.m.Y') ?? '-' }}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if($expense->payment_status === 'paid') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                            @elseif($expense->payment_status === 'partial') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                            @else bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 @endif">
+                                            @if($expense->payment_status === 'paid') Ödendi
+                                            @elseif($expense->payment_status === 'partial') Kısmi
+                                            @else Bekliyor @endif
+                                        </span>
+                                    </td>
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate">{{ $expense->notes ?? '-' }}</td>
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex justify-end gap-1">
+                                            <a href="{{ route('stock.expenses.show', $expense) }}" class="inline-flex items-center p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" title="Göster">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </a>
                                             <a href="{{ route('stock.expenses.edit', $expense) }}" class="inline-flex items-center p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" title="Düzenle">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -126,7 +143,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-12 text-center">
+                                    <td colspan="7" class="px-6 py-12 text-center">
                                         <svg class="mx-auto h-16 w-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                         </svg>

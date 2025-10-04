@@ -397,11 +397,16 @@ Route::middleware('auth')->group(function () {
             Route::resource('suppliers', StockSupplierController::class)->except(['show']);
             Route::resource('purchases', StockPurchaseController::class);
             Route::post('purchases/{purchase}/payments', [StockPurchaseController::class, 'addPayment'])->name('purchases.addPayment');
+            Route::delete('purchases/{purchase}/payments/{paymentIndex}', [StockPurchaseController::class, 'deletePayment'])->name('purchases.deletePayment');
             Route::post('purchases/{purchase}/installment-schedule', [StockPurchaseController::class, 'createInstallmentSchedule'])->name('purchases.create-installment-schedule');
             Route::post('purchases/batch-upload', [StockPurchaseController::class, 'batchUpload'])->name('purchases.batch-upload');
             Route::post('purchases/ocr-process', [StockPurchaseController::class, 'processOcr'])->name('purchases.ocr-process');
             Route::get('purchases/suggest-items', [StockPurchaseController::class, 'suggestItems'])->name('purchases.suggest-items');
             Route::resource('expenses', StockExpenseController::class);
+            Route::patch('expenses/{expense}/update-due-date', [StockExpenseController::class, 'updateDueDate'])->name('expenses.update-due-date');
+            Route::get('expenses/{expense}/payments', [\App\Http\Controllers\Stock\StockExpensePaymentController::class, 'index'])->name('expenses.payments.index');
+            Route::post('expenses/{expense}/payments', [\App\Http\Controllers\Stock\StockExpensePaymentController::class, 'store'])->name('expenses.payments.store');
+            Route::delete('expenses/{expense}/payments/{payment}', [\App\Http\Controllers\Stock\StockExpensePaymentController::class, 'destroy'])->name('expenses.payments.destroy');
             Route::resource('expense-categories', \App\Http\Controllers\Stock\StockExpenseCategoryController::class);
             Route::get('/usage', [StockUsageController::class, 'index'])->name('usage.index');
             Route::get('/current', [StockCurrentAccountController::class, 'index'])->name('current.index');

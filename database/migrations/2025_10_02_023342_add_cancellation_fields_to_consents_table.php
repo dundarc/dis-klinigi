@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('verification_token')->nullable()->after('consent_method');
             $table->timestamp('email_sent_at')->nullable()->after('verification_token');
             $table->timestamp('email_verified_at')->nullable()->after('email_sent_at');
+            $table->timestamp('withdrawn_at')->nullable()->after('email_verified_at'); // Add withdrawn_at if missing
             $table->timestamp('cancellation_pdf_generated_at')->nullable()->after('withdrawn_at');
             $table->timestamp('cancellation_pdf_downloaded_at')->nullable()->after('cancellation_pdf_generated_at');
         });

@@ -32,7 +32,7 @@ class StockDashboardController extends Controller
         $currentMonth = Carbon::now()->startOfMonth();
         $monthlyStockExpenses = StockExpense::whereDate('expense_date', '>=', $currentMonth)->sum('total_amount');
         $monthlyPurchases = StockPurchaseInvoice::whereDate('invoice_date', '>=', $currentMonth)->sum('grand_total');
-        $monthlyGeneralExpenses = GeneralExpense::whereDate('expense_date', '>=', $currentMonth)->sum('amount');
+        $monthlyGeneralExpenses = 0; // GeneralExpense is the same as StockExpense, avoid double counting
         $monthlyServiceExpenses = ServiceExpense::whereDate('invoice_date', '>=', $currentMonth)->sum('amount');
 
         $pendingInvoicesCount = StockPurchaseInvoice::pending()->count();

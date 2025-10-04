@@ -44,9 +44,13 @@ class DynamicMailService
         }
 
         Config::set('mail.mailers.smtp', $smtpConfig);
+
+        $fromAddress = EmailService::resolveFromAddress($settings->from_address);
+        $fromName = EmailService::resolveFromName($settings->from_name);
+
         Config::set('mail.from', [
-            'address' => $settings->from_address,
-            'name' => $settings->from_name,
+            'address' => $fromAddress,
+            'name' => $fromName,
         ]);
 
         // Reinitialize mail manager with new config

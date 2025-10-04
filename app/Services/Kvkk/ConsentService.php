@@ -88,6 +88,9 @@ class ConsentService
 
             $consent = Consent::query()->create([
                 'patient_id' => $patient->id,
+                'type' => Arr::get($data, 'type', 'kvkk'),
+                'title' => Arr::get($data, 'title', 'KVKK Aydınlatma Metni'),
+                'content' => Arr::get($data, 'content', ''),
                 'version' => Arr::get($data, 'version', '1.0'),
                 'status' => $status,
                 'consent_method' => Arr::get($data, 'consent_method'),

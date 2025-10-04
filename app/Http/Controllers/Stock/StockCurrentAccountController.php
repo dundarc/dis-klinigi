@@ -33,23 +33,47 @@ class StockCurrentAccountController extends Controller
     {
         $this->authorize('accessStockManagement');
 
-        $query = $supplier->purchaseInvoices()->with('items')->latest('invoice_date')->latest();
+        // Load invoices
+        $invoiceQuery = $supplier->purchaseInvoices()->with('items')->latest('invoice_date')->latest();
 
         if ($status = $request->string('status')->toString()) {
-            $query->where('payment_status', $status);
+            $invoiceQuery->where('payment_status', $status);
         }
 
         if ($from = $request->input('date_from')) {
-            $query->whereDate('invoice_date', '>=', $from);
+            $invoiceQuery->whereDate('invoice_date', '>=', $from);
         }
 
         if ($to = $request->input('date_to')) {
-            $query->whereDate('invoice_date', '<=', $to);
+            $invoiceQuery->whereDate('invoice_date', '<=', $to);
+        }
+
+        $invoices = $invoiceQuery->paginate(20)->withQueryString();
+
+        // Load expenses for service suppliers
+        $expenses = collect();
+        if ($supplier->type === 'service') {
+            $expenseQuery = $supplier->expenses()->with('category')->latest('expense_date')->latest();
+
+            if ($status = $request->string('status')->toString()) {
+                $expenseQuery->where('payment_status', $status);
+            }
+
+            if ($from = $request->input('date_from')) {
+                $expenseQuery->whereDate('expense_date', '>=', $from);
+            }
+
+            if ($to = $request->input('date_to')) {
+                $expenseQuery->whereDate('expense_date', '<=', $to);
+            }
+
+            $expenses = $expenseQuery->paginate(20)->withQueryString();
         }
 
         return view('stock.current.show', [
             'supplier' => $supplier,
-            'invoices' => $query->paginate(20)->withQueryString(),
+            'invoices' => $invoices,
+            'expenses' => $expenses,
             'filters' => $request->only(['status', 'date_from', 'date_to']),
             'summary' => [
                 'total_debt' => $supplier->total_debt,

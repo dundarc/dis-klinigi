@@ -17,6 +17,7 @@ use App\Policies\InvoicePolicy;
 use App\Policies\NotificationPolicy;
 use App\Policies\PatientPolicy;
 use App\Policies\PrescriptionPolicy;
+use App\Policies\StockExpenseCategoryPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -35,6 +36,7 @@ class AuthServiceProvider extends ServiceProvider
         File::class => FilePolicy::class,
         Encounter::class => EncounterPolicy::class,
         Notification::class => NotificationPolicy::class,
+        StockExpenseCategory::class => StockExpenseCategoryPolicy::class,
     ];
 
     /**

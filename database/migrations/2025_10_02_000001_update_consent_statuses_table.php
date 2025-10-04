@@ -13,6 +13,12 @@ return new class extends Migration
             return;
         }
 
+        // First, add the status column if it doesn't exist
+        $columns = Schema::getColumnListing('consents');
+        if (!in_array('status', $columns)) {
+            DB::statement("ALTER TABLE consents ADD COLUMN status ENUM('accepted', 'withdrawn') DEFAULT 'accepted'");
+        }
+
         // Change the enum values
         DB::statement("ALTER TABLE consents MODIFY COLUMN status ENUM('accepted', 'withdrawn', 'active', 'canceled') DEFAULT 'active'");
 

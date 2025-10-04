@@ -66,4 +66,9 @@ class StockItem extends Model
     {
         return $this->name . ($this->sku ? ' (' . $this->sku . ')' : '');
     }
+
+    public function getLastMovementAttribute()
+    {
+        return $this->movements()->latest('movement_date')->latest('created_at')->first();
+    }
 }

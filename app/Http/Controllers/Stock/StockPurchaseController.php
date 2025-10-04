@@ -70,7 +70,7 @@ class StockPurchaseController extends Controller
         $this->authorize('accessStockManagement');
 
         return view('stock.purchases.create', [
-            'suppliers' => StockSupplier::orderBy('name')->get(),
+            'suppliers' => StockSupplier::where('type', 'supplier')->orderBy('name')->get(),
             'items' => StockItem::orderBy('name')->get(),
         ]);
     }
@@ -213,15 +213,24 @@ class StockPurchaseController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $purchase, $validated) {
+            // Map payment method to database enum values
+            $paymentMethodMap = [
+                'nakit' => 'cash',
+                'havale' => 'bank_transfer',
+                'kredi_karti' => 'credit_card',
+                'cek' => 'check',
+            ];
+            $dbPaymentMethod = $paymentMethodMap[$validated['payment_method']] ?? $validated['payment_method'];
+
             if (!empty($validated['schedule_id'])) {
                 // Payment for specific installment
                 $schedule = StockPaymentSchedule::findOrFail($validated['schedule_id']);
                 $receiptPath = null;
-                
+
                 if ($request->hasFile('receipt_file')) {
                     $receiptPath = $request->file('receipt_file')->store('stock/purchases/payments', 'public');
                 }
-                
+
                 $schedule->addPartialPayment(
                     $validated['payment_amount'],
                     $validated['payment_method'],
@@ -248,7 +257,7 @@ class StockPurchaseController extends Controller
                 $purchase->update(['payment_history' => $paymentHistory]);
                 $purchase->updatePaymentStatus();
             }
-            
+
             // Create account movement for payment
             if ($purchase->supplier_id) {
                 $purchase->accountMovements()->create([
@@ -256,13 +265,64 @@ class StockPurchaseController extends Controller
                     'direction' => 'credit',
                     'amount' => $validated['payment_amount'],
                     'movement_date' => $validated['payment_date'],
-                    'payment_method' => $validated['payment_method'],
+                    'payment_method' => $dbPaymentMethod,
                     'description' => 'Ödeme',
                 ]);
             }
         });
 
         return redirect()->route('stock.purchases.show', $purchase)->with('success', 'Ödeme başarıyla eklendi.');
+    }
+
+    public function deletePayment(Request $request, StockPurchaseInvoice $purchase, int $paymentIndex): RedirectResponse
+    {
+        $this->authorize('accessStockManagement');
+
+        DB::transaction(function () use ($purchase, $paymentIndex) {
+            $paymentHistory = $purchase->payment_history ?? [];
+
+            if (!isset($paymentHistory[$paymentIndex])) {
+                throw new \Exception('Ödeme bulunamadı.');
+            }
+
+            $deletedPayment = $paymentHistory[$paymentIndex];
+
+            // Delete receipt file if exists
+            if (isset($deletedPayment['receipt_path']) && $deletedPayment['receipt_path']) {
+                Storage::disk('public')->delete($deletedPayment['receipt_path']);
+            }
+
+            // Remove payment from history
+            unset($paymentHistory[$paymentIndex]);
+            $paymentHistory = array_values($paymentHistory); // Reindex array
+
+            $purchase->update(['payment_history' => $paymentHistory]);
+
+            // Update payment status after deletion
+            $purchase->updatePaymentStatus();
+
+            // Create reverse account movement
+            if ($purchase->supplier_id) {
+                $paymentMethodMap = [
+                    'nakit' => 'cash',
+                    'havale' => 'bank_transfer',
+                    'kredi_karti' => 'credit_card',
+                    'cek' => 'check',
+                ];
+                $dbPaymentMethod = $paymentMethodMap[$deletedPayment['method']] ?? $deletedPayment['method'];
+
+                $purchase->accountMovements()->create([
+                    'supplier_id' => $purchase->supplier_id,
+                    'direction' => 'debit', // Reverse the credit movement
+                    'amount' => $deletedPayment['amount'],
+                    'movement_date' => $deletedPayment['date'],
+                    'payment_method' => $dbPaymentMethod,
+                    'description' => 'Ödeme silindi',
+                ]);
+            }
+        });
+
+        return redirect()->route('stock.purchases.show', $purchase)->with('success', 'Ödeme başarıyla silindi.');
     }
 
     public function batchUpload(Request $request): RedirectResponse
@@ -543,12 +603,20 @@ class StockPurchaseController extends Controller
             return;
         }
 
+        $paymentMethodMap = [
+            'nakit' => 'cash',
+            'havale' => 'bank_transfer',
+            'kredi_karti' => 'credit_card',
+            'cek' => 'check',
+        ];
+        $dbPaymentMethod = isset($validated['payment_method']) ? ($paymentMethodMap[$validated['payment_method']] ?? $validated['payment_method']) : null;
+
         $invoice->accountMovements()->create([
             'supplier_id' => $validated['supplier_id'],
             'direction' => 'debit',
             'amount' => $grandTotal,
             'movement_date' => $validated['invoice_date'] ?? now()->toDateString(),
-            'payment_method' => $validated['payment_method'] ?? null,
+            'payment_method' => $dbPaymentMethod,
             'description' => 'Stok faturasi',
         ]);
     }
@@ -559,12 +627,20 @@ class StockPurchaseController extends Controller
             return;
         }
 
+        $paymentMethodMap = [
+            'nakit' => 'cash',
+            'havale' => 'bank_transfer',
+            'kredi_karti' => 'credit_card',
+            'cek' => 'check',
+        ];
+        $dbPaymentMethod = isset($validated['payment_method']) ? ($paymentMethodMap[$validated['payment_method']] ?? $validated['payment_method']) : null;
+
         $invoice->accountMovements()->create([
             'supplier_id' => $validated['supplier_id'],
             'direction' => 'debit',
             'amount' => $grandTotal,
             'movement_date' => $validated['invoice_date'] ?? now()->toDateString(),
-            'payment_method' => $validated['payment_method'] ?? null,
+            'payment_method' => $dbPaymentMethod,
             'description' => 'Stok faturasi (PDF yukleme)',
         ]);
     }

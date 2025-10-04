@@ -49,6 +49,10 @@
                     <form method="POST" action="{{ route('stock.purchases.store') }}" x-data="invoiceForm()" class="p-8 space-y-8">
                         @csrf
                         
+                        <!-- Hidden Fields -->
+                        <input type="hidden" name="mode" value="manual">
+                        <input type="hidden" name="payment_type" x-bind:value="paymentType">
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div class="space-y-3">
                                 <label for="invoice_number" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -88,7 +92,7 @@
                                 </label>
                                 <select id="supplier_id" name="supplier_id" class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
                                     <option value="">Tedarikçi Seçin</option>
-                                    @foreach($suppliers as $supplier)
+                                    @foreach($suppliers->where('type', 'supplier') as $supplier)
                                         <option value="{{ $supplier->id }}" @selected(old('supplier_id') == $supplier->id)>{{ $supplier->name }}</option>
                                     @endforeach
                                 </select>

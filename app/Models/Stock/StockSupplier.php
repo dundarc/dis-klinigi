@@ -51,12 +51,16 @@ class StockSupplier extends Model
 
     public function getTotalDebtAttribute(): float
     {
-        return $this->purchaseInvoices->sum('remaining_amount');
+        $invoiceDebt = $this->purchaseInvoices->sum('remaining_amount');
+        $expenseDebt = $this->type === 'service' ? $this->expenses->sum('remaining_amount') : 0;
+        return $invoiceDebt + $expenseDebt;
     }
 
     public function getTotalPaidAttribute(): float
     {
-        return $this->purchaseInvoices->sum('total_paid');
+        $invoicePaid = $this->purchaseInvoices->sum('total_paid');
+        $expensePaid = $this->type === 'service' ? $this->expenses->sum('total_paid') : 0;
+        return $invoicePaid + $expensePaid;
     }
 
     public function getOverdueInvoicesAttribute()

@@ -274,7 +274,7 @@
                         </div>
                     @endforelse
                 </div>
-            </x-card>
+            </div>
         </div>
     </div>
 </x-app-layout>

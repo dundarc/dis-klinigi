@@ -15,10 +15,13 @@ class EmailWebhookController extends Controller
      */
     public function bounce(Request $request): JsonResponse
     {
-        // This is a generic implementation
-        // In real-world, you'd verify signatures for specific providers
-
         $payload = $request->all();
+        $provider = $payload['provider'] ?? null;
+
+        // Verify webhook signature based on provider
+        if (!$this->verifyWebhookSignature($request, $provider)) {
+            return response()->json(['error' => 'Invalid signature'], 401);
+        }
 
         try {
             // Parse bounce data (this would vary by provider)
@@ -57,5 +60,77 @@ class EmailWebhookController extends Controller
 
             return response()->json(['error' => 'Processing failed'], 500);
         }
+    }
+
+    /**
+     * Verify webhook signature based on provider
+     */
+    private function verifyWebhookSignature(Request $request, ?string $provider): bool
+    {
+        // Skip verification in development
+        if (app()->environment(['local', 'development'])) {
+            return true;
+        }
+
+        switch ($provider) {
+            case 'mailgun':
+                return $this->verifyMailgunSignature($request);
+            case 'sendgrid':
+                return $this->verifySendGridSignature($request);
+            case 'ses':
+                return $this->verifySESSignature($request);
+            default:
+                // For unknown providers, skip verification but log warning
+                \Log::warning('Unknown webhook provider, skipping signature verification', [
+                    'provider' => $provider,
+                    'ip' => $request->ip(),
+                ]);
+                return true;
+        }
+    }
+
+    private function verifyMailgunSignature(Request $request): bool
+    {
+        $signature = $request->header('X-Mailgun-Signature');
+        $timestamp = $request->header('X-Mailgun-Timestamp');
+        $token = $request->header('X-Mailgun-Token');
+
+        if (!$signature || !$timestamp || !$token) {
+            return false;
+        }
+
+        // Get webhook signing key from settings (you'd store this in email settings)
+        $signingKey = config('services.mailgun.webhook_signing_key');
+
+        if (!$signingKey) {
+            \Log::error('Mailgun webhook signing key not configured');
+            return false;
+        }
+
+        $expectedSignature = hash_hmac('sha256', $timestamp . $token, $signingKey);
+
+        return hash_equals($expectedSignature, $signature);
+    }
+
+    private function verifySendGridSignature(Request $request): bool
+    {
+        // SendGrid uses different verification methods
+        // This is a simplified implementation
+        $signature = $request->header('X-Twilio-Email-Event-Webhook-Signature');
+        $timestamp = $request->header('X-Twilio-Email-Event-Webhook-Timestamp');
+
+        if (!$signature || !$timestamp) {
+            return false;
+        }
+
+        // Implementation would depend on your SendGrid setup
+        return true; // Placeholder
+    }
+
+    private function verifySESSignature(Request $request): bool
+    {
+        // SES webhook verification
+        // This would involve SNS message verification
+        return true; // Placeholder - implement proper SNS verification
     }
 }
