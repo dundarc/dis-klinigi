@@ -27,6 +27,10 @@ class StockPurchaseInvoice extends Model
         'payment_schedule',
         'is_installment',
         'total_installments',
+        'is_cancelled',
+        'cancelled_at',
+        'cancelled_by',
+        'cancel_reason',
     ];
 
     protected $casts = [
@@ -41,6 +45,8 @@ class StockPurchaseInvoice extends Model
         'is_installment' => 'boolean',
         'payment_status' => PaymentStatus::class,
         'payment_method' => \App\Enums\PaymentMethod::class,
+        'is_cancelled' => 'boolean',
+        'cancelled_at' => 'datetime',
     ];
 
     public function supplier()
@@ -68,6 +74,11 @@ class StockPurchaseInvoice extends Model
         return $query->where('payment_status', 'pending');
     }
 
+    public function scopePartial($query)
+    {
+        return $query->where('payment_status', PaymentStatus::PARTIAL);
+    }
+
     public function scopeOverdue($query)
     {
         return $query->where('payment_status', PaymentStatus::OVERDUE)
@@ -84,6 +95,11 @@ class StockPurchaseInvoice extends Model
 
     public function getTotalPaidAttribute(): float
     {
+        // Cancelled invoices should have 0 paid amount
+        if ($this->is_cancelled) {
+            return 0;
+        }
+
         if ($this->is_installment) {
             return (float) $this->paymentSchedules()->sum('paid_amount');
         }
@@ -97,6 +113,11 @@ class StockPurchaseInvoice extends Model
 
     public function getRemainingAmountAttribute(): float
     {
+        // Cancelled invoices should have 0 remaining amount
+        if ($this->is_cancelled) {
+            return 0;
+        }
+
         return (float) $this->grand_total - $this->total_paid;
     }
 

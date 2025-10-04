@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="min-h-[120px] bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700 dark:from-indigo-800 dark:via-purple-800 dark:to-blue-900 relative overflow-hidden rounded-2xl shadow-2xl">
+        <div x-data="{ showCancelModal: false }" class="min-h-[120px] bg-gradient-to-br from-indigo-600 via-purple-600 to-blue-700 dark:from-indigo-800 dark:via-purple-800 dark:to-blue-900 relative overflow-hidden rounded-2xl shadow-2xl">
             <!-- Background Pattern -->
             <div class="absolute inset-0 bg-black/10">
                 <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%);"></div>
@@ -45,8 +45,9 @@
                             <span class="hidden sm:inline">Listeye Dön</span>
                             <span class="sm:hidden">Liste</span>
                         </a>
-                        <a href="{{ route('stock.purchases.edit', $invoice) }}"
-                           class="inline-flex items-center px-3 sm:px-6 py-2 sm:py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all duration-200 border border-white/20 backdrop-blur-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base">
+                         
+                         <a href="{{ route('stock.purchases.edit', $invoice) }}"
+                            class="inline-flex items-center px-3 sm:px-6 py-2 sm:py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all duration-200 border border-white/20 backdrop-blur-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
@@ -59,6 +60,10 @@
                             </svg>
                             <span class="hidden sm:inline">Yazdır</span>
                         </a>
+                        @if(!$invoice->is_cancelled)
+                             <button type="button" x-on:click="showCancelModal = true" class="inline-flex items-center px-3 sm:px-6 py-2 sm:py-3 bg-red-500/20 hover:bg-red-500/30 text-white font-semibold rounded-xl transition-all duration-200 border border-red-400/30 backdrop-blur-sm shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base">Faturayı İptal Et</button>
+                         @endif
+                         @can('accessAdminFeatures')
                         <form method="POST" action="{{ route('stock.purchases.destroy', $invoice) }}" onsubmit="return confirm('Bu faturayı silmek istediğinizden emin misiniz?');" class="inline">
                             @csrf
                             @method('DELETE')
@@ -69,9 +74,36 @@
                                 <span class="hidden sm:inline">Sil</span>
                             </button>
                         </form>
+
+                        @endcan
                     </div>
                 </div>
             </div>
+
+            <!-- Cancel Modal -->
+            @if(!$invoice->is_cancelled)
+                <div x-show="showCancelModal" x-on:keydown.escape.window="showCancelModal = false" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div x-show="showCancelModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity" x-on:click="showCancelModal = false">
+                            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                        </div>
+
+                        <div x-show="showCancelModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <form method="POST" action="{{ route('stock.purchases.cancel', $invoice) }}" class="p-6">
+                                @csrf
+                                <h2 class="text-lg font-bold mb-4">Faturayı iptal etmek üzeresiniz</h2>
+                                <textarea required name="cancel_reason" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" rows="4" placeholder="İptal nedeni girin... (Zorunlu)" required></textarea>
+
+                                <div class="mt-4 flex justify-end space-x-3">
+                                    <button type="button" x-on:click="showCancelModal = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">Vazgeç</button>
+                                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">İptal Et</button>
+                                </div>
+                            </form>
+                            <p class="p-6 text-sm text-gray-500">Faturayı iptal etmeden önce lütfen ödeme iadelerini aldığınızdan emin olun ve ödeme hareketlerini iptal edin. Bu işlem geri alınamaz. <strong>İptal işlemini uygulamadan önce dikkatli olun.</strong></p>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </x-slot>
 
@@ -95,17 +127,21 @@
                                 </div>
                             </div>
                             @php
-                                $statusConfig = [
-                                    'paid' => ['bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200', '✅ TAM ÖDENDİ'],
-                                    'pending' => ['bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200', '⏳ BEKLİYOR'],
-                                    'overdue' => ['bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 animate-pulse', '⚠️ GECİKMİŞ'],
-                                    'partial' => ['bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200', '🔄 KISMI ÖDEME'],
-                                    'installment' => ['bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200', '📅 TAKSİTLİ'],
-                                ];
-                                $status = $invoice->payment_status->value;
-                                $config = $statusConfig[$status] ?? ['bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200', ucfirst($status)];
+                                if ($invoice->is_cancelled) {
+                                    $statusConfig = ['bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200', '❌ İPTAL EDİLDİ'];
+                                } else {
+                                    $statusConfig = [
+                                        'paid' => ['bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200', '✅ TAM ÖDENDİ'],
+                                        'pending' => ['bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200', '⏳ BEKLİYOR'],
+                                        'overdue' => ['bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 animate-pulse', '⚠️ GECİKMİŞ'],
+                                        'partial' => ['bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200', '🔄 KISMI ÖDEME'],
+                                        'installment' => ['bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200', '📅 TAKSİTLİ'],
+                                    ];
+                                    $status = $invoice->payment_status->value;
+                                    $statusConfig = $statusConfig[$status] ?? ['bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200', ucfirst($status)];
+                                }
                             @endphp
-                            <span class="inline-flex items-center rounded-full {{ $config[0] }} px-4 py-2 text-sm font-bold border-2 border-current/20">{{ $config[1] }}</span>
+                            <span class="inline-flex items-center rounded-full {{ $statusConfig[0] }} px-4 py-2 text-sm font-bold border-2 border-current/20">{{ $statusConfig[1] }}</span>
                         </div>
                     </div>
 
@@ -406,21 +442,7 @@
                                                     <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ ucfirst($payment['method']) }}</span>
                                                 </div>
 
-                                                @if(isset($payment['receipt_path']))
-                                                    <div class="flex items-center space-x-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                        </svg>
-                                                        <a href="{{ Storage::url($payment['receipt_path']) }}" target="_blank" class="text-sm font-semibold text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 transition-colors">Dekont İndir</a>
-                                                    </div>
-                                                @else
-                                                    <div class="flex items-center space-x-2 p-2 bg-slate-50 dark:bg-slate-600/30 rounded-lg">
-                                                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                        </svg>
-                                                        <span class="text-sm text-slate-500 dark:text-slate-400">Dekont Yok</span>
-                                                    </div>
-                                                @endif
+                                                
 
                                                 @if(isset($payment['notes']) && $payment['notes'])
                                                     <div class="flex items-start space-x-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg sm:col-span-2 lg:col-span-1">
@@ -555,27 +577,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- Dekont Dosyası -->
-                                    <div class="space-y-3">
-                                        <label for="receipt_file" class="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                            <span class="flex items-center space-x-2">
-                                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                </svg>
-                                                <span>Dekont Dosyası</span>
-                                            </span>
-                                        </label>
-                                        <div class="relative group">
-                                            <input type="file" name="receipt_file" id="receipt_file" accept=".pdf,.jpg,.jpeg,.png"
-                                                   class="block w-full px-4 py-4 border-2 border-slate-200 dark:border-slate-600 rounded-2xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-amber-50 file:to-amber-100 file:text-amber-800 hover:file:from-amber-100 hover:file:to-amber-200 file:transition-all">
-                                        </div>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center">
-                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            PDF, JPG, JPEG veya PNG formatında (İsteğe bağlı)
-                                        </p>
-                                    </div>
+                                    
                                 </div>
 
                                 <!-- Notlar -->
@@ -790,4 +792,5 @@
         }
     });
 </script>
+
 </x-app-layout>

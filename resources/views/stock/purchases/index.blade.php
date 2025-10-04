@@ -142,16 +142,18 @@
                                         <td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ $invoice->supplier?->name ?? '-' }}</td>
                                         <td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ optional($invoice->invoice_date)->format('d.m.Y') ?? '-' }}</td>
                                         <td class="px-6 py-4">
-                                            @if($invoice->payment_status->value === 'paid')
-                                                <span class="px-3 py-1 text-xs font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">ÖDENDİ</span>
+                                            @if($invoice->is_cancelled)
+                                                <span class="badge badge-danger">İptal</span>
+                                            @elseif($invoice->payment_status->value === 'paid')
+                                                <span class="badge badge-success">Ödendi</span>
                                             @elseif($invoice->payment_status->value === 'partial')
-                                                <span class="px-3 py-1 text-xs font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">KISMI</span>
+                                                <span class="badge badge-info">Kısmi</span>
                                             @elseif($invoice->payment_status->value === 'overdue')
-                                                <span class="px-3 py-1 text-xs font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full animate-pulse">GECİKMİŞ</span>
+                                                <span class="badge badge-danger animate-pulse">Gecikmiş</span>
                                             @elseif($invoice->payment_status->value === 'installment')
-                                                <span class="px-3 py-1 text-xs font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">TAKSİTLİ</span>
+                                                <span class="badge badge-warning">Taksitli</span>
                                             @else
-                                                <span class="px-3 py-1 text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">BEKLİYOR</span>
+                                                <span class="badge badge-secondary">Bekliyor</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 text-gray-900 dark:text-white font-semibold">₺{{ number_format($invoice->grand_total, 2, ',', '.') }}</td>
@@ -164,9 +166,70 @@
                             </table>
                         </div>
 
-                        <div class="px-8 py-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600">
-                            {{ $invoices->links() }}
-                        </div>
+                        <!-- Modern Pagination -->
+                        @if($invoices->hasPages())
+                            <div class="px-8 py-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600">
+                                <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                                        <span class="font-medium">{{ $invoices->firstItem() }}</span> -
+                                        <span class="font-medium">{{ $invoices->lastItem() }}</span>
+                                        arası gösteriliyor,
+                                        toplam <span class="font-medium">{{ $invoices->total() }}</span> fatura
+                                    </div>
+
+                                    <div class="flex items-center space-x-2">
+                                        <!-- Previous Button -->
+                                        @if($invoices->onFirstPage())
+                                            <button disabled class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 rounded-xl cursor-not-allowed">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                </svg>
+                                                Önceki
+                                            </button>
+                                        @else
+                                            <a href="{{ $invoices->previousPageUrl() }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                </svg>
+                                                Önceki
+                                            </a>
+                                        @endif
+
+                                        <!-- Page Numbers -->
+                                        <div class="flex items-center space-x-1">
+                                            @foreach($invoices->getUrlRange(1, $invoices->lastPage()) as $page => $url)
+                                                @if($page == $invoices->currentPage())
+                                                    <span class="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl shadow-lg">
+                                                        {{ $page }}
+                                                    </span>
+                                                @else
+                                                    <a href="{{ $url }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                        {{ $page }}
+                                                    </a>
+                                                @endif
+                                            @endforeach
+                                        </div>
+
+                                        <!-- Next Button -->
+                                        @if($invoices->hasMorePages())
+                                            <a href="{{ $invoices->nextPageUrl() }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                Sonraki
+                                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </a>
+                                        @else
+                                            <button disabled class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 rounded-xl cursor-not-allowed">
+                                                Sonraki
+                                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                     @else
                     <div class="bg-white dark:bg-gray-800 p-12 text-center rounded-2xl shadow">

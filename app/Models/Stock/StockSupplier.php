@@ -51,14 +51,14 @@ class StockSupplier extends Model
 
     public function getTotalDebtAttribute(): float
     {
-        $invoiceDebt = $this->purchaseInvoices->sum('remaining_amount');
+        $invoiceDebt = $this->purchaseInvoices->where('is_cancelled', false)->sum('remaining_amount');
         $expenseDebt = $this->type === 'service' ? $this->expenses->sum('remaining_amount') : 0;
         return $invoiceDebt + $expenseDebt;
     }
 
     public function getTotalPaidAttribute(): float
     {
-        $invoicePaid = $this->purchaseInvoices->sum('total_paid');
+        $invoicePaid = $this->purchaseInvoices->where('is_cancelled', false)->sum('total_paid');
         $expensePaid = $this->type === 'service' ? $this->expenses->sum('total_paid') : 0;
         return $invoicePaid + $expensePaid;
     }
@@ -66,7 +66,7 @@ class StockSupplier extends Model
     public function getOverdueInvoicesAttribute()
     {
         return $this->purchaseInvoices->filter(function ($invoice) {
-            return $invoice->payment_status === 'overdue' || ($invoice->due_date && $invoice->due_date->isPast() && $invoice->remaining_amount > 0);
+            return !$invoice->is_cancelled && ($invoice->payment_status === 'overdue' || ($invoice->due_date && $invoice->due_date->isPast() && $invoice->remaining_amount > 0));
         });
     }
 

@@ -70,15 +70,21 @@ class StockCurrentAccountController extends Controller
             $expenses = $expenseQuery->paginate(20)->withQueryString();
         }
 
+        // Calculate summary based on visible invoices (excluding cancelled ones)
+        $activeInvoices = $invoices->where('is_cancelled', false);
+        $totalAmount = $activeInvoices->sum('grand_total');
+        $totalPaid = $activeInvoices->sum('total_paid');
+        $remainingDebt = $totalAmount - $totalPaid;
+
         return view('stock.current.show', [
             'supplier' => $supplier,
             'invoices' => $invoices,
             'expenses' => $expenses,
             'filters' => $request->only(['status', 'date_from', 'date_to']),
             'summary' => [
-                'total_debt' => $supplier->total_debt,
-                'total_paid' => $supplier->total_paid,
-                'remaining_debt' => $supplier->total_debt - $supplier->total_paid,
+                'total_debt' => $totalAmount,
+                'total_paid' => $totalPaid,
+                'remaining_debt' => $remainingDebt,
                 'overdue_amount' => $supplier->overdue_amount,
                 'overdue_invoices_count' => $supplier->overdue_invoices->count(),
             ],

@@ -386,6 +386,11 @@ Route::middleware('auth')->group(function () {
     Route::prefix('stock')->name('stock.')->group(function () {
         Route::middleware('can:accessStockManagement')->group(function () {
             Route::get('/', [StockDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/search', [StockDashboardController::class, 'search'])->name('search');
+            Route::get('/api/partial-invoices', [StockDashboardController::class, 'getPartialInvoices'])->name('api.partial-invoices');
+            Route::get('/api/overdue-invoices', [StockDashboardController::class, 'getOverdueInvoices'])->name('api.overdue-invoices');
+            Route::get('/api/critical-stocks', [StockDashboardController::class, 'getCriticalStocks'])->name('api.critical-stocks');
+            Route::get('/api/negative-stocks', [StockDashboardController::class, 'getNegativeStocks'])->name('api.negative-stocks');
             Route::resource('items', StockItemController::class);
             Route::post('/items/{item}/add-movement', [StockItemController::class, 'addMovement'])->name('items.add-movement');
             Route::post('/items/bulk-movement', [StockItemController::class, 'bulkMovement'])->name('items.bulk-movement');
@@ -396,6 +401,7 @@ Route::middleware('auth')->group(function () {
             Route::resource('categories', StockCategoryController::class);
             Route::resource('suppliers', StockSupplierController::class)->except(['show']);
             Route::resource('purchases', StockPurchaseController::class);
+            Route::post('purchases/{purchase}/cancel', [StockPurchaseController::class, 'cancel'])->name('purchases.cancel');
             Route::post('purchases/{purchase}/payments', [StockPurchaseController::class, 'addPayment'])->name('purchases.addPayment');
             Route::delete('purchases/{purchase}/payments/{paymentIndex}', [StockPurchaseController::class, 'deletePayment'])->name('purchases.deletePayment');
             Route::post('purchases/{purchase}/installment-schedule', [StockPurchaseController::class, 'createInstallmentSchedule'])->name('purchases.create-installment-schedule');

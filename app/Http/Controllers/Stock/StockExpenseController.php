@@ -47,7 +47,7 @@ class StockExpenseController extends Controller
         }
 
         return view('stock.expenses.index', [
-            'expenses' => $query->paginate(15)->withQueryString(),
+            'expenses' => $query->paginate(20)->withQueryString(),
             'categories' => StockExpenseCategory::orderBy('name')->get(),
             'suppliers' => StockSupplier::orderBy('name')->get(),
             'filters' => $request->only(['category_id', 'supplier_id', 'payment_status', 'date_from', 'date_to']),

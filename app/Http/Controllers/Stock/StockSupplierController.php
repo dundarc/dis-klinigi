@@ -27,7 +27,7 @@ class StockSupplierController extends Controller
             $query->where('type', $type);
         }
 
-        $suppliers = $query->paginate(15)->withQueryString();
+        $suppliers = $query->paginate(20)->withQueryString();
 
         return view('stock.suppliers.index', [
             'suppliers' => $suppliers,

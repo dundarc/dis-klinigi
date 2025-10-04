@@ -304,18 +304,70 @@
                             </table>
                         </div>
 
-                        <!-- Enhanced Pagination -->
-                        <div class="px-8 py-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm text-gray-700 dark:text-gray-300">
-                                    Sayfa {{ $suppliers->currentPage() }} / {{ $suppliers->lastPage() }}
-                                    <span class="font-medium">({{ $suppliers->total() }} toplam kayıt)</span>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    {{ $suppliers->links() }}
+                        <!-- Modern Pagination -->
+                        @if($suppliers->hasPages())
+                            <div class="px-8 py-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600">
+                                <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                                        <span class="font-medium">{{ $suppliers->firstItem() }}</span> -
+                                        <span class="font-medium">{{ $suppliers->lastItem() }}</span>
+                                        arası gösteriliyor,
+                                        toplam <span class="font-medium">{{ $suppliers->total() }}</span> tedarikçi
+                                    </div>
+
+                                    <div class="flex items-center space-x-2">
+                                        <!-- Previous Button -->
+                                        @if($suppliers->onFirstPage())
+                                            <button disabled class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 rounded-xl cursor-not-allowed">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                </svg>
+                                                Önceki
+                                            </button>
+                                        @else
+                                            <a href="{{ $suppliers->previousPageUrl() }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                </svg>
+                                                Önceki
+                                            </a>
+                                        @endif
+
+                                        <!-- Page Numbers -->
+                                        <div class="flex items-center space-x-1">
+                                            @foreach($suppliers->getUrlRange(1, $suppliers->lastPage()) as $page => $url)
+                                                @if($page == $suppliers->currentPage())
+                                                    <span class="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl shadow-lg">
+                                                        {{ $page }}
+                                                    </span>
+                                                @else
+                                                    <a href="{{ $url }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                        {{ $page }}
+                                                    </a>
+                                                @endif
+                                            @endforeach
+                                        </div>
+
+                                        <!-- Next Button -->
+                                        @if($suppliers->hasMorePages())
+                                            <a href="{{ $suppliers->nextPageUrl() }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                Sonraki
+                                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </a>
+                                        @else
+                                            <button disabled class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 rounded-xl cursor-not-allowed">
+                                                Sonraki
+                                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endif
                     @else
                         <!-- Enhanced Empty State -->
                         <div class="text-center py-16 px-8">

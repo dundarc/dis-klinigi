@@ -369,7 +369,9 @@
                                                 <td class="px-6 py-4 text-green-600 dark:text-green-400 font-medium">{{ number_format($invoice->total_paid, 2, ',', '.') }} TL</td>
                                                 <td class="px-6 py-4 {{ $invoice->remaining_amount > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400' }} font-medium">{{ number_format($invoice->remaining_amount, 2, ',', '.') }} TL</td>
                                                 <td class="px-6 py-4">
-                                                    @if($invoice->payment_status === 'paid')
+                                                    @if($invoice->is_cancelled)
+                                                        <span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-900/30 px-2.5 py-1 text-xs font-medium text-gray-800 dark:text-gray-200">İPTAL</span>
+                                                    @elseif($invoice->payment_status === 'paid')
                                                         <span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-1 text-xs font-medium text-green-800 dark:text-green-200">Ödendi</span>
                                                     @elseif($invoice->payment_status === 'pending')
                                                         <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-1 text-xs font-medium text-blue-800 dark:text-blue-200">Bekliyor</span>
@@ -388,7 +390,7 @@
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                         </svg>
                                                     </a>
-                                                    @if($invoice->remaining_amount > 0)
+                                                    @if(!$invoice->is_cancelled && $invoice->remaining_amount > 0)
                                                     <button onclick="makePayment({{ $invoice->id }})" class="inline-flex items-center p-2 text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors" title="Ödeme Yap">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
@@ -673,6 +675,11 @@
                                 <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <span class="text-sm font-medium text-green-700 dark:text-green-300">Tamamlanan</span>
                                     <span class="text-lg font-bold text-green-800 dark:text-green-200">{{ $invoices->where('payment_status', 'paid')->count() }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">İptal Edilen Faturalar</span>
+                                    <span class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ $invoices->where('is_cancelled', true)->count() }}</span>
                                 </div>
                             </div>
                         </div>

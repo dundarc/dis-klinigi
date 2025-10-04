@@ -9,6 +9,7 @@ use App\Models\Stock\StockPurchaseItem;
 use App\Models\Stock\StockPaymentSchedule;
 use App\Models\Stock\StockSupplier;
 use App\Services\Stock\StockMovementService;
+use App\Services\Stock\PurchaseInvoiceCancelService;
 use App\Services\OCRService;
 use App\Enums\PaymentStatus;
 use Illuminate\Http\RedirectResponse;
@@ -59,7 +60,7 @@ class StockPurchaseController extends Controller
         }
 
         return view('stock.purchases.index', [
-            'invoices' => $query->paginate(15)->withQueryString(),
+            'invoices' => $query->paginate(20)->withQueryString(),
             'suppliers' => StockSupplier::orderBy('name')->get(['id', 'name']),
             'filters' => $request->only(['supplier_id', 'payment_status', 'date_from', 'date_to']),
         ]);
@@ -197,6 +198,26 @@ class StockPurchaseController extends Controller
         });
 
         return redirect()->route('stock.purchases.index')->with('success', 'Fatura silindi.');
+    }
+
+    public function cancel(StockPurchaseInvoice $purchase, Request $request): RedirectResponse
+    {
+        $this->authorize('accessStockManagement');
+
+        try {
+            $purchase->load(['items.stockItem']);
+
+            app(PurchaseInvoiceCancelService::class)->cancel(
+                $purchase,
+                $request->user(),
+                $request->input('cancel_reason')
+            );
+
+            return redirect()->route('stock.purchases.index')
+                ->with('success', 'Fatura başarıyla iptal edildi.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function addPayment(Request $request, StockPurchaseInvoice $purchase): RedirectResponse

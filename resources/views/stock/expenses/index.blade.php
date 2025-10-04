@@ -155,9 +155,70 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-6">
-                    {{ $expenses->links() }}
-                </div>
+                <!-- Modern Pagination -->
+                @if($expenses->hasPages())
+                    <div class="mt-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-6 backdrop-blur-sm">
+                        <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+                            <div class="text-sm text-slate-600 dark:text-slate-400">
+                                <span class="font-medium">{{ $expenses->firstItem() }}</span> -
+                                <span class="font-medium">{{ $expenses->lastItem() }}</span>
+                                arası gösteriliyor,
+                                toplam <span class="font-medium">{{ $expenses->total() }}</span> gider
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <!-- Previous Button -->
+                                @if($expenses->onFirstPage())
+                                    <button disabled class="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-500 rounded-xl cursor-not-allowed">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                        </svg>
+                                        Önceki
+                                    </button>
+                                @else
+                                    <a href="{{ $expenses->previousPageUrl() }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                        </svg>
+                                        Önceki
+                                    </a>
+                                @endif
+
+                                <!-- Page Numbers -->
+                                <div class="flex items-center space-x-1">
+                                    @foreach($expenses->getUrlRange(1, $expenses->lastPage()) as $page => $url)
+                                        @if($page == $expenses->currentPage())
+                                            <span class="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg">
+                                                {{ $page }}
+                                            </span>
+                                        @else
+                                            <a href="{{ $url }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                {{ $page }}
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                </div>
+
+                                <!-- Next Button -->
+                                @if($expenses->hasMorePages())
+                                    <a href="{{ $expenses->nextPageUrl() }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                                        Sonraki
+                                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </a>
+                                @else
+                                    <button disabled class="inline-flex items-center px-3 py-2 text-sm font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-500 rounded-xl cursor-not-allowed">
+                                        Sonraki
+                                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </x-card>
         </div>
     </div>
